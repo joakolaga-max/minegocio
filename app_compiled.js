@@ -174,13 +174,6 @@ function App() {
         return () => window.removeEventListener("authReady", onAuth);
     }, []);
 
-    if (!authReady) {
-        return React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", gap: 16, background: "#0f1117" } },
-            React.createElement("div", { style: { width: 44, height: 44, border: "4px solid #1e2230", borderTopColor: "#6366f1", borderRadius: "50%", animation: "spin 0.8s linear infinite" } }),
-            React.createElement("div", { style: { color: "#6b7280", fontSize: 14 } }, "Conectando..."));
-    }
-
-    if (!user) return React.createElement(LoginScreen, null);
     // ── Cargar datos de Firebase al inicio ──
     useEffect(() => {
         const loadAll = async () => {
@@ -254,6 +247,12 @@ function App() {
             return costo;
         return costo / (1 - m);
     };
+    if (!authReady) {
+        return React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", gap: 16, background: "#0f1117" } },
+            React.createElement("div", { style: { width: 44, height: 44, border: "4px solid #1e2230", borderTopColor: "#6366f1", borderRadius: "50%", animation: "spin 0.8s linear infinite" } }),
+            React.createElement("div", { style: { color: "#6b7280", fontSize: 14 } }, "Conectando..."));
+    }
+    if (!user) return React.createElement(LoginScreen, null);
     return (React.createElement("div", { style: { minHeight: "100vh", background: "#0f1117", fontFamily: "'DM Sans', sans-serif", color: "#f1f5f9" } },
         React.createElement("style", null, `
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
