@@ -431,56 +431,38 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
     const scanVideoRef = useRef();
     const stopRefScan = useCallback(() => {
         if (window._zxingRefReader) {
-            try {
-                window._zxingRefReader.reset();
-            }
-            catch (e) { }
+            try { window._zxingRefReader.reset(); } catch(e) {}
             window._zxingRefReader = null;
         }
         setScanningRef(false);
     }, []);
-    useEffect(() => {
-        if (!scanningRef) return;
-        let stream = null;
-        const startRefScan = async () => {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                if (!scanVideoRef.current) return;
-                scanVideoRef.current.srcObject = stream;
-                await scanVideoRef.current.play();
-            } catch(e) {
-                showToast('No se pudo acceder a la cámara', 'error');
-                setScanningRef(false);
-                return;
-            }
-            const doScan = () => {
-                setTimeout(() => {
-                    if (!scanVideoRef.current) return;
-                    const reader = new window.ZXing.BrowserMultiFormatReader();
-                    window._zxingRefReader = reader;
-                    reader.decodeFromVideoElement(scanVideoRef.current, (result, err) => {
-                        if (result) {
-                            const text = result.getText().trim().toUpperCase();
-                            setCodigoRef(text);
-                            if (stream) stream.getTracks().forEach(t => t.stop());
-                            stopRefScan();
-                            showToast('Código REF cargado: ' + text, 'success');
-                        }
-                    });
-                }, 500);
-            };
-            if (!window.ZXing) {
-                const script = document.createElement('script');
-                script.src = 'https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js';
-                script.onload = doScan;
-                document.head.appendChild(script);
-            } else {
-                doScan();
-            }
-        };
-        startRefScan();
-        return () => { if (stream) stream.getTracks().forEach(t => t.stop()); };
-    }, [scanningRef]);
+    const startRefScan = useCallback(() => {
+        if (!window.ZXing) {
+            showToast('Cargando escáner...', 'info');
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js';
+            script.onload = () => initRefScanner();
+            document.head.appendChild(script);
+        } else {
+            initRefScanner();
+        }
+    }, []);
+    const initRefScanner = useCallback(() => {
+        setScanningRef(true);
+        setTimeout(() => {
+            if (!scanVideoRef.current) return;
+            const reader = new window.ZXing.BrowserMultiFormatReader();
+            window._zxingRefReader = reader;
+            reader.decodeFromVideoDevice(null, scanVideoRef.current, (result, err) => {
+                if (result) {
+                    const text = result.getText().trim().toUpperCase();
+                    setCodigoRef(text);
+                    stopRefScan();
+                    showToast('Código REF cargado: ' + text, 'success');
+                }
+            });
+        }, 300);
+    }, []);
     const agregarProducto = () => {
         if (!codigoRef.trim() || !codigoProv.trim()) {
             showToast("Completá el código local y el código del proveedor", "error");
@@ -581,7 +563,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
                     React.createElement("label", { style: { fontSize: 12, color: "#6b7280", marginBottom: 6, display: "block" } }, "Tu C\u00F3digo REF"),
                     React.createElement("div", { style: { display: "flex", gap: 6 } },
                         React.createElement("input", { className: "input-field", placeholder: "REF00001", value: codigoRef, onChange: e => setCodigoRef(e.target.value.toUpperCase()) }),
-                        React.createElement("button", { className: "btn-ghost", style: { padding: "10px 12px", flexShrink: 0, color: scanningRef ? "#22c55e" : "#6b7280" }, onClick: () => scanningRef ? stopRefScan() : setScanningRef(true), title: "Escanear c\u00F3digo REF" },
+                        React.createElement("button", { className: "btn-ghost", style: { padding: "10px 12px", flexShrink: 0, color: scanningRef ? "#22c55e" : "#6b7280" }, onClick: () => scanningRef ? stopRefScan() : startRefScan(), title: "Escanear c\u00F3digo REF" },
                             React.createElement(Icon, { name: "camera", size: 18 }))),
                     scanningRef && (React.createElement("div", { style: { marginTop: 8, borderRadius: 12, overflow: "hidden", position: "relative", background: "#000" } },
                         React.createElement("video", { ref: scanVideoRef, autoPlay: true, playsInline: true, muted: true, style: { width: "100%", display: "block", minHeight: 180 } }),
