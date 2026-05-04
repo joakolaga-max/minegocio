@@ -440,33 +440,46 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
         setScanningRef(false);
     }, []);
     useEffect(() => {
-        if (!scanningRef)
-            return;
-        const startRefScan = () => {
-            setTimeout(() => {
-                if (!scanVideoRef.current)
-                    return;
-                const reader = new window.ZXing.BrowserMultiFormatReader();
-                window._zxingRefReader = reader;
-                reader.decodeFromVideoDevice(null, scanVideoRef.current, (result, err) => {
-                    if (result) {
-                        const text = result.getText().trim().toUpperCase();
-                        setCodigoRef(text);
-                        stopRefScan();
-                        showToast("Código REF cargado: " + text, "success");
-                    }
-                });
-            }, 300);
+        if (!scanningRef) return;
+        let stream = null;
+        const startRefScan = async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                if (!scanVideoRef.current) return;
+                scanVideoRef.current.srcObject = stream;
+                await scanVideoRef.current.play();
+            } catch(e) {
+                showToast('No se pudo acceder a la cámara', 'error');
+                setScanningRef(false);
+                return;
+            }
+            const doScan = () => {
+                setTimeout(() => {
+                    if (!scanVideoRef.current) return;
+                    const reader = new window.ZXing.BrowserMultiFormatReader();
+                    window._zxingRefReader = reader;
+                    reader.decodeFromVideoElement(scanVideoRef.current, (result, err) => {
+                        if (result) {
+                            const text = result.getText().trim().toUpperCase();
+                            setCodigoRef(text);
+                            if (stream) stream.getTracks().forEach(t => t.stop());
+                            stopRefScan();
+                            showToast('Código REF cargado: ' + text, 'success');
+                        }
+                    });
+                }, 500);
+            };
+            if (!window.ZXing) {
+                const script = document.createElement('script');
+                script.src = 'https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js';
+                script.onload = doScan;
+                document.head.appendChild(script);
+            } else {
+                doScan();
+            }
         };
-        if (!window.ZXing) {
-            const script = document.createElement("script");
-            script.src = "https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js";
-            script.onload = startRefScan;
-            document.head.appendChild(script);
-        }
-        else {
-            startRefScan();
-        }
+        startRefScan();
+        return () => { if (stream) stream.getTracks().forEach(t => t.stop()); };
     }, [scanningRef]);
     const agregarProducto = () => {
         if (!codigoRef.trim() || !codigoProv.trim()) {
