@@ -580,7 +580,8 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
         showToast(`${actualizados} precios actualizados desde proveedores`, actualizados > 0 ? "success" : "info");
     };
     const filtrados = data.misProductos.map((p, i) => (Object.assign(Object.assign({}, p), { _i: i }))).filter(p => !busqueda || p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
-        p.descripcion.toLowerCase().includes(busqueda.toLowerCase()));
+        p.descripcion.toLowerCase().includes(busqueda.toLowerCase()) ||
+        (p.codigoProv || "").toLowerCase().includes(busqueda.toLowerCase()));
     const margenLabel = { p1: "50%", p2: "40%", p3: "30%", p4: "20%" };
     return (React.createElement("div", { className: "card" },
         React.createElement("div", { style: { marginBottom: 20, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 } },
