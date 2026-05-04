@@ -9,7 +9,8 @@ const DB = {
     })),
     misProductos: [],
     margenes: { p1: 50, p2: 40, p3: 30, p4: 20 },
-    stock: {}
+    stock: {},
+    fotos: {}
 };
 const saveToFirebase = async (path, data) => {
     if (window.__fb)
@@ -421,6 +422,7 @@ function TabProveedores({ data, setData, showToast, busqueda, setBusqueda }) {
                     React.createElement("button", { className: "btn-primary", onClick: () => fileRef.current.click() },
                         React.createElement(Icon, { name: "upload", size: 16 }),
                         " Cargar Excel / CSV"),
+                    prov.productos.length > 0 && React.createElement("button", { style: { background: "linear-gradient(135deg,#22c55e,#16a34a)", color: "#fff", border: "none", padding: "10px 16px", borderRadius: 10, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", gap: 8 }, onClick: async () => { showToast("Guardando...", "info"); if (window.__fb) await window.__fb.save("proveedores", data.proveedores); try { localStorage.setItem("mn_proveedores", JSON.stringify(data.proveedores)); } catch(e) {} showToast("\u2705 Lista guardada", "success"); } }, React.createElement(Icon, { name: "check", size: 14 }), " Guardar lista"),
                     React.createElement("input", { ref: fileRef, type: "file", accept: ".csv,.txt,.xlsx,.xls", style: { display: "none" }, onChange: handleFile })))),
         prov.productos.length > 0 && (React.createElement("div", { style: { position: "relative", marginBottom: 16 } },
             React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } },
@@ -452,6 +454,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
     const [margenSel, setMargenSel] = useState("p1");
     const [busqueda, setBusqueda] = useState("");
     const [editIdx, setEditIdx] = useState(null);
+    const [photoModal, setPhotoModal] = useState(null);
     const [scanningRef, setScanningRef] = useState(false);
     const scanVideoRef = useRef();
     const stopRefScan = useCallback(() => {
@@ -474,11 +477,19 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
     }, []);
     const initRefScanner = useCallback(() => {
         setScanningRef(true);
-        setTimeout(() => {
+        setTimeout(async () => {
             if (!scanVideoRef.current) return;
-            const reader = new window.ZXing.BrowserMultiFormatReader();
-            window._zxingRefReader = reader;
-            reader.decodeFromVideoDevice(null, scanVideoRef.current, (result, err) => {
+            try {
+              const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { exact: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+              });
+              scanVideoRef.current.srcObject = stream;
+              await scanVideoRef.current.play();
+              const hints = new Map();
+              hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
+              const reader = new window.ZXing.BrowserMultiFormatReader(hints, 400);
+              window._zxingRefReader = reader;
+              reader.decodeFromStream(stream, scanVideoRef.current, (result, err) => {
                 if (result) {
                     const text = result.getText().trim().toUpperCase();
                     beep();
@@ -487,6 +498,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
                     showToast('Código REF cargado: ' + text, 'success');
                 }
             });
+            } catch(e) { showToast("Error cámara: " + e.message, "error"); setScanningRef(false); }
         }, 300);
     }, []);
     const agregarProducto = () => {
@@ -591,8 +603,8 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
                         React.createElement("input", { className: "input-field", placeholder: "REF00001", value: codigoRef, onChange: e => setCodigoRef(e.target.value.toUpperCase()) }),
                         React.createElement("button", { className: "btn-ghost", style: { padding: "10px 12px", flexShrink: 0, color: scanningRef ? "#22c55e" : "#6b7280" }, onClick: () => scanningRef ? stopRefScan() : startRefScan(), title: "Escanear c\u00F3digo REF" },
                             React.createElement(Icon, { name: "camera", size: 18 }))),
-                    scanningRef && (React.createElement("div", { style: { marginTop: 8, borderRadius: 12, overflow: "hidden", position: "relative", background: "#000" } },
-                        React.createElement("video", { ref: scanVideoRef, autoPlay: true, playsInline: true, muted: true, style: { width: "100%", borderRadius: 12, display: "block", minHeight: 200 } }), React.createElement("div", { style: { position: "absolute", inset: 0, border: "2px solid #6366f1", borderRadius: 12, pointerEvents: "none" } }), React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "70%", height: 2, background: "rgba(99,102,241,0.8)", boxShadow: "0 0 12px #6366f1" } }),
+                    scanningRef && (React.createElement("div", { style: { position: "fixed", inset: 0, background: "#000", zIndex: 500, display: "flex", flexDirection: "column" } },
+                        React.createElement("video", { ref: scanVideoRef, autoPlay: true, playsInline: true, muted: true, style: { width: "100%", flex: 1, objectFit: "cover", display: "block" } }), React.createElement("div", { style: { position: "absolute", inset: 0, border: "2px solid #6366f1", borderRadius: 12, pointerEvents: "none" } }), React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "70%", height: 2, background: "rgba(99,102,241,0.8)", boxShadow: "0 0 12px #6366f1" } }),
                         React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "70%", height: 2, background: "rgba(99,102,241,0.8)", boxShadow: "0 0 12px #6366f1" } }),
                         React.createElement("div", { style: { position: "absolute", bottom: 10, left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.7)", fontSize: 12 } }, "Apunt\u00E1 al c\u00F3digo REF"),
                         React.createElement("button", { onClick: () => stopRefScan(), style: { position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" } },
@@ -738,8 +750,8 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta 
                     React.createElement(Icon, { name: "plus", size: 16 })),
                 React.createElement("button", { className: "btn-ghost", onClick: scanning ? stopScan : startScan, style: { padding: "10px 14px", color: scanning ? "#22c55e" : "#6b7280" } },
                     React.createElement(Icon, { name: "camera", size: 18 }))),
-            scanning && (React.createElement("div", { style: { marginTop: 12, borderRadius: 12, overflow: "hidden", position: "relative", background: "#000" } },
-                React.createElement("video", { ref: videoRef, autoPlay: true, playsInline: true, muted: true, style: { width: "100%", borderRadius: 12, display: "block", minHeight: 200 } }),
+            scanning && (React.createElement("div", { style: { position: "fixed", inset: 0, background: "#000", zIndex: 500, display: "flex", flexDirection: "column" } },
+                React.createElement("video", { ref: videoRef, autoPlay: true, playsInline: true, muted: true, style: { width: "100%", flex: 1, objectFit: "cover", display: "block" } }),
                 React.createElement("div", { style: { position: "absolute", inset: 0, border: "2px solid #6366f1", borderRadius: 12, pointerEvents: "none" } }),
                 React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "70%", height: 2, background: "rgba(99,102,241,0.8)", boxShadow: "0 0 12px #6366f1" } }),
                 React.createElement("div", { style: { position: "absolute", bottom: 12, left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.7)", fontSize: 12 } }, "Apunt\u00E1 al c\u00F3digo de barras"),
@@ -755,7 +767,7 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta 
                         " c/u")),
                 React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
                     React.createElement("button", { onClick: () => cambiarCantidad(i, -1), style: { width: 28, height: 28, borderRadius: 8, background: "#374151", border: "none", color: "#f1f5f9", cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" } }, "\u2212"),
-                    React.createElement("span", { style: { fontWeight: 700, fontSize: 16, minWidth: 24, textAlign: "center" } }, item.cantidad),
+                    React.createElement("input", { type: "number", inputMode: "numeric", min: 1, value: item.cantidad, onChange: e => { const v = Math.max(1, parseInt(e.target.value)||1); setItems(its => { const n=[...its]; n[i].cantidad=v; return n; }); }, style: { width: 52, height: 32, borderRadius: 8, background: "#1e2230", border: "1px solid #374151", color: "#f1f5f9", textAlign: "center", fontSize: 15, fontWeight: 700, fontFamily: "inherit" } }),
                     React.createElement("button", { onClick: () => cambiarCantidad(i, 1), style: { width: 28, height: 28, borderRadius: 8, background: "#6366f1", border: "none", color: "#fff", cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" } }, "+")),
                 React.createElement("div", { style: { fontWeight: 700, color: "#22c55e", minWidth: 90, textAlign: "right" } }, fmt(item.precioVenta * item.cantidad)))))),
             React.createElement("div", { style: { background: "linear-gradient(135deg, #1e3a2e, #1a3025)", borderRadius: 16, border: "1px solid #166534", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 } },
@@ -771,6 +783,7 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta 
 function TabStock({ data, setData, showToast }) {
     const [busqueda, setBusqueda] = useState("");
     const [editIdx, setEditIdx] = useState(null);
+    const [photoModal, setPhotoModal] = useState(null);
     const [scanningStock, setScanningStock] = useState(false);
     const stockVideoRef = useRef();
     const stopStockScan = () => {
@@ -862,7 +875,7 @@ function TabStock({ data, setData, showToast }) {
                     React.createElement("video", { ref: stockVideoRef, autoPlay: true, playsInline: true, muted: true, style: { width: "100%", borderRadius: 12, display: "block", minHeight: 200 } }),
                     React.createElement("div", { style: { position: "absolute", inset: 0, border: "2px solid #6366f1", borderRadius: 12, pointerEvents: "none" } }),
                     React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "70%", height: 2, background: "rgba(99,102,241,0.8)", boxShadow: "0 0 12px #6366f1" } }),
-                    React.createElement("div", { style: { position: "absolute", bottom: 12, left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.7)", fontSize: 12 } }, "Apuntá al código de barras"),
+                    React.createElement("div", { style: { position: "absolute", bottom: 12, left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.7)", fontSize: 12 } }, "📷  Apuntá al código de barras — se detecta solo"),
                     React.createElement("button", { onClick: stopStockScan, style: { position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" } },
                         React.createElement(Icon, { name: "x", size: 18 })))),
             React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, productos.map(p => {
