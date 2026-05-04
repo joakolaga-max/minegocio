@@ -70,21 +70,29 @@ const parseExcel = (buffer) => {
 };
 
 // ─── BEEP ─────────────────────────────────────────────────────────────────────
+let _audioCtx = null;
+const getAudioCtx = () => {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    return _audioCtx;
+};
 const beep = () => {
     try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const ctx = getAudioCtx();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
-        osc.type = 'square';
+        osc.type = 'sine';
         osc.frequency.setValueAtTime(1800, ctx.currentTime);
-        gain.gain.setValueAtTime(0.3, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
         osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.12);
+        osc.stop(ctx.currentTime + 0.15);
     } catch(e) {}
 };
+// Desbloquear audio en primer toque (requerido en iOS/Android)
+document.addEventListener('touchstart', () => { try { getAudioCtx(); } catch(e) {} }, { once: true });
 // ─── ICONS ───────────────────────────────────────────────────────────────────
 const Icon = ({ name, size = 20 }) => {
     var _a;
@@ -765,41 +773,45 @@ function TabStock({ data, setData, showToast }) {
     const [editIdx, setEditIdx] = useState(null);
     const [scanningStock, setScanningStock] = useState(false);
     const stockVideoRef = useRef();
-    const stopStockScan = useCallback(() => {
+    const stopStockScan = () => {
         if (window._zxingStockReader) {
             try { window._zxingStockReader.reset(); } catch(e) {}
             window._zxingStockReader = null;
         }
         setScanningStock(false);
-    }, []);
-    const startStockScan = useCallback(() => {
+    };
+    const startStockScan = () => {
+        const doScan = () => {
+            setScanningStock(true);
+            setTimeout(() => {
+                if (!stockVideoRef.current) return;
+                const reader = new window.ZXing.BrowserMultiFormatReader();
+                window._zxingStockReader = reader;
+                reader.decodeFromVideoDevice(null, stockVideoRef.current, (result, err) => {
+                    if (result) {
+                        const text = result.getText().trim().toUpperCase();
+                        beep();
+                        setBusqueda(text);
+                        if (window._zxingStockReader) {
+                            try { window._zxingStockReader.reset(); } catch(e) {}
+                            window._zxingStockReader = null;
+                        }
+                        setScanningStock(false);
+                        showToast('Buscando: ' + text, 'info');
+                    }
+                });
+            }, 300);
+        };
         if (!window.ZXing) {
             showToast('Cargando escáner...', 'info');
             const script = document.createElement('script');
             script.src = 'https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js';
-            script.onload = () => initStockScanner();
+            script.onload = doScan;
             document.head.appendChild(script);
         } else {
-            initStockScanner();
+            doScan();
         }
-    }, []);
-    const initStockScanner = useCallback(() => {
-        setScanningStock(true);
-        setTimeout(() => {
-            if (!stockVideoRef.current) return;
-            const reader = new window.ZXing.BrowserMultiFormatReader();
-            window._zxingStockReader = reader;
-            reader.decodeFromVideoDevice(null, stockVideoRef.current, (result, err) => {
-                if (result) {
-                    const text = result.getText().trim().toUpperCase();
-                    beep();
-                    setBusqueda(text);
-                    stopStockScan();
-                    showToast('Buscando: ' + text, 'info');
-                }
-            });
-        }, 300);
-    }, []);
+    };
     const productos = data.misProductos.map((p, i) => {
         var _a;
         const stock = ((_a = data.stock) === null || _a === void 0 ? void 0 : _a[p.codigoRef]) || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
