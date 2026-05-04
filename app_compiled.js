@@ -68,6 +68,23 @@ const parseExcel = (buffer) => {
     }
     return rows;
 };
+
+// ─── BEEP ─────────────────────────────────────────────────────────────────────
+const beep = () => {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(1800, ctx.currentTime);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.12);
+    } catch(e) {}
+};
 // ─── ICONS ───────────────────────────────────────────────────────────────────
 const Icon = ({ name, size = 20 }) => {
     var _a;
@@ -456,6 +473,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
             reader.decodeFromVideoDevice(null, scanVideoRef.current, (result, err) => {
                 if (result) {
                     const text = result.getText().trim().toUpperCase();
+                    beep();
                     setCodigoRef(text);
                     stopRefScan();
                     showToast('Código REF cargado: ' + text, 'success');
@@ -566,7 +584,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
                         React.createElement("button", { className: "btn-ghost", style: { padding: "10px 12px", flexShrink: 0, color: scanningRef ? "#22c55e" : "#6b7280" }, onClick: () => scanningRef ? stopRefScan() : startRefScan(), title: "Escanear c\u00F3digo REF" },
                             React.createElement(Icon, { name: "camera", size: 18 }))),
                     scanningRef && (React.createElement("div", { style: { marginTop: 8, borderRadius: 12, overflow: "hidden", position: "relative", background: "#000" } },
-                        React.createElement("video", { ref: scanVideoRef, autoPlay: true, playsInline: true, muted: true, style: { width: "100%", display: "block", minHeight: 180 } }),
+                        React.createElement("video", { ref: scanVideoRef, autoPlay: true, playsInline: true, muted: true, style: { width: "100%", borderRadius: 12, display: "block", minHeight: 200 } }), React.createElement("div", { style: { position: "absolute", inset: 0, border: "2px solid #6366f1", borderRadius: 12, pointerEvents: "none" } }), React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "70%", height: 2, background: "rgba(99,102,241,0.8)", boxShadow: "0 0 12px #6366f1" } }),
                         React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "70%", height: 2, background: "rgba(99,102,241,0.8)", boxShadow: "0 0 12px #6366f1" } }),
                         React.createElement("div", { style: { position: "absolute", bottom: 10, left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.7)", fontSize: 12 } }, "Apunt\u00E1 al c\u00F3digo REF"),
                         React.createElement("button", { onClick: () => stopRefScan(), style: { position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" } },
@@ -684,6 +702,7 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta 
             codeReader.decodeFromVideoDevice(null, videoRef.current, (result, err) => {
                 if (result) {
                     const text = result.getText();
+                    beep();
                     buscarYAgregar(text);
                     stopScan();
                 }
@@ -744,6 +763,43 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta 
 function TabStock({ data, setData, showToast }) {
     const [busqueda, setBusqueda] = useState("");
     const [editIdx, setEditIdx] = useState(null);
+    const [scanningStock, setScanningStock] = useState(false);
+    const stockVideoRef = useRef();
+    const stopStockScan = useCallback(() => {
+        if (window._zxingStockReader) {
+            try { window._zxingStockReader.reset(); } catch(e) {}
+            window._zxingStockReader = null;
+        }
+        setScanningStock(false);
+    }, []);
+    const startStockScan = useCallback(() => {
+        if (!window.ZXing) {
+            showToast('Cargando escáner...', 'info');
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js';
+            script.onload = () => initStockScanner();
+            document.head.appendChild(script);
+        } else {
+            initStockScanner();
+        }
+    }, []);
+    const initStockScanner = useCallback(() => {
+        setScanningStock(true);
+        setTimeout(() => {
+            if (!stockVideoRef.current) return;
+            const reader = new window.ZXing.BrowserMultiFormatReader();
+            window._zxingStockReader = reader;
+            reader.decodeFromVideoDevice(null, stockVideoRef.current, (result, err) => {
+                if (result) {
+                    const text = result.getText().trim().toUpperCase();
+                    beep();
+                    setBusqueda(text);
+                    stopStockScan();
+                    showToast('Buscando: ' + text, 'info');
+                }
+            });
+        }, 300);
+    }, []);
     const productos = data.misProductos.map((p, i) => {
         var _a;
         const stock = ((_a = data.stock) === null || _a === void 0 ? void 0 : _a[p.codigoRef]) || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
@@ -782,10 +838,21 @@ function TabStock({ data, setData, showToast }) {
         data.misProductos.length === 0 ? (React.createElement("div", { style: { textAlign: "center", padding: "60px 20px", color: "#374151" } },
             React.createElement(Icon, { name: "box", size: 48 }),
             React.createElement("div", { style: { marginTop: 16, fontSize: 15, color: "#6b7280" } }, "Primero agreg\u00E1 productos en \"Mis Precios\""))) : (React.createElement(React.Fragment, null,
-            React.createElement("div", { style: { position: "relative", marginBottom: 16 } },
-                React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } },
-                    React.createElement(Icon, { name: "search", size: 16 })),
-                React.createElement("input", { className: "input-field", placeholder: "Buscar producto...", value: busqueda, onChange: e => setBusqueda(e.target.value), style: { paddingLeft: 38 } })),
+            React.createElement("div", { style: { marginBottom: 16 } },
+                React.createElement("div", { style: { display: "flex", gap: 8 } },
+                    React.createElement("div", { style: { position: "relative", flex: 1 } },
+                        React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } },
+                            React.createElement(Icon, { name: "search", size: 16 })),
+                        React.createElement("input", { className: "input-field", placeholder: "Buscar producto...", value: busqueda, onChange: e => setBusqueda(e.target.value), style: { paddingLeft: 38 } })),
+                    React.createElement("button", { className: "btn-ghost", onClick: () => scanningStock ? stopStockScan() : startStockScan(), style: { padding: "10px 14px", color: scanningStock ? "#22c55e" : "#6b7280", flexShrink: 0 } },
+                        React.createElement(Icon, { name: "camera", size: 18 }))),
+                scanningStock && React.createElement("div", { style: { marginTop: 8, borderRadius: 12, overflow: "hidden", position: "relative", background: "#000" } },
+                    React.createElement("video", { ref: stockVideoRef, autoPlay: true, playsInline: true, muted: true, style: { width: "100%", borderRadius: 12, display: "block", minHeight: 200 } }),
+                    React.createElement("div", { style: { position: "absolute", inset: 0, border: "2px solid #6366f1", borderRadius: 12, pointerEvents: "none" } }),
+                    React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "70%", height: 2, background: "rgba(99,102,241,0.8)", boxShadow: "0 0 12px #6366f1" } }),
+                    React.createElement("div", { style: { position: "absolute", bottom: 12, left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.7)", fontSize: 12 } }, "Apuntá al código de barras"),
+                    React.createElement("button", { onClick: stopStockScan, style: { position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" } },
+                        React.createElement(Icon, { name: "x", size: 18 })))),
             React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, productos.map(p => {
                 const bajo = p.stock.minimo > 0 && p.actual < p.stock.minimo;
                 return (React.createElement("div", { key: p.codigoRef, style: { background: bajo ? "rgba(239,68,68,0.08)" : "#1e2230", borderRadius: 12, border: `1px solid ${bajo ? "rgba(239,68,68,0.3)" : "#1e2535"}`, padding: "14px 16px" } },
