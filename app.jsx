@@ -1,5 +1,4 @@
-
-
+const { useState, useEffect, useRef, useCallback } = React;
 
 // ─── DEFAULT STATE ────────────────────────────────────────────────────────────
 const DB = {
@@ -26,12 +25,9 @@ const parsePrecio = (v) => {
   if (!v && v !== 0) return 0;
   if (typeof v === "number") return v;
   let s = String(v).replace(/[$\s]/g, "").trim();
-  // Argentine format: $ 1.234,56 or 1.234,56
   if (s.includes(",") && s.includes(".")) {
-    // Thousands dot + decimal comma: 1.234,56
     s = s.replace(/\./g, "").replace(",", ".");
   } else if (s.includes(",")) {
-    // Only comma — could be decimal: 402,00
     s = s.replace(",", ".");
   }
   return parseFloat(s) || 0;
@@ -71,31 +67,31 @@ const parseExcel = (buffer) => {
 };
 
 // ─── ICONS ───────────────────────────────────────────────────────────────────
+const ICON_PATHS = {
+  store:    ["M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z", "M9 22V12h6v10"],
+  tag:      ["M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z", "M7 7h.01"],
+  calc:     ["M4 2h16a2 2 0 012 2v16a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z", "M8 10h8", "M8 14h4"],
+  box:      ["M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"],
+  upload:   ["M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4", "M17 8l-5-5-5 5", "M12 3v12"],
+  search:   ["M11 17a6 6 0 100-12 6 6 0 000 12z", "M21 21l-4.35-4.35"],
+  trash:    ["M3 6h18", "M8 6V4h8v2", "M19 6l-1 14H6L5 6"],
+  plus:     ["M12 5v14", "M5 12h14"],
+  check:    ["M20 6L9 17l-5-5"],
+  alert:    ["M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z", "M12 9v4", "M12 17h.01"],
+  camera:   ["M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z", "M12 17a4 4 0 100-8 4 4 0 000 8z"],
+  settings: ["M12 15a3 3 0 100-6 3 3 0 000 6z", "M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"],
+  x:        ["M18 6L6 18", "M6 6l12 12"],
+  scan:     ["M3 9V5a2 2 0 012-2h4", "M15 3h4a2 2 0 012 2v4", "M3 15v4a2 2 0 002 2h4", "M15 21h4a2 2 0 002-2v-4", "M7 12h10"],
+  download: ["M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4", "M7 10l5 5 5-5", "M12 15V3"],
+  refresh:  ["M23 4v6h-6", "M1 20v-6h6", "M3.51 9a9 9 0 0114.85-3.36L23 10", "M1 14l4.64 4.36A9 9 0 0020.49 15"],
+};
+
 const Icon = ({ name, size = 20 }) => {
-  const icons = {
-    store: "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z M9 22V12h6v10",
-    tag: "M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z M7 7h.01",
-    calc: "M4 2h16a2 2 0 012 2v16a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2z M8 10h8 M8 14h4",
-    box: "M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z",
-    upload: "M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4 M17 8l-5-5-5 5 M12 3v12",
-    search: "M11 17a6 6 0 100-12 6 6 0 000 12z M21 21l-4.35-4.35",
-    trash: "M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6",
-    plus: "M12 5v14 M5 12h14",
-    check: "M20 6L9 17l-5-5",
-    alert: "M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z M12 9v4 M12 17h.01",
-    camera: "M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z M12 17a4 4 0 100-8 4 4 0 000 8z",
-    settings: "M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z",
-    x: "M18 6L6 18 M6 6l12 12",
-    scan: "M3 9V5a2 2 0 012-2h4 M15 3h4a2 2 0 012 2v4 M3 15v4a2 2 0 002 2h4 M15 21h4a2 2 0 002-2v-4 M7 12h10",
-    download: "M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4 M7 10l5 5 5-5 M12 15V3",
-    refresh: "M23 4v6h-6 M1 20v-6h6 M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15",
-  };
+  const paths = ICON_PATHS[name] || [];
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      {icons[name]?.split(" M").map((d, i) => (
-        <path key={i} d={i === 0 ? d : "M" + d} />
-      ))}
+      {paths.map((d, i) => <path key={i} d={d} />)}
     </svg>
   );
 };
@@ -131,54 +127,60 @@ export default function App() {
 
   const showToast = (msg, type = "success") => setToast({ msg, type });
 
-  // ── Cargar datos de Firebase al inicio ──
+  // FIX #1 y #2: esperar auth antes de cargar, y no pisar con array vacío
   useEffect(() => {
     const loadAll = async () => {
+      if (!window.__fb)
+        await new Promise(res => window.addEventListener("fbReady", res, { once: true }));
+      if (!window.__authReady)
+        await new Promise(res => window.addEventListener("authReady", res, { once: true }));
+      if (!window.__user) {
+        setLoaded(true);
+        return;
+      }
       setSyncing(true);
-      const [provData, misData, config, stockData] = await Promise.all([
-        loadFromFirebase("proveedores"),
-        loadFromFirebase("misProductos"),
-        loadFromFirebase("config"),
-        loadFromFirebase("stock"),
-      ]);
-      setData(d => ({
-        ...d,
-        proveedores: provData || d.proveedores,
-        misProductos: misData || d.misProductos,
-        margenes: config?.margenes || d.margenes,
-        stock: stockData || d.stock || {},
-      }));
+      try {
+        const [provData, misData, config, stockData] = await Promise.all([
+          loadFromFirebase("proveedores"),
+          loadFromFirebase("misProductos"),
+          loadFromFirebase("config"),
+          loadFromFirebase("stock"),
+        ]);
+        setData(d => ({
+          ...d,
+          proveedores: (Array.isArray(provData) && provData.length > 0) ? provData : d.proveedores,
+          misProductos: (Array.isArray(misData) && misData.length > 0) ? misData : d.misProductos,
+          margenes: config?.margenes || d.margenes,
+          stock: (stockData && typeof stockData === "object" && !Array.isArray(stockData)) ? stockData : d.stock,
+        }));
+      } catch (e) {
+        showToast("Error al cargar datos", "error");
+      }
       setSyncing(false);
       setLoaded(true);
     };
     loadAll();
   }, []);
 
-  // ── Guardar en Firebase cuando cambian los datos ──
-  
+  // Guardar en Firebase cuando cambian los datos
   useEffect(() => {
     if (!loaded) return;
     const t = setTimeout(async () => {
       setSyncing(true);
-      if (JSON.stringify(data.proveedores) !== JSON.stringify(prevDataRef.current?.proveedores)) {
+      if (JSON.stringify(data.proveedores) !== JSON.stringify(prevDataRef.current?.proveedores))
         await saveToFirebase("proveedores", data.proveedores);
-      }
-      if (JSON.stringify(data.misProductos) !== JSON.stringify(prevDataRef.current?.misProductos)) {
+      if (JSON.stringify(data.misProductos) !== JSON.stringify(prevDataRef.current?.misProductos))
         await saveToFirebase("misProductos", data.misProductos);
-      }
-      if (JSON.stringify(data.margenes) !== JSON.stringify(prevDataRef.current?.margenes)) {
+      if (JSON.stringify(data.margenes) !== JSON.stringify(prevDataRef.current?.margenes))
         await saveToFirebase("config", { margenes: data.margenes });
-      }
-      if (JSON.stringify(data.stock) !== JSON.stringify(prevDataRef.current?.stock)) {
+      if (JSON.stringify(data.stock) !== JSON.stringify(prevDataRef.current?.stock))
         await saveToFirebase("stock", data.stock);
-      }
       prevDataRef.current = data;
       setSyncing(false);
     }, 1200);
     return () => clearTimeout(t);
   }, [data, loaded]);
 
-  // ── buscar producto en todos los proveedores por código ──
   const buscarEnProveedores = useCallback((codigo) => {
     for (const prov of data.proveedores) {
       const p = prov.productos.find(x => x.codigo === codigo);
@@ -222,7 +224,6 @@ export default function App() {
         select.input-field option { background: #1e2230; }
       `}</style>
 
-      {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #1e2230 0%, #16192a 100%)", borderBottom: "1px solid #1e2535", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -239,7 +240,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* Content */}
       <div style={{ padding: "20px 16px", maxWidth: 900, margin: "0 auto", paddingBottom: 100 }}>
         {tab === "proveedores" && <TabProveedores data={data} setData={setData} showToast={showToast} busqueda={busqueda} setBusqueda={setBusqueda} />}
         {tab === "precios" && <TabMisPrecios data={data} setData={setData} showToast={showToast} buscarEnProveedores={buscarEnProveedores} calcPrecioVenta={calcPrecioVenta} />}
@@ -248,7 +248,6 @@ export default function App() {
         {tab === "config" && <TabConfig data={data} setData={setData} showToast={showToast} />}
       </div>
 
-      {/* Bottom Nav */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "#1e2230", borderTop: "1px solid #1e2535", display: "flex", justifyContent: "space-around", padding: "6px 0 8px", zIndex: 100 }}>
         {[
           { id: "proveedores", icon: "upload", label: "Proveedores" },
@@ -316,7 +315,6 @@ function TabProveedores({ data, setData, showToast, busqueda, setBusqueda }) {
         <p style={{ color: "#6b7280", fontSize: 13, marginTop: 4 }}>Cargá la lista en Excel (.xlsx) o CSV — tal cual te la manda el proveedor</p>
       </div>
 
-      {/* Selector proveedor */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
         {data.proveedores.map((p, i) => (
           <button key={i} onClick={() => setProvSel(i)} style={{
@@ -337,7 +335,6 @@ function TabProveedores({ data, setData, showToast, busqueda, setBusqueda }) {
         ))}
       </div>
 
-      {/* Card proveedor activo */}
       <div style={{ background: "#1e2230", borderRadius: 16, border: "1px solid #1e2535", padding: 20, marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <div>
@@ -363,7 +360,6 @@ function TabProveedores({ data, setData, showToast, busqueda, setBusqueda }) {
         </div>
       </div>
 
-      {/* Buscador */}
       {prov.productos.length > 0 && (
         <div style={{ position: "relative", marginBottom: 16 }}>
           <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" }}>
@@ -374,7 +370,6 @@ function TabProveedores({ data, setData, showToast, busqueda, setBusqueda }) {
         </div>
       )}
 
-      {/* Tabla */}
       {filtrados.length > 0 && (
         <div style={{ background: "#1e2230", borderRadius: 16, border: "1px solid #1e2535", overflow: "hidden" }}>
           <div style={{ display: "grid", gridTemplateColumns: "130px 1fr 110px", padding: "10px 16px", borderBottom: "1px solid #1e2535", fontSize: 11, color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
@@ -422,7 +417,6 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
     if (!encontrado) { showToast("Código del proveedor no encontrado en ninguna lista", "error"); return; }
     const yaExiste = data.misProductos.find(p => p.codigoRef === codigoRef.trim());
     if (yaExiste && editIdx === null) { showToast("El código local ya existe", "error"); return; }
-
     const nuevo = {
       codigoRef: codigoRef.trim(),
       codigoProv: codigoProv.trim(),
@@ -431,11 +425,9 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
       margen: margenSel,
       proveedor: encontrado.proveedor,
     };
-
     setData(d => {
       const lista = [...d.misProductos];
-      if (editIdx !== null) { lista[editIdx] = nuevo; }
-      else { lista.push(nuevo); }
+      if (editIdx !== null) { lista[editIdx] = nuevo; } else { lista.push(nuevo); }
       return { ...d, misProductos: lista };
     });
     showToast(editIdx !== null ? "Producto actualizado" : "Producto agregado", "success");
@@ -497,7 +489,6 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
         </div>
       </div>
 
-      {/* Formulario */}
       <div style={{ background: "#1e2230", borderRadius: 16, border: "1px solid #1e2535", padding: 20, marginBottom: 20 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: "#818cf8", marginBottom: 14 }}>
           {editIdx !== null ? "✏️ Editando producto" : "➕ Agregar producto"}
@@ -548,7 +539,6 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
         </div>
       </div>
 
-      {/* Buscador */}
       {data.misProductos.length > 0 && (
         <div style={{ position: "relative", marginBottom: 16 }}>
           <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" }}>
@@ -559,7 +549,6 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
         </div>
       )}
 
-      {/* Lista */}
       {filtrados.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {filtrados.map((p) => {
@@ -609,13 +598,12 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta 
 
   const buscarYAgregar = (cod) => {
     const codLimpio = cod.trim().toUpperCase();
-    // buscar en mis productos por código REF
     const miProd = data.misProductos.find(p => p.codigoRef === codLimpio || p.codigoProv === codLimpio);
     if (!miProd) { showToast("Código no encontrado en Mis Precios", "error"); return; }
     const pv = calcPrecioVenta(miProd.precioCosto, miProd.margen);
     const existe = items.findIndex(i => i.codigoRef === miProd.codigoRef);
     if (existe >= 0) {
-      setItems(its => { const n = [...its]; n[existe].cantidad++; return n; });
+      setItems(its => { const n = [...its]; n[existe] = { ...n[existe], cantidad: n[existe].cantidad + 1 }; return n; });
     } else {
       setItems(its => [...its, { codigoRef: miProd.codigoRef, descripcion: miProd.descripcion, precioVenta: pv, cantidad: 1 }]);
     }
@@ -627,21 +615,19 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta 
   const cambiarCantidad = (i, delta) => {
     setItems(its => {
       const n = [...its];
-      n[i].cantidad = Math.max(0, n[i].cantidad + delta);
-      if (n[i].cantidad === 0) n.splice(i, 1);
+      const nueva = n[i].cantidad + delta;
+      if (nueva <= 0) { n.splice(i, 1); } else { n[i] = { ...n[i], cantidad: nueva }; }
       return n;
     });
   };
 
+  // FIX #4: aviso honesto + cleanup al desmontar
   const startScan = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
       videoRef.current.srcObject = stream;
       setScanning(true);
-      // Simular detección de código (en producción usar una librería como zxing)
-      setTimeout(() => {
-        showToast("Escáner activo — apuntá al código de barras", "info");
-      }, 500);
+      showToast("Cámara activa — ingresá el código manualmente", "info");
     } catch {
       showToast("No se pudo acceder a la cámara", "error");
     }
@@ -650,9 +636,17 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta 
   const stopScan = () => {
     if (videoRef.current?.srcObject) {
       videoRef.current.srcObject.getTracks().forEach(t => t.stop());
+      videoRef.current.srcObject = null;
     }
     setScanning(false);
   };
+
+  useEffect(() => {
+    return () => {
+      if (videoRef.current?.srcObject)
+        videoRef.current.srcObject.getTracks().forEach(t => t.stop());
+    };
+  }, []);
 
   return (
     <div className="card">
@@ -661,7 +655,6 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta 
         <p style={{ color: "#6b7280", fontSize: 13, marginTop: 4 }}>Armá presupuestos rápido</p>
       </div>
 
-      {/* Input código */}
       <div style={{ background: "#1e2230", borderRadius: 16, border: "1px solid #1e2535", padding: 16, marginBottom: 16 }}>
         <div style={{ display: "flex", gap: 8 }}>
           <input ref={inputRef} className="input-field" placeholder="Ingresá código REF o del proveedor..." value={codigo}
@@ -679,6 +672,9 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta 
             <video ref={videoRef} autoPlay playsInline style={{ width: "100%", borderRadius: 12, display: "block" }} />
             <div style={{ position: "absolute", inset: 0, border: "2px solid #6366f1", borderRadius: 12, pointerEvents: "none" }} />
             <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "60%", height: 2, background: "rgba(99,102,241,0.7)", boxShadow: "0 0 8px #6366f1" }} />
+            <div style={{ position: "absolute", bottom: 8, left: 0, right: 0, textAlign: "center", fontSize: 11, color: "#a5b4fc", background: "rgba(0,0,0,0.5)", padding: "4px 0" }}>
+              Lectura automática no disponible — ingresá el código arriba
+            </div>
             <button onClick={stopScan} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <Icon name="x" size={16} />
             </button>
@@ -686,7 +682,6 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta 
         )}
       </div>
 
-      {/* Items */}
       {items.length > 0 ? (
         <>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
@@ -708,13 +703,10 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta 
               </div>
             ))}
           </div>
-
-          {/* Total */}
           <div style={{ background: "linear-gradient(135deg, #1e3a2e, #1a3025)", borderRadius: 16, border: "1px solid #166534", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
             <span style={{ fontSize: 18, fontWeight: 700, color: "#86efac" }}>TOTAL</span>
             <span style={{ fontSize: 28, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", color: "#22c55e" }}>{fmt(total)}</span>
           </div>
-
           <button onClick={() => { setItems([]); showToast("Calculadora limpiada", "info"); }} style={{ width: "100%", padding: "12px", borderRadius: 12, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             <Icon name="trash" size={16} /> Limpiar todo
           </button>
@@ -732,7 +724,6 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta 
 // ─── TAB STOCK ───────────────────────────────────────────────────────────────
 function TabStock({ data, setData, showToast }) {
   const [busqueda, setBusqueda] = useState("");
-  const [editIdx, setEditIdx] = useState(null);
 
   const productos = data.misProductos.map((p, i) => {
     const stock = data.stock?.[p.codigoRef] || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
@@ -743,7 +734,13 @@ function TabStock({ data, setData, showToast }) {
   const updateStock = (codigoRef, field, val) => {
     setData(d => ({
       ...d,
-      stock: { ...d.stock, [codigoRef]: { ...(d.stock?.[codigoRef] || {}), [field]: Math.max(0, parseInt(val) || 0) } }
+      stock: {
+        ...d.stock,
+        [codigoRef]: {
+          ...(d.stock?.[codigoRef] || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 }),
+          [field]: Math.max(0, parseInt(val) || 0)
+        }
+      }
     }));
   };
 
@@ -785,7 +782,6 @@ function TabStock({ data, setData, showToast }) {
             <input className="input-field" placeholder="Buscar producto..." value={busqueda}
               onChange={e => setBusqueda(e.target.value)} style={{ paddingLeft: 38 }} />
           </div>
-
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {productos.map(p => {
               const bajo = p.stock.minimo > 0 && p.actual < p.stock.minimo;
@@ -835,6 +831,10 @@ function TabConfig({ data, setData, showToast }) {
   const [margenes, setMargenes] = useState({ ...data.margenes });
   const [nombres, setNombres] = useState(data.proveedores.map(p => p.nombre));
 
+  // FIX #3: sincronizar cuando llegan datos de Firebase después del montaje
+  useEffect(() => { setMargenes({ ...data.margenes }); }, [data.margenes]);
+  useEffect(() => { setNombres(data.proveedores.map(p => p.nombre)); }, [data.proveedores]);
+
   const guardar = () => {
     setData(d => ({
       ...d,
@@ -851,7 +851,6 @@ function TabConfig({ data, setData, showToast }) {
         <p style={{ color: "#6b7280", fontSize: 13, marginTop: 4 }}>Personalizá el sistema</p>
       </div>
 
-      {/* Márgenes */}
       <div style={{ background: "#1e2230", borderRadius: 16, border: "1px solid #1e2535", padding: 20, marginBottom: 16 }}>
         <div style={{ fontWeight: 700, color: "#818cf8", marginBottom: 16, fontSize: 14 }}>Márgenes de venta</div>
         <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>Fórmula: Precio venta = Costo / (1 − margen)</div>
@@ -873,7 +872,6 @@ function TabConfig({ data, setData, showToast }) {
         </div>
       </div>
 
-      {/* Nombres proveedores */}
       <div style={{ background: "#1e2230", borderRadius: 16, border: "1px solid #1e2535", padding: 20, marginBottom: 20 }}>
         <div style={{ fontWeight: 700, color: "#818cf8", marginBottom: 16, fontSize: 14 }}>Nombres de proveedores</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
