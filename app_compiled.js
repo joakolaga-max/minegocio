@@ -572,12 +572,43 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
         setEditIdx(i);
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
+
+    const importRef = React.useRef();
+    const importarMisProductos = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const isExcel = /\.(xlsx|xls)$/i.test(file.name);
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            let rows = [];
+            try {
+                if (isExcel) {
+                    rows = window.XLSX ? parseExcel(new Uint8Array(ev.target.result)) : [];
+                } else {
+                    const lines = ev.target.result.trim().split(/\r?\n/).filter(Boolean);
+                    rows = lines.slice(1).map(line => {
+                        const cols = line.split(",").map(s => s.trim().replace(/^"|"$/g, ""));
+                        if (cols.length < 4) return null;
+                        return { codigoRef: cols[0], codigoProv: cols[1], descripcion: cols[2], precioCosto: parseFloat(cols[3]) || 0, margen: cols[5] || "p1" };
+                    }).filter(Boolean);
+                }
+            } catch(err) { showToast("Error al leer el archivo", "error"); return; }
+            if (!rows.length) { showToast("No se encontraron productos", "error"); return; }
+            if (!window.confirm("Esto reemplazara tu lista actual (" + data.misProductos.length + " productos) con " + rows.length + " del archivo. Continuar?")) return;
+            setData(d => Object.assign({}, d, { misProductos: rows }));
+            showToast("Importados " + rows.length + " productos", "success");
+        };
+        if (isExcel) reader.readAsArrayBuffer(file);
+        else reader.readAsText(file);
+        e.target.value = "";
+    };
     const exportarCSV = () => {
         const rows = data.misProductos.map(p => {
             const pv = calcPrecioVenta(p.precioCosto, p.margen);
-            return `${p.codigoRef},${p.descripcion},${pv.toFixed(2)}`;
+            const desc = p.descripcion.replace(/,/g, ";");
+            return [p.codigoRef, p.codigoProv || "", desc, p.precioCosto.toFixed(2), pv.toFixed(2), p.margen].join(",");
         });
-        const blob = new Blob(["Codigo,Descripcion,Precio\n" + rows.join("\n")], { type: "text/csv" });
+        const blob = new Blob(["Ref,CodProveedor,Descripcion,PrecioCompra,PrecioVenta,Margen\n" + rows.join("\n")], { type: "text/csv" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
         a.download = "mis_precios.csv";
@@ -614,7 +645,11 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
                     " Actualizar precios"),
                 data.misProductos.length > 0 && React.createElement("button", { className: "btn-primary", onClick: exportarCSV },
                     React.createElement(Icon, { name: "download", size: 14 }),
-                    " Exportar CSV"))),
+                    " Exportar CSV"),
+            React.createElement("button", { className: "btn-ghost", onClick: () => importRef.current && importRef.current.click(), style: { display: "flex", alignItems: "center", gap: 6 } },
+                React.createElement(Icon, { name: "upload", size: 14 }),
+                " Importar"),
+            React.createElement("input", { ref: importRef, type: "file", accept: ".csv,.txt,.xlsx,.xls", style: { display: "none" }, onChange: importarMisProductos }))),
         React.createElement("div", { style: { background: "#1e2230", borderRadius: 16, border: "1px solid #1e2535", padding: 20, marginBottom: 20 } },
             React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: "#818cf8", marginBottom: 14 } }, editIdx !== null ? "✏️ Editando producto" : "➕ Agregar producto"),
             React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 } },
@@ -666,7 +701,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
                         React.createElement("span", { style: { color: "#818cf8", fontWeight: 700, fontFamily: "monospace", fontSize: 13 } }, p.codigoRef),
                         React.createElement("span", { style: { fontSize: 11, color: "#6b7280" } }, "\u2192"),
                         React.createElement("span", { style: { color: "#6b7280", fontFamily: "monospace", fontSize: 12 } }, p.codigoProv),
-                        React.createElement("span", { className: "badge", style: { background: "rgba(99,102,241,0.15)", color: "#818cf8", fontSize: 10 } }, margenLabel[p.margen])),
+                        React.createElement("span", { className: "badge", style: { background: "rgba(99,102,241,0.15)", color: "#818cf8", fontSize: 10 } }, margenLabel[p.margen] + " (" + data.margenes[p.margen] + "%)")),
                     React.createElement("div", { style: { fontSize: 13, color: "#cbd5e1", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.descripcion),
                     React.createElement("div", { style: { display: "flex", gap: 16, marginTop: 6 } },
                         React.createElement("span", { style: { fontSize: 12, color: "#6b7280" } },
@@ -685,7 +720,68 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
                         React.createElement(Icon, { name: "settings", size: 14 })))));
         }))) : data.misProductos.length === 0 ? (React.createElement("div", { style: { textAlign: "center", padding: "60px 20px", color: "#374151" } },
             React.createElement(Icon, { name: "tag", size: 48 }),
-            React.createElement("div", { style: { marginTop: 16, fontSize: 15, color: "#6b7280" } }, "Todav\u00EDa no agregaste productos"))) : null));
+            React.createElement("div", { style: { marginTop: 16, fontSize: 15, color: "#6b7280" } }, "Todav\u00EDa no agregaste productos"))) : null))
+    ,photoModal && React.createElement("div", {
+        style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+        onClick: () => setPhotoModal(null)
+    },
+        React.createElement("div", {
+            style: { background: "#1e2230", borderRadius: 20, padding: 24, width: "100%", maxWidth: 420 },
+            onClick: e => e.stopPropagation()
+        },
+            React.createElement("div", { style: { fontWeight: 700, fontSize: 15, color: "#f1f5f9", marginBottom: 4 } }, photoModal.descripcion),
+            React.createElement("div", { style: { fontSize: 12, color: "#818cf8", fontFamily: "monospace", marginBottom: 16 } }, photoModal.codigoRef),
+            data.fotos && data.fotos[photoModal.codigoRef]
+                ? React.createElement("img", { src: data.fotos[photoModal.codigoRef], alt: photoModal.descripcion, style: { width: "100%", borderRadius: 12, marginBottom: 16, maxHeight: 280, objectFit: "contain", background: "#111" } })
+                : React.createElement("div", { style: { background: "#111827", borderRadius: 12, height: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 16, color: "#374151", gap: 8 } },
+                    React.createElement(Icon, { name: "camera", size: 44 }),
+                    React.createElement("div", { style: { fontSize: 13, color: "#6b7280" } }, "Sin foto cargada")),
+            React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
+                React.createElement("label", { style: { flex: 1, minWidth: 120, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff", borderRadius: 10, padding: "11px 16px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 } },
+                    React.createElement(Icon, { name: "camera", size: 16 }),
+                    data.fotos && data.fotos[photoModal.codigoRef] ? "Cambiar foto" : "Cargar foto",
+                    React.createElement("input", { type: "file", accept: "image/*", capture: "environment", style: { display: "none" },
+                        onChange: e => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                                const img = new Image();
+                                img.onload = () => {
+                                    const canvas = document.createElement("canvas");
+                                    const MAX = 700;
+                                    const ratio = Math.min(MAX/img.width, MAX/img.height, 1);
+                                    canvas.width = img.width * ratio;
+                                    canvas.height = img.height * ratio;
+                                    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+                                    const compressed = canvas.toDataURL("image/jpeg", 0.75);
+                                    setData(d => {
+                                        const fotos = Object.assign({}, d.fotos || {});
+                                        fotos[photoModal.codigoRef] = compressed;
+                                        return Object.assign({}, d, { fotos });
+                                    });
+                                    showToast("Foto guardada", "success");
+                                };
+                                img.src = ev.target.result;
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    })),
+                data.fotos && data.fotos[photoModal.codigoRef] && React.createElement("button", {
+                    className: "btn-danger",
+                    style: { padding: "11px 14px" },
+                    onClick: () => {
+                        if (!window.confirm("Eliminar la foto?")) return;
+                        setData(d => {
+                            const fotos = Object.assign({}, d.fotos || {});
+                            delete fotos[photoModal.codigoRef];
+                            return Object.assign({}, d, { fotos });
+                        });
+                        setPhotoModal(null);
+                        showToast("Foto eliminada", "info");
+                    }
+                }, React.createElement(Icon, { name: "trash", size: 16 })),
+                React.createElement("button", { className: "btn-ghost", style: { padding: "11px 16px" }, onClick: () => setPhotoModal(null) }, "Cerrar"))));
 }
 // ─── TAB CALCULADORA ─────────────────────────────────────────────────────────
 function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta }) {
@@ -945,9 +1041,11 @@ function TabStock({ data, setData, showToast }) {
                                 React.createElement("span", { style: { color: "#818cf8", fontFamily: "monospace", fontWeight: 700, fontSize: 13 } }, p.codigoRef),
                                 bajo && React.createElement("span", { className: "badge", style: { background: "rgba(239,68,68,0.2)", color: "#ef4444" } }, "\u26A0 Bajo m\u00EDnimo")),
                             React.createElement("div", { style: { fontSize: 13, color: "#cbd5e1", marginTop: 2 } }, p.descripcion)),
-                        React.createElement("div", { style: { textAlign: "right" } },
-                            React.createElement("div", { style: { fontSize: 24, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", color: bajo ? "#ef4444" : "#22c55e" } }, p.actual),
-                            React.createElement("div", { style: { fontSize: 11, color: "#6b7280" } }, "en stock"))),
+                        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+                            data.fotos && data.fotos[p.codigoRef] && React.createElement("img", { src: data.fotos[p.codigoRef], alt: p.descripcion, onClick: () => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion }), style: { width: 52, height: 52, borderRadius: 8, objectFit: "cover", border: "2px solid #374151", cursor: "pointer", flexShrink: 0 } }),
+                            React.createElement("div", { style: { textAlign: "right" } },
+                                React.createElement("div", { style: { fontSize: 24, fontWeight: 700, fontFamily: "'Space Grotesk', sans-serif", color: bajo ? "#ef4444" : "#22c55e" } }, p.actual),
+                                React.createElement("div", { style: { fontSize: 11, color: "#6b7280" } }, "en stock")))),
                     React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 } }, [
                         { label: "Inicial", field: "inicial", color: "#6b7280" },
                         { label: "Entradas", field: "entradas", color: "#22c55e" },
@@ -961,6 +1059,8 @@ function TabStock({ data, setData, showToast }) {
 // ─── TAB CONFIG ──────────────────────────────────────────────────────────────
 function TabConfig({ data, setData, showToast }) {
     const [margenes, setMargenes] = useState(Object.assign({}, data.margenes));
+    // Sync local state when data.margenes loads from Firebase
+    useEffect(() => { setMargenes(Object.assign({}, data.margenes)); }, [JSON.stringify(data.margenes)]);
     const [nombres, setNombres] = useState(data.proveedores.map(p => p.nombre));
     const guardar = () => {
         setData(d => (Object.assign(Object.assign({}, d), { margenes, proveedores: d.proveedores.map((p, i) => (Object.assign(Object.assign({}, p), { nombre: nombres[i] || p.nombre }))) })));
@@ -996,6 +1096,7 @@ function TabConfig({ data, setData, showToast }) {
             " Guardar configuraci\u00F3n")));
 }
 
+
 // ─── TAB VENTAS ───────────────────────────────────────────────────────────────
 function TabVentas({ data, setData, showToast }) {
     const ventas = [...(data.ventas || [])].reverse();
@@ -1003,12 +1104,39 @@ function TabVentas({ data, setData, showToast }) {
         .filter(v => v.fecha === new Date().toLocaleDateString("es-AR"))
         .reduce((s, v) => s + v.total, 0);
     const fmt2 = (n) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2 }).format(n || 0);
+
+    const borrarVenta = (ventaId) => {
+        if (!window.confirm("Borrar esta venta del registro?")) return;
+        setData(d => {
+            const nuevas = (d.ventas || []).filter(v => v.id !== ventaId);
+            saveToFirebase("ventas", nuevas);
+            try { localStorage.setItem("mn_ventas", JSON.stringify(nuevas)); } catch(e) {}
+            return Object.assign({}, d, { ventas: nuevas });
+        });
+        showToast("Venta eliminada", "info");
+    };
+
+    const borrarTodo = () => {
+        if (!window.confirm("Borrar TODO el historial de ventas? Esta accion no se puede deshacer.")) return;
+        setData(d => {
+            saveToFirebase("ventas", []);
+            try { localStorage.setItem("mn_ventas", JSON.stringify([])); } catch(e) {}
+            return Object.assign({}, d, { ventas: [] });
+        });
+        showToast("Historial borrado", "info");
+    };
+
     return React.createElement("div", { className: "card" },
-        React.createElement("div", { style: { marginBottom: 20 } },
-            React.createElement("div", { className: "section-title" }, "📋 Registro de Ventas"),
-            React.createElement("div", { style: { fontSize: 13, color: "#6b7280", marginTop: 4 } }, "Historial de ventas confirmadas")),
+        React.createElement("div", { style: { marginBottom: 20, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 } },
+            React.createElement("div", null,
+                React.createElement("div", { className: "section-title" }, "Registro de Ventas"),
+                React.createElement("div", { style: { fontSize: 13, color: "#6b7280", marginTop: 4 } }, "Historial de ventas confirmadas")),
+            ventas.length > 0 && React.createElement("button", {
+                onClick: borrarTodo,
+                style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.35)", color: "#ef4444", borderRadius: 10, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }
+            }, React.createElement(Icon, { name: "trash", size: 14 }), " Borrar todo")),
         ventas.length > 0 && React.createElement("div", { style: { background: "linear-gradient(135deg,#1e3a2e,#1a3025)", borderRadius: 14, border: "1px solid #166534", padding: "14px 18px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" } },
-            React.createElement("div", { style: { fontSize: 13, color: "#86efac", fontWeight: 600 } }, "Total del día"),
+            React.createElement("div", { style: { fontSize: 13, color: "#86efac", fontWeight: 600 } }, "Total del dia"),
             React.createElement("div", { style: { fontSize: 22, fontWeight: 700, color: "#22c55e", fontFamily: "'Space Grotesk',sans-serif" } }, fmt2(totalHoy))),
         ventas.length === 0
             ? React.createElement("div", { style: { textAlign: "center", padding: "60px 20px", color: "#374151" } },
@@ -1019,8 +1147,13 @@ function TabVentas({ data, setData, showToast }) {
                     React.createElement("div", { style: { padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #111827" } },
                         React.createElement("div", null,
                             React.createElement("div", { style: { fontWeight: 700, fontSize: 13, color: "#f1f5f9" } }, v.fecha),
-                            React.createElement("div", { style: { fontSize: 12, color: "#6b7280", marginTop: 2 } }, v.hora + " — " + v.items.length + " producto(s)")),
-                        React.createElement("div", { style: { fontWeight: 700, fontSize: 16, color: "#22c55e" } }, fmt2(v.total))),
+                            React.createElement("div", { style: { fontSize: 12, color: "#6b7280", marginTop: 2 } }, v.hora + " - " + v.items.length + " producto(s)")),
+                        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+                            React.createElement("div", { style: { fontWeight: 700, fontSize: 16, color: "#22c55e" } }, fmt2(v.total)),
+                            React.createElement("button", {
+                                onClick: () => borrarVenta(v.id),
+                                style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", borderRadius: 8, padding: "5px 8px", cursor: "pointer", display: "flex", alignItems: "center" }
+                            }, React.createElement(Icon, { name: "trash", size: 14 })))),
                     React.createElement("div", { style: { padding: "8px 16px 12px" } },
                         v.items.map((item, j) => React.createElement("div", { key: j, style: { display: "flex", justifyContent: "space-between", fontSize: 12, color: "#94a3b8", padding: "3px 0" } },
                             React.createElement("span", null, item.cantidad + "x " + item.descripcion),
