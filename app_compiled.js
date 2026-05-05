@@ -604,7 +604,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
                         React.createElement("input", { className: "input-field", placeholder: "REF00001", value: codigoRef, onChange: e => setCodigoRef(e.target.value.toUpperCase()) }),
                         React.createElement("button", { className: "btn-ghost", style: { padding: "10px 12px", flexShrink: 0, color: scanningRef ? "#22c55e" : "#6b7280" }, onClick: () => scanningRef ? stopRefScan() : startRefScan(), title: "Escanear c\u00F3digo REF" },
                             React.createElement(Icon, { name: "camera", size: 18 }))),
-                    scanningRef && (React.createElement("div", { style: { position: "fixed", inset: 0, background: "#000", zIndex: 500, display: "flex", flexDirection: "column" } },
+                    scanningRef && (React.createElement("div", { style: { position: "fixed", bottom: 0, left: 0, right: 0, height: "55vh", background: "#000", zIndex: 500, display: "flex", flexDirection: "column", borderRadius: "20px 20px 0 0", overflow: "hidden" } },
                         React.createElement("video", { ref: scanVideoRef, autoPlay: true, playsInline: true, muted: true, style: { width: "100%", flex: 1, objectFit: "cover", display: "block" } }), React.createElement("div", { style: { position: "absolute", inset: 0, border: "2px solid #6366f1", borderRadius: 12, pointerEvents: "none" } }), React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "70%", height: 2, background: "rgba(99,102,241,0.8)", boxShadow: "0 0 12px #6366f1" } }),
                         React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "70%", height: 2, background: "rgba(99,102,241,0.8)", boxShadow: "0 0 12px #6366f1" } }),
                         React.createElement("div", { style: { position: "absolute", bottom: 10, left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.7)", fontSize: 12 } }, "Apunt\u00E1 al c\u00F3digo REF"),
@@ -751,7 +751,7 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta 
                     React.createElement(Icon, { name: "plus", size: 16 })),
                 React.createElement("button", { className: "btn-ghost", onClick: scanning ? stopScan : startScan, style: { padding: "10px 14px", color: scanning ? "#22c55e" : "#6b7280" } },
                     React.createElement(Icon, { name: "camera", size: 18 }))),
-            scanning && (React.createElement("div", { style: { position: "fixed", inset: 0, background: "#000", zIndex: 500, display: "flex", flexDirection: "column" } },
+            scanning && (React.createElement("div", { style: { position: "fixed", bottom: 0, left: 0, right: 0, height: "55vh", background: "#000", zIndex: 500, display: "flex", flexDirection: "column", borderRadius: "20px 20px 0 0", overflow: "hidden" } },
                 React.createElement("video", { ref: videoRef, autoPlay: true, playsInline: true, muted: true, style: { width: "100%", flex: 1, objectFit: "cover", display: "block" } }),
                 React.createElement("div", { style: { position: "absolute", inset: 0, border: "2px solid #6366f1", borderRadius: 12, pointerEvents: "none" } }),
                 React.createElement("div", { style: { position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "70%", height: 2, background: "rgba(99,102,241,0.8)", boxShadow: "0 0 12px #6366f1" } }),
@@ -831,7 +831,7 @@ function TabStock({ data, setData, showToast }) {
         const stock = ((_a = data.stock) === null || _a === void 0 ? void 0 : _a[p.codigoRef]) || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
         const actual = (stock.inicial || 0) + (stock.entradas || 0) - (stock.salidas || 0);
         return Object.assign(Object.assign({}, p), { _i: i, stock, actual });
-    }).filter(p => !busqueda || p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) || p.descripcion.toLowerCase().includes(busqueda.toLowerCase()));
+    }).filter(p => !busqueda || p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) || p.descripcion.toLowerCase().includes(busqueda.toLowerCase()) || (p.codigoProv || "").toLowerCase().includes(busqueda.toLowerCase()));
     const updateStock = (codigoRef, field, val) => {
         setData(d => {
             var _a;
