@@ -326,8 +326,8 @@ function App() {
                 React.createElement("button", { onClick: () => window.logout(), title: "Cerrar sesión", style: { background: "transparent", border: "1px solid #374151", borderRadius: 8, padding: "4px 10px", color: "#6b7280", cursor: "pointer", fontSize: 12, fontFamily: "inherit", marginLeft: 4 } }, "Salir"))),
         React.createElement("div", { style: { padding: "20px 16px", maxWidth: 900, margin: "0 auto", paddingBottom: 100 } },
             tab === "proveedores" && React.createElement(TabProveedores, { data: data, setData: setData, showToast: showToast, busqueda: busqueda, setBusqueda: setBusqueda, onSelectProduct: (p) => { setPrefillProd(p); setTab("precios"); } }),
-            tab === "precios" && React.createElement(TabMisPrecios, { data: data, setData: setData, showToast: showToast, buscarEnProveedores: buscarEnProveedores, calcPrecioVenta: calcPrecioVenta, prefillProd: prefillProd, clearPrefill: () => setPrefillProd(null) }),
-            tab === "calc" && React.createElement(TabCalculadora, { data: data, showToast: showToast, buscarEnProveedores: buscarEnProveedores, calcPrecioVenta: calcPrecioVenta }),
+            tab === "precios" && React.createElement(TabMisPrecios, { data: data, setData: setData, showToast: showToast, buscarEnProveedores: buscarEnProveedores, prefillProd: prefillProd, clearPrefill: () => setPrefillProd(null) }),
+            tab === "calc" && React.createElement(TabCalculadora, { data: data, setData: setData, showToast: showToast, buscarEnProveedores: buscarEnProveedores }),
             tab === "stock" && React.createElement(TabStock, { data: data, setData: setData, showToast: showToast }),
             tab === "ventas" && React.createElement(TabVentas, { data: data, setData: setData, showToast: showToast }),
         tab === "config" && React.createElement(TabConfig, { data: data, setData: setData, showToast: showToast })),
@@ -456,7 +456,9 @@ function TabProveedores({ data, setData, showToast, busqueda, setBusqueda, onSel
             React.createElement("div", { style: { fontSize: 12, color: "#374151", marginTop: 6 } }, "Excel o CSV: C\u00F3digo | Descripci\u00F3n | Precio")))));
 }
 // ─── TAB MIS PRECIOS ──────────────────────────────────────────────────────────
-function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrecioVenta, prefillProd, clearPrefill }) {
+function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillProd, clearPrefill }) {
+    // Define locally so it always uses latest data.margenes
+    const calcPrecioVenta = (costo, margenKey) => { const m = (data.margenes[margenKey] || 50) / 100; if (m >= 1) return costo; return costo / (1 - m); };
     const [codigoRef, setCodigoRef] = useState("");
     const [codigoProv, setCodigoProv] = useState("");
     const [margenSel, setMargenSel] = useState("p1");
@@ -603,7 +605,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
     const filtrados = data.misProductos.map((p, i) => (Object.assign(Object.assign({}, p), { _i: i }))).filter(p => !busqueda || p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
         p.descripcion.toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.codigoProv || "").toLowerCase().includes(busqueda.toLowerCase()));
-    const margenLabel = { p1: "50%", p2: "40%", p3: "30%", p4: "20%" };
+    const margenLabel = { p1: data.margenes.p1+"%", p2: data.margenes.p2+"%", p3: data.margenes.p3+"%", p4: data.margenes.p4+"%" };
     return (React.createElement("div", { className: "card" },
         React.createElement("div", { style: { marginBottom: 20, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 } },
             React.createElement("div", null,
@@ -692,7 +694,8 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
             React.createElement("div", { style: { marginTop: 16, fontSize: 15, color: "#6b7280" } }, "Todav\u00EDa no agregaste productos"))) : null));
 }
 // ─── TAB CALCULADORA ─────────────────────────────────────────────────────────
-function TabCalculadora({ data, showToast, buscarEnProveedores, calcPrecioVenta }) {
+function TabCalculadora({ data, showToast, buscarEnProveedores, setData }) {
+    const calcPrecioVenta = (costo, margenKey) => { const m = (data.margenes[margenKey] || 50) / 100; if (m >= 1) return costo; return costo / (1 - m); };
     const [items, setItems] = useState([]);
     const [codigo, setCodigo] = useState("");
     const [scanning, setScanning] = useState(false);
@@ -968,6 +971,9 @@ function TabStock({ data, setData, showToast }) {
 function TabConfig({ data, setData, showToast }) {
     const [margenes, setMargenes] = useState(Object.assign({}, data.margenes));
     const [nombres, setNombres] = useState(data.proveedores.map(p => p.nombre));
+    // Sync when Firebase loads data after component mounts
+    useEffect(() => { setMargenes(Object.assign({}, data.margenes)); }, [JSON.stringify(data.margenes)]);
+    useEffect(() => { setNombres(data.proveedores.map(p => p.nombre)); }, [JSON.stringify(data.proveedores.map(p=>p.nombre))]);
     const guardar = () => {
         setData(d => (Object.assign(Object.assign({}, d), { margenes, proveedores: d.proveedores.map((p, i) => (Object.assign(Object.assign({}, p), { nombre: nombres[i] || p.nombre }))) })));
         showToast("Configuración guardada", "success");
