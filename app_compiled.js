@@ -206,15 +206,14 @@ function App() {
     useEffect(() => {
         const loadAll = async () => {
             setSyncing(true);
-            const [provData, misData, config, stockData, ventasData, fotosData] = await Promise.all([
+            const [provData, misData, config, stockData, ventasData] = await Promise.all([
                 loadFromFirebase("proveedores"),
                 loadFromFirebase("misProductos"),
                 loadFromFirebase("config"),
                 loadFromFirebase("stock"),
                 loadFromFirebase("ventas"),
-                loadFromFirebase("fotos"),
             ]);
-            setData(d => (Object.assign(Object.assign({}, d), { proveedores: (provData && provData.length) ? provData : d.proveedores, misProductos: misData || d.misProductos, margenes: (config === null || config === void 0 ? void 0 : config.margenes) || d.margenes, stock: stockData || d.stock || {}, ventas: (ventasData || d.ventas || []), fotos: fotosData || d.fotos || {} })));
+            setData(d => (Object.assign(Object.assign({}, d), { proveedores: (provData && provData.length) ? provData : d.proveedores, misProductos: misData || d.misProductos, margenes: (config === null || config === void 0 ? void 0 : config.margenes) || d.margenes, stock: stockData || d.stock || {}, ventas: (ventasData || d.ventas || []) })));
             setSyncing(false);
             setLoaded(true);
         };
@@ -260,10 +259,6 @@ function App() {
             if (JSON.stringify(data.ventas) !== JSON.stringify(prevDataRef.current && prevDataRef.current.ventas)) {
                 try { localStorage.setItem("mn_ventas", JSON.stringify(data.ventas)); } catch(e) {}
                 await saveToFirebase("ventas", data.ventas);
-            }
-            if (JSON.stringify(data.fotos) !== JSON.stringify(prevDataRef.current && prevDataRef.current.fotos)) {
-                try { localStorage.setItem("mn_fotos", JSON.stringify(data.fotos)); } catch(e) {}
-                await saveToFirebase("fotos", data.fotos);
             }
             prevDataRef.current = data;
             setSyncing(false);
@@ -644,17 +639,17 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
             React.createElement("div", null,
                 React.createElement("div", { className: "section-title" }, "\uD83C\uDFF7\uFE0F Mis Precios"),
                 React.createElement("p", { style: { color: "#6b7280", fontSize: 13, marginTop: 4 } }, "Tu cat\u00E1logo con m\u00E1rgenes personalizados")),
-            React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
+            React.createElement("div", { style: { display: "flex", gap: 8 } },
                 React.createElement("button", { className: "btn-ghost", onClick: actualizarPrecios },
                     React.createElement(Icon, { name: "refresh", size: 14 }),
                     " Actualizar precios"),
                 data.misProductos.length > 0 && React.createElement("button", { className: "btn-primary", onClick: exportarCSV },
                     React.createElement(Icon, { name: "download", size: 14 }),
                     " Exportar CSV"),
-                React.createElement("button", { className: "btn-ghost", onClick: () => importRef.current && importRef.current.click(), style: { display: "flex", alignItems: "center", gap: 6 } },
-                    React.createElement(Icon, { name: "upload", size: 14 }),
-                    " Importar"),
-                React.createElement("input", { ref: importRef, type: "file", accept: ".csv,.txt,.xlsx,.xls", style: { display: "none" }, onChange: importarMisProductos }))),
+            React.createElement("button", { className: "btn-ghost", onClick: () => importRef.current && importRef.current.click(), style: { display: "flex", alignItems: "center", gap: 6 } },
+                React.createElement(Icon, { name: "upload", size: 14 }),
+                " Importar"),
+            React.createElement("input", { ref: importRef, type: "file", accept: ".csv,.txt,.xlsx,.xls", style: { display: "none" }, onChange: importarMisProductos }))),
         React.createElement("div", { style: { background: "#1e2230", borderRadius: 16, border: "1px solid #1e2535", padding: 20, marginBottom: 20 } },
             React.createElement("div", { style: { fontSize: 13, fontWeight: 600, color: "#818cf8", marginBottom: 14 } }, editIdx !== null ? "✏️ Editando producto" : "➕ Agregar producto"),
             React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 } },
@@ -700,25 +695,28 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, calcPrec
             React.createElement("input", { className: "input-field", placeholder: "Buscar en mis productos...", value: busqueda, onChange: e => setBusqueda(e.target.value), style: { paddingLeft: 38 } }))),
         filtrados.length > 0 ? (React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, filtrados.map((p) => {
             const pv = calcPrecioVenta(p.precioCosto, p.margen);
-            return (React.createElement("div", { key: p._i, className: "table-row", style: { background: "#1e2230", borderRadius: 12, border: "1px solid #1e2535", padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 } },
-                data.fotos && data.fotos[p.codigoRef]
-                    ? React.createElement("img", { src: data.fotos[p.codigoRef], style: { width: 44, height: 44, borderRadius: 8, objectFit: "cover", flexShrink: 0, border: "1px solid #374151", cursor: "pointer" }, onClick: e => { e.stopPropagation(); setPhotoModal({ idx: p._i, codigoRef: p.codigoRef, descripcion: p.descripcion }); } })
-                    : React.createElement("div", { style: { width: 44, height: 44, borderRadius: 8, background: "#111827", border: "1px dashed #374151", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, cursor: "pointer", color: "#4b5563" }, onClick: e => { e.stopPropagation(); setPhotoModal({ idx: p._i, codigoRef: p.codigoRef, descripcion: p.descripcion }); } },
-                        React.createElement(Icon, { name: "camera", size: 18 })),
+            return (React.createElement("div", { key: p._i, className: "table-row", onClick: () => setPhotoModal({ idx: p._i, codigoRef: p.codigoRef, descripcion: p.descripcion }), style: { background: "#1e2230", borderRadius: 12, border: "1px solid #1e2535", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" } },
                 React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" } },
+                    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4 } },
                         React.createElement("span", { style: { color: "#818cf8", fontWeight: 700, fontFamily: "monospace", fontSize: 13 } }, p.codigoRef),
                         React.createElement("span", { style: { fontSize: 11, color: "#6b7280" } }, "\u2192"),
                         React.createElement("span", { style: { color: "#6b7280", fontFamily: "monospace", fontSize: 12 } }, p.codigoProv),
                         React.createElement("span", { className: "badge", style: { background: "rgba(99,102,241,0.15)", color: "#818cf8", fontSize: 10 } }, margenLabel[p.margen] + " (" + data.margenes[p.margen] + "%)")),
                     React.createElement("div", { style: { fontSize: 13, color: "#cbd5e1", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.descripcion),
                     React.createElement("div", { style: { display: "flex", gap: 16, marginTop: 6 } },
-                        React.createElement("span", { style: { fontSize: 12, color: "#6b7280" } }, "Costo: ", React.createElement("span", { style: { color: "#94a3b8" } }, fmt(p.precioCosto))),
-                        React.createElement("span", { style: { fontSize: 12, color: "#6b7280" } }, "Venta: ", React.createElement("span", { style: { color: "#22c55e", fontWeight: 700 } }, fmt(pv))))),
-                React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } },
-                    React.createElement("button", { className: "btn-danger", style: { padding: "6px 10px" }, onClick: e => { e.stopPropagation(); if (window.confirm(`\u00BFEliminás "${p.descripcion}"?`)) eliminar(p._i); } },
+                        React.createElement("span", { style: { fontSize: 12, color: "#6b7280" } },
+                            "Costo: ",
+                            React.createElement("span", { style: { color: "#94a3b8" } }, fmt(p.precioCosto))),
+                        React.createElement("span", { style: { fontSize: 12, color: "#6b7280" } },
+                            "Venta: ",
+                            React.createElement("span", { style: { color: "#22c55e", fontWeight: 700 } }, fmt(pv))))),
+                React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } },
+                    React.createElement("button", { className: "btn-danger", style: { padding: "6px 12px" }, onClick: () => {
+                            if (window.confirm(`¿Seguro que querés eliminar "${p.descripcion}"?`))
+                                eliminar(p._i);
+                        } },
                         React.createElement(Icon, { name: "trash", size: 14 })),
-                    React.createElement("button", { className: "btn-primary", style: { padding: "6px 10px" }, onClick: e => { e.stopPropagation(); editar(p._i); } },
+                    React.createElement("button", { className: "btn-primary", style: { padding: "6px 12px" }, onClick: () => editar(p._i) },
                         React.createElement(Icon, { name: "settings", size: 14 })))));
         }))) : data.misProductos.length === 0 ? (React.createElement("div", { style: { textAlign: "center", padding: "60px 20px", color: "#374151" } },
             React.createElement(Icon, { name: "tag", size: 48 }),
