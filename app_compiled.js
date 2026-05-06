@@ -345,6 +345,7 @@ function App() {
                     { id: "proveedores", icon: "upload", label: "Proveedores" },
                     { id: "precios", icon: "tag", label: "Mis Precios" },
                     { id: "stock", icon: "box", label: "Stock" },
+                    { id: "ventas", icon: "download", label: "Ventas" },
                     { id: "config", icon: "settings", label: "Configuración" },
                 ].map(n => (React.createElement("button", { key: n.id, onClick: () => { setTab(n.id); setMenuOpen(false); }, style: {
                         width: "100%", padding: "14px 24px", background: tab === n.id ? "rgba(99,102,241,0.1)" : "transparent",
