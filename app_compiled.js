@@ -607,7 +607,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
         p.descripcion.toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.codigoProv || "").toLowerCase().includes(busqueda.toLowerCase()));
     const margenLabel = { p1: data.margenes.p1+"%", p2: data.margenes.p2+"%", p3: data.margenes.p3+"%", p4: data.margenes.p4+"%" };
-    return (React.createElement("div", { className: "card" },
+    return (React.createElement(React.Fragment, null, React.createElement("div", { className: "card" },
         React.createElement("div", { style: { marginBottom: 20, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 } },
             React.createElement("div", null,
                 React.createElement("div", { className: "section-title" }, "\uD83C\uDFF7\uFE0F Mis Precios"),
@@ -667,7 +667,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
             React.createElement("input", { className: "input-field", placeholder: "Buscar en mis productos...", value: busqueda, onChange: e => setBusqueda(e.target.value), style: { paddingLeft: 38 } }))),
         filtrados.length > 0 ? (React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 8 } }, filtrados.map((p) => {
             const pv = calcPrecioVenta(p.precioCosto, p.margen);
-            return (React.createElement("div", { key: p._i, className: "table-row", onClick: () => data.fotos?.[p.codigoRef] && setPhotoModal({ idx: p._i, codigoRef: p.codigoRef, descripcion: p.descripcion }), style: { background: "#1e2230", borderRadius: 12, border: "1px solid #1e2535", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, cursor: data.fotos?.[p.codigoRef] ? "pointer" : "default" } },
+            return (React.createElement("div", { key: p._i, className: "table-row", onClick: () => setPhotoModal({ idx: p._i, codigoRef: p.codigoRef, descripcion: p.descripcion }), style: { background: "#1e2230", borderRadius: 12, border: "1px solid #1e2535", padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer" } },
                 React.createElement("div", { style: { flex: 1, minWidth: 0 } },
                     React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, marginBottom: 4 } },
                         React.createElement("span", { style: { color: "#818cf8", fontWeight: 700, fontFamily: "monospace", fontSize: 13 } }, p.codigoRef),
@@ -692,7 +692,59 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
                         React.createElement(Icon, { name: "settings", size: 14 })))));
         }))) : data.misProductos.length === 0 ? (React.createElement("div", { style: { textAlign: "center", padding: "60px 20px", color: "#374151" } },
             React.createElement(Icon, { name: "tag", size: 48 }),
-            React.createElement("div", { style: { marginTop: 16, fontSize: 15, color: "#6b7280" } }, "Todav\u00EDa no agregaste productos"))) : null));
+            React.createElement("div", { style: { marginTop: 16, fontSize: 15, color: "#6b7280" } }, "Todav\u00EDa no agregaste productos"))) : null),
+    photoModal && React.createElement("div", {
+        style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+        onClick: () => setPhotoModal(null)
+    },
+        React.createElement("div", {
+            style: { background: "#1e2230", borderRadius: 20, padding: 24, width: "100%", maxWidth: 420 },
+            onClick: e => e.stopPropagation()
+        },
+            React.createElement("div", { style: { fontWeight: 700, fontSize: 15, color: "#f1f5f9", marginBottom: 4 } }, photoModal.descripcion),
+            React.createElement("div", { style: { fontSize: 12, color: "#818cf8", fontFamily: "monospace", marginBottom: 16 } }, photoModal.codigoRef),
+            data.fotos && data.fotos[photoModal.codigoRef]
+                ? React.createElement("img", { src: data.fotos[photoModal.codigoRef], alt: photoModal.descripcion, style: { width: "100%", borderRadius: 12, marginBottom: 16, maxHeight: 280, objectFit: "contain", background: "#111" } })
+                : React.createElement("div", { style: { background: "#111827", borderRadius: 12, height: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginBottom: 16, gap: 8 } },
+                    React.createElement(Icon, { name: "camera", size: 44 }),
+                    React.createElement("div", { style: { fontSize: 13, color: "#6b7280" } }, "Sin foto cargada")),
+            React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
+                React.createElement("label", { style: { flex: 1, minWidth: 120, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff", borderRadius: 10, padding: "11px 16px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 } },
+                    React.createElement(Icon, { name: "camera", size: 16 }),
+                    data.fotos && data.fotos[photoModal.codigoRef] ? "Cambiar foto" : "Cargar foto",
+                    React.createElement("input", { type: "file", accept: "image/*", capture: "environment", style: { display: "none" },
+                        onChange: e => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                                const img = new Image();
+                                img.onload = () => {
+                                    const canvas = document.createElement("canvas");
+                                    const MAX = 700;
+                                    const ratio = Math.min(MAX/img.width, MAX/img.height, 1);
+                                    canvas.width = img.width * ratio;
+                                    canvas.height = img.height * ratio;
+                                    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+                                    const compressed = canvas.toDataURL("image/jpeg", 0.75);
+                                    setData(d => { const fotos = Object.assign({}, d.fotos || {}); fotos[photoModal.codigoRef] = compressed; return Object.assign({}, d, { fotos }); });
+                                    showToast("Foto guardada", "success");
+                                };
+                                img.src = ev.target.result;
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    })),
+                data.fotos && data.fotos[photoModal.codigoRef] && React.createElement("button", {
+                    className: "btn-danger", style: { padding: "11px 14px" },
+                    onClick: () => {
+                        if (!window.confirm("Eliminar la foto?")) return;
+                        setData(d => { const fotos = Object.assign({}, d.fotos || {}); delete fotos[photoModal.codigoRef]; return Object.assign({}, d, { fotos }); });
+                        setPhotoModal(null);
+                        showToast("Foto eliminada", "info");
+                    }
+                }, React.createElement(Icon, { name: "trash", size: 16 })),
+                React.createElement("button", { className: "btn-ghost", style: { padding: "11px 16px" }, onClick: () => setPhotoModal(null) }, "Cerrar"))))));
 }
 // ─── TAB CALCULADORA ─────────────────────────────────────────────────────────
 function TabCalculadora({ data, showToast, buscarEnProveedores, setData }) {
