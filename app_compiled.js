@@ -142,6 +142,7 @@ function LoginScreen() {
     const [error, setError] = React.useState("");
     const [loading, setLoading] = React.useState(false);
     const [mode, setMode] = React.useState("login");
+    const [resetSent, setResetSent] = React.useState(false);
 
     const handle = async (action) => {
         setError(""); setLoading(true);
@@ -154,6 +155,20 @@ function LoginScreen() {
                 "auth/weak-password": "La contraseña debe tener al menos 6 caracteres",
                 "auth/invalid-email": "Email inválido",
             };
+            setError(msgs[e.code] || e.message);
+        }
+        setLoading(false);
+    };
+
+    const resetPassword = async () => {
+        if (!email.trim()) { setError("Ingresá tu email para recuperar la contraseña"); return; }
+        setError(""); setLoading(true);
+        try {
+            await window.resetPassword(email.trim());
+            setError(""); 
+            setResetSent(true);
+        } catch(e) {
+            const msgs = { "auth/invalid-email": "Email inválido", "auth/user-not-found": "No existe una cuenta con ese email" };
             setError(msgs[e.code] || e.message);
         }
         setLoading(false);
@@ -174,17 +189,24 @@ function LoginScreen() {
                     error && React.createElement("div", { style: { fontSize: 13, color: "#ef4444", background: "rgba(239,68,68,0.1)", borderRadius: 10, padding: "10px 14px" } }, error),
                     React.createElement("button", { disabled: loading, onClick: () => handle(mode), style: { background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff", border: "none", padding: 14, borderRadius: 12, cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 15, opacity: loading ? 0.7 : 1 } },
                         loading ? "Cargando..." : mode === "login" ? "Iniciar sesión" : "Crear cuenta")),
-                React.createElement("div", { style: { textAlign: "center", marginTop: 20, fontSize: 13, color: "#6b7280" } },
-                    mode === "login" ? "¿No tenés cuenta? " : "¿Ya tenés cuenta? ",
-                    React.createElement("span", { onClick: () => { setMode(mode === "login" ? "register" : "login"); setError(""); }, style: { color: "#818cf8", fontWeight: 600, cursor: "pointer" } },
-                        mode === "login" ? "Registrate" : "Iniciá sesión")))));
+                resetSent
+                    ? React.createElement("div", { style: { textAlign: "center", padding: "16px", background: "rgba(34,197,94,0.1)", borderRadius: 12, color: "#22c55e", fontSize: 14, fontWeight: 600 } },
+                        "✅ Te enviamos un email para restablecer tu contraseña. Revisá tu bandeja de entrada.")
+                    : React.createElement(React.Fragment, null,
+                        mode === "login" && React.createElement("div", { style: { textAlign: "center", marginTop: 4 } },
+                            React.createElement("span", { onClick: resetPassword, style: { color: "#6b7280", fontSize: 12, cursor: "pointer", textDecoration: "underline" } },
+                                loading ? "Enviando..." : "¿Olvidaste tu contraseña?")),
+                        React.createElement("div", { style: { textAlign: "center", marginTop: 14, fontSize: 13, color: "#6b7280" } },
+                            mode === "login" ? "¿No tenés cuenta? " : "¿Ya tenés cuenta? ",
+                            React.createElement("span", { onClick: () => { setMode(mode === "login" ? "register" : "login"); setError(""); setResetSent(false); }, style: { color: "#818cf8", fontWeight: 600, cursor: "pointer" } },
+                                mode === "login" ? "Registrate" : "Iniciá sesión"))))));
 }
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
 function App() {
     const [user, setUser] = useState(window.__user || null);
     const [authReady, setAuthReady] = useState(window.__authReady || false);
-    const [tab, setTab] = useState("calc");
+    const [tab, setTab] = useState(() => localStorage.getItem("mn_lastTab") || "calc");
     const [data, setData] = useState(DB);
     const [toast, setToast] = useState(null);
     const [busqueda, setBusqueda] = useState("");
@@ -344,7 +366,7 @@ function App() {
         tab === "ventas" && React.createElement(TabVentas, { data: data, setData: setData, showToast: showToast }),
         tab === "config" && React.createElement(TabConfig, { data: data, setData: setData, showToast: showToast })),
         React.createElement("div", { style: { position: "fixed", bottom: 0, left: 0, right: 0, background: "#1e2230", borderTop: "1px solid #1e2535", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 16px 8px", zIndex: 100 } },
-            React.createElement("button", { className: `nav-btn ${tab === "calc" ? "active" : ""}`, onClick: () => setTab("calc"), style: { flex: 1 } },
+            React.createElement("button", { className: `nav-btn ${tab === "calc" ? "active" : ""}`, onClick: () => { setTab("calc"); try { localStorage.setItem("mn_lastTab", "calc"); } catch(e) {} }, style: { flex: 1 } },
                 React.createElement(Icon, { name: "calc", size: 22 }),
                 "Calculadora"),
             React.createElement("button", { className: "nav-btn", onClick: () => setMenuOpen(m => !m), style: { flex: 0, padding: "10px 16px" } },
@@ -360,7 +382,7 @@ function App() {
                     { id: "ventas", icon: "download", label: "Ventas" },
                     { id: "pedidos", icon: "box", label: "Pedidos" },
                     { id: "config", icon: "settings", label: "Configuración" },
-                ].map(n => (React.createElement("button", { key: n.id, onClick: () => { setTab(n.id); setMenuOpen(false); }, style: {
+                ].map(n => (React.createElement("button", { key: n.id, onClick: () => { setTab(n.id); setMenuOpen(false); try { localStorage.setItem("mn_lastTab", n.id); } catch(e) {} }, style: {
                         width: "100%", padding: "14px 24px", background: tab === n.id ? "rgba(99,102,241,0.1)" : "transparent",
                         border: "none", color: tab === n.id ? "#818cf8" : "#cbd5e1", cursor: "pointer",
                         fontFamily: "inherit", fontSize: 15, fontWeight: 500,
@@ -504,7 +526,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
         if (!window.ZXing) {
             showToast('Cargando escáner...', 'info');
             const script = document.createElement('script');
-            script.src = 'https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js';
+            script.src = 'https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js';
             script.onload = () => initRefScanner();
             document.head.appendChild(script);
         } else {
@@ -515,27 +537,13 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
         setScanningRef(true);
         setTimeout(async () => {
             if (!scanVideoRef.current) return;
-            try {
-              const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: { exact: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } }
-              });
-              scanVideoRef.current.srcObject = stream;
-              await scanVideoRef.current.play();
-              const hints = new Map();
-              hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
-              const reader = new window.ZXing.BrowserMultiFormatReader(hints, 400);
-              window._zxingRefReader = reader;
-              reader.decodeFromStream(stream, scanVideoRef.current, (result, err) => {
-                if (result) {
-                    const text = result.getText().trim().toUpperCase();
-                    beep();
-                    setCodigoRef(text);
-                    stopRefScan();
-                    showToast('Código REF cargado: ' + text, 'success');
-                }
-            });
-            } catch(e) { showToast("Error cámara: " + e.message, "error"); setScanningRef(false); }
-        }, 300);
+            const cleanup = await startBarcodeScanner(
+                scanVideoRef.current,
+                (text) => { beep(); setCodigoRef(text.toUpperCase()); stopRefScan(); showToast("Código REF cargado: " + text, "success"); },
+                (e) => { showToast("Error cámara: " + e.message, "error"); setScanningRef(false); }
+            );
+            window._zxRefCleanup = cleanup;
+        }, 200);
     }, []);
     const agregarProducto = () => {
         if (!codigoRef.trim() || !codigoProv.trim()) {
@@ -759,6 +767,62 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
                 }, React.createElement(Icon, { name: "trash", size: 16 })),
                 React.createElement("button", { className: "btn-ghost", style: { padding: "11px 16px" }, onClick: () => setPhotoModal(null) }, "Cerrar"))))));
 }
+
+// ─── FAST BARCODE SCANNER ────────────────────────────────────────────────────
+// Uses native BarcodeDetector API (fastest on Android Chrome) with ZXing fallback
+async function startBarcodeScanner(videoEl, onResult, onError) {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { exact: "environment" }, width: { min: 1280, ideal: 1920 }, height: { min: 720, ideal: 1080 }, frameRate: { ideal: 30 } }
+        });
+        videoEl.srcObject = stream;
+        await videoEl.play();
+
+        // Try native BarcodeDetector first (Chrome Android, fast)
+        if ("BarcodeDetector" in window) {
+            const detector = new BarcodeDetector({ formats: ["ean_13","ean_8","code_128","code_39","qr_code","upc_a","upc_e","data_matrix","codabar","itf"] });
+            let active = true;
+            const scan = async () => {
+                if (!active || videoEl.readyState < 2) { if (active) requestAnimationFrame(scan); return; }
+                try {
+                    const barcodes = await detector.detect(videoEl);
+                    if (barcodes.length > 0) { active = false; onResult(barcodes[0].rawValue); return; }
+                } catch(e) {}
+                if (active) requestAnimationFrame(scan);
+            };
+            requestAnimationFrame(scan);
+            return () => { active = false; stream.getTracks().forEach(t => t.stop()); };
+        }
+
+        // Fallback: ZXing
+        if (!window.ZXing) {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement("script");
+                s.src = "https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js";
+                s.onload = resolve; s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+        const hints = new Map();
+        hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
+        const reader = new window.ZXing.BrowserMultiFormatReader(hints, 200);
+        try {
+            hints.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+                window.ZXing.BarcodeFormat.EAN_13, window.ZXing.BarcodeFormat.EAN_8,
+                window.ZXing.BarcodeFormat.CODE_128, window.ZXing.BarcodeFormat.CODE_39,
+                window.ZXing.BarcodeFormat.UPC_A, window.ZXing.BarcodeFormat.UPC_E,
+                window.ZXing.BarcodeFormat.ITF, window.ZXing.BarcodeFormat.QR_CODE,
+            ]);
+        } catch(e) {}
+        reader.decodeFromConstraints(
+                        { video: { facingMode: { exact: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } },
+                        videoEl,
+                        (result, err) => { if (result) onResult(result.getText()); });
+        return () => { try { reader.reset(); } catch(e) {} stream.getTracks().forEach(t => t.stop()); };
+
+    } catch(e) { onError(e); return () => {}; }
+}
+
 // ─── TAB CALCULADORA ─────────────────────────────────────────────────────────
 function TabCalculadora({ data, showToast, buscarEnProveedores, setData }) {
     const calcPrecioVenta = (costo, margenKey) => { const m = (data.margenes[margenKey] || 50) / 100; if (m >= 1) return costo; return costo / (1 - m); };
@@ -829,7 +893,7 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, setData }) {
         if (!window.ZXing) {
             showToast("Cargando escáner...", "info");
             const script = document.createElement("script");
-            script.src = "https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js";
+            script.src = "https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js";
             script.onload = () => initScanner();
             document.head.appendChild(script);
         }
@@ -842,9 +906,21 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, setData }) {
         setTimeout(() => {
             if (!videoRef.current)
                 return;
-            const codeReader = new window.ZXing.BrowserMultiFormatReader();
+            const codeReader = new window.ZXing.BrowserMultiFormatReader((() => {
+                const h = new Map();
+                h.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
+                try {
+                    h.set(window.ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+                        window.ZXing.BarcodeFormat.EAN_13, window.ZXing.BarcodeFormat.EAN_8,
+                        window.ZXing.BarcodeFormat.CODE_128, window.ZXing.BarcodeFormat.CODE_39,
+                        window.ZXing.BarcodeFormat.UPC_A, window.ZXing.BarcodeFormat.UPC_E,
+                        window.ZXing.BarcodeFormat.ITF, window.ZXing.BarcodeFormat.QR_CODE,
+                    ]);
+                } catch(e) {}
+                return h;
+            })(), 200);
             window._zxingReader = codeReader;
-            codeReader.decodeFromVideoDevice(null, videoRef.current, (result, err) => {
+            codeReader.decodeFromConstraints({ video: { facingMode: { exact: "environment" } } }, videoRef.current, (result, err) => {
                 if (result) {
                     const text = result.getText();
                     beep();
@@ -917,39 +993,23 @@ function TabStock({ data, setData, showToast }) {
     const [photoModal, setPhotoModal] = useState(null);
     const [scanningStock, setScanningStock] = useState(false);
     const stockVideoRef = useRef();
-    const stopStockScan = () => {
-        if (window._zxingStockReader) {
-            try { window._zxingStockReader.reset(); } catch(e) {}
-            window._zxingStockReader = null;
-        }
-        setScanningStock(false);
-    };
+    
     const startStockScan = () => {
         const doScan = () => {
             setScanningStock(true);
-            setTimeout(() => {
+            setTimeout(async () => {
                 if (!stockVideoRef.current) return;
-                const reader = new window.ZXing.BrowserMultiFormatReader();
-                window._zxingStockReader = reader;
-                reader.decodeFromVideoDevice(null, stockVideoRef.current, (result, err) => {
-                    if (result) {
-                        const text = result.getText().trim().toUpperCase();
-                        beep();
-                        setBusqueda(text);
-                        if (window._zxingStockReader) {
-                            try { window._zxingStockReader.reset(); } catch(e) {}
-                            window._zxingStockReader = null;
-                        }
-                        setScanningStock(false);
-                        showToast('Buscando: ' + text, 'info');
-                    }
-                });
-            }, 300);
+                stopStockScanFn.current = await startBarcodeScanner(
+                    stockVideoRef.current,
+                    (text) => { beep(); setBusqueda(text.toUpperCase()); stopStockScan(); showToast("Buscando: " + text, "info"); },
+                    (e) => { showToast("Error cámara: " + e.message, "error"); setScanningStock(false); }
+                );
+            }, 200);
         };
         if (!window.ZXing) {
             showToast('Cargando escáner...', 'info');
             const script = document.createElement('script');
-            script.src = 'https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js';
+            script.src = 'https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js';
             script.onload = doScan;
             document.head.appendChild(script);
         } else {
@@ -1148,6 +1208,8 @@ function TabVentas({ data, setData, showToast }) {
 // ─── TAB PEDIDOS ──────────────────────────────────────────────────────────────
 function TabPedidos({ data, setData, showToast }) {
     const [busqueda, setBusqueda] = useState("");
+    const [showAgregar, setShowAgregar] = useState(false);
+    const [busquedaAgregar, setBusquedaAgregar] = useState("");
     const pedidos = data.pedidos || [];
 
     // Group by proveedor
@@ -1208,7 +1270,7 @@ function TabPedidos({ data, setData, showToast }) {
         showToast("Lista limpiada", "info");
     };
 
-    return React.createElement("div", { className: "card" },
+    return React.createElement(React.Fragment, null, React.createElement("div", { className: "card" },
         // Header
         React.createElement("div", { style: { marginBottom: 16, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 10 } },
             React.createElement("div", null,
@@ -1220,9 +1282,53 @@ function TabPedidos({ data, setData, showToast }) {
                 pedidos.length > 0 && React.createElement("button", { onClick: limpiarTodo, style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.35)", color: "#ef4444", borderRadius: 10, padding: "8px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12 } }, "Limpiar todo"))),
 
         // Search
-        pedidos.length > 0 && React.createElement("div", { style: { position: "relative", marginBottom: 14 } },
+        React.createElement("div", { style: { position: "relative", marginBottom: 14 } },
             React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } }, React.createElement(Icon, { name: "search", size: 16 })),
             React.createElement("input", { className: "input-field", placeholder: "Buscar en pedidos...", value: busqueda, onChange: e => setBusqueda(e.target.value), style: { paddingLeft: 38 } })),
+
+        React.createElement("div", { style: { marginBottom: 14 } },
+            React.createElement("button", { onClick: () => setShowAgregar(!showAgregar), className: "btn-primary", style: { width: "100%", justifyContent: "center" } },
+                React.createElement(Icon, { name: "plus", size: 16 }), showAgregar ? " Cerrar búsqueda" : " Agregar producto"),
+            showAgregar && React.createElement("div", { style: { background: "#111827", borderRadius: 12, border: "1px solid #1e2535", padding: 14, marginTop: 10 } },
+                React.createElement("div", { style: { position: "relative", marginBottom: 10 } },
+                    React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } }, React.createElement(Icon, { name: "search", size: 16 })),
+                    React.createElement("input", { className: "input-field", placeholder: "Buscar en proveedores y mis precios...", value: busquedaAgregar, onChange: e => setBusquedaAgregar(e.target.value), style: { paddingLeft: 38 } })),
+                busquedaAgregar.length > 1 && React.createElement("div", { style: { maxHeight: 240, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 } },
+                    (() => {
+                        const term = busquedaAgregar.toLowerCase();
+                        const resultsMisProd = (data.misProductos||[]).filter(p =>
+                            p.codigoRef.toLowerCase().includes(term) || (p.descripcion||"").toLowerCase().includes(term) || (p.codigoProv||"").toLowerCase().includes(term)
+                        ).slice(0,5).map(p => ({ ...p, fuente: "mis_precios" }));
+                        const resultsProv = [];
+                        (data.proveedores||[]).forEach(prov => {
+                            (prov.productos||[]).filter(p =>
+                                p.codigo.toLowerCase().includes(term) || (p.descripcion||"").toLowerCase().includes(term)
+                            ).slice(0,3).forEach(p => resultsProv.push({ ...p, codigoProv: p.codigo, fuente: "proveedor", proveedor: prov.nombre }));
+                        });
+                        const todos = [...resultsMisProd, ...resultsProv.slice(0,8)];
+                        if (!todos.length) return React.createElement("div", { style: { textAlign: "center", padding: "12px", color: "#6b7280", fontSize: 13 } }, "Sin resultados");
+                        return todos.map((p, i) => React.createElement("div", { key: i, style: { background: "#1e2230", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 } },
+                            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                                React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } },
+                                    React.createElement("span", { style: { fontSize: 12, color: "#818cf8", fontFamily: "monospace", fontWeight: 700 } }, p.codigoRef || p.codigo),
+                                    React.createElement("span", { className: "badge", style: { background: p.fuente === "mis_precios" ? "rgba(34,197,94,0.15)" : "rgba(99,102,241,0.15)", color: p.fuente === "mis_precios" ? "#22c55e" : "#818cf8", fontSize: 10 } }, p.fuente === "mis_precios" ? "Mis Precios" : p.proveedor)),
+                                React.createElement("div", { style: { fontSize: 12, color: "#cbd5e1", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.descripcion)),
+                            p.fuente === "mis_precios"
+                                ? React.createElement("button", { onClick: () => {
+                                        if ((data.pedidos||[]).find(x => x.codigoRef === p.codigoRef)) { showToast("Ya está en pedidos","info"); return; }
+                                        setData(d => Object.assign({}, d, { pedidos: [...(d.pedidos||[]), { codigoRef: p.codigoRef, codigoProv: p.codigoProv||"", descripcion: p.descripcion, cantidad: 1, proveedor: p.proveedor||"", precioCosto: p.precioCosto||0 }] }));
+                                        showToast("Agregado a pedidos","success"); setBusquedaAgregar(""); setShowAgregar(false);
+                                    }, className: "btn-primary", style: { padding: "6px 12px", fontSize: 12 } }, "+ Pedir")
+                                : React.createElement("div", { style: { display: "flex", gap: 6 } },
+                                    React.createElement("button", { onClick: () => {
+                                            if ((data.pedidos||[]).find(x => x.codigoProv === p.codigoProv)) { showToast("Ya está en pedidos","info"); return; }
+                                            setData(d => Object.assign({}, d, { pedidos: [...(d.pedidos||[]), { codigoRef: p.codigoProv, codigoProv: p.codigoProv, descripcion: p.descripcion, cantidad: 1, proveedor: p.proveedor, precioCosto: p.precio||0 }] }));
+                                            showToast("Agregado a pedidos","success"); setBusquedaAgregar(""); setShowAgregar(false);
+                                        }, className: "btn-primary", style: { padding: "6px 12px", fontSize: 12 } }, "+ Pedir"),
+                                    React.createElement("button", { onClick: () => { window.__prefillPedido = p; setData(d => d); showToast("Andá a Mis Precios para cargarlo","info"); }, className: "btn-ghost", style: { padding: "6px 10px", fontSize: 11 } }, "→ Mis P."))));
+                    })()
+                )
+            )),
 
         // Empty state
         pedidos.length === 0
@@ -1258,7 +1364,48 @@ function TabPedidos({ data, setData, showToast }) {
                                         React.createElement("input", { type: "number", min: 1, value: p.cantidad||1, onChange: e => setData(d => Object.assign({}, d, { pedidos: (d.pedidos||[]).map(x => x.codigoRef===p.codigoRef ? Object.assign({},x,{cantidad:Math.max(1,parseInt(e.target.value)||1)}) : x) })), style: { width: 44, height: 28, borderRadius: 6, background: "#1e2230", border: "1px solid #374151", color: "#f1f5f9", textAlign: "center", fontSize: 13, fontWeight: 700, fontFamily: "inherit" } }),
                                         React.createElement("button", { onClick: () => cambiarCantidad(p.codigoRef, 1), style: { width: 28, height: 28, borderRadius: 6, background: "#6366f1", border: "none", color: "#fff", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" } }, "+"),
                                         React.createElement("button", { onClick: () => quitarDePedido(p.codigoRef), style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", borderRadius: 6, padding: "5px 7px", cursor: "pointer", display: "flex", alignItems: "center" } },
-                                            React.createElement(Icon, { name: "trash", size: 13 }))))))))));
+                                            React.createElement(Icon, { name: "trash", size: 13 }))))))))),
+    showAgregar && React.createElement("div", {
+        style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 400, display: "flex", alignItems: "flex-end", justifyContent: "center" },
+        onClick: () => { setShowAgregar(false); setBusqAgregar(""); }
+    },
+        React.createElement("div", {
+            style: { background: "#1e2230", borderRadius: "20px 20px 0 0", padding: 20, width: "100%", maxWidth: 600, maxHeight: "80vh", display: "flex", flexDirection: "column" },
+            onClick: e => e.stopPropagation()
+        },
+            React.createElement("div", { style: { fontWeight: 700, fontSize: 15, color: "#f1f5f9", marginBottom: 12 } }, "Agregar producto al pedido"),
+            React.createElement("div", { style: { position: "relative", marginBottom: 12 } },
+                React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } }, React.createElement(Icon, { name: "search", size: 16 })),
+                React.createElement("input", { className: "input-field", placeholder: "Buscar en Mis Precios y Proveedores...", value: busqAgregar, onChange: e => setBusqAgregar(e.target.value), autoFocus: true, style: { paddingLeft: 38 } })),
+            React.createElement("div", { style: { overflowY: "auto", flex: 1 } },
+                busqAgregar.length < 2
+                    ? React.createElement("div", { style: { textAlign: "center", padding: "30px 20px", color: "#4b5563", fontSize: 13 } }, "Escribi al menos 2 caracteres para buscar")
+                    : resultadosAgregar.length === 0
+                        ? React.createElement("div", { style: { textAlign: "center", padding: "30px 20px", color: "#4b5563", fontSize: 13 } }, "No se encontraron resultados")
+                        : resultadosAgregar.map((p, i) => React.createElement("div", { key: i, style: { padding: "10px 12px", borderRadius: 10, marginBottom: 6, background: "#111827", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }, onClick: () => {
+                            if (p._fuente === "proveedor") {
+                                if (window.confirm("Este producto no está en Mis Precios. ¿Querés agregarlo primero?")) {
+                                    setShowAgregar(false); setBusqAgregar("");
+                                    // Signal to navigate to precios with prefill
+                                    window.__prefillProd = { codigo: p.codigoProv };
+                                    window.dispatchEvent(new CustomEvent("navigateToPrecios", { detail: p }));
+                                }
+                                return;
+                            }
+                            const yaEsta = (data.pedidos||[]).find(x => x.codigoRef === p.codigoRef);
+                            if (yaEsta) { showToast("Ya está en pedidos", "info"); return; }
+                            setData(d => Object.assign({}, d, { pedidos: [...(d.pedidos||[]), { codigoRef: p.codigoRef, codigoProv: p.codigoProv||"", descripcion: p.descripcion, cantidad: 1, proveedor: p.proveedor||"", precioCosto: p.precioCosto||0 }] }));
+                            showToast("Agregado: " + p.descripcion, "success");
+                            setBusqAgregar("");
+                        } },
+                            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                                React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } },
+                                    React.createElement("span", { style: { fontSize: 11, color: "#818cf8", fontFamily: "monospace", fontWeight: 700 } }, p.codigoRef || p.codigoProv),
+                                    React.createElement("span", { className: "badge", style: { background: p._fuente === "mis_precios" ? "rgba(34,197,94,0.15)" : "rgba(99,102,241,0.15)", color: p._fuente === "mis_precios" ? "#22c55e" : "#818cf8", fontSize: 10 } }, p._fuente === "mis_precios" ? "Mis Precios" : p.proveedor)),
+                                React.createElement("div", { style: { fontSize: 13, color: "#cbd5e1", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.descripcion)),
+                            React.createElement("div", { style: { fontSize: 13, color: "#22c55e", fontWeight: 700, flexShrink: 0 } }, p.precioCosto ? "$" + (p.precioCosto||0).toFixed(0) : ""))))),
+        React.createElement("button", { onClick: () => { setShowAgregar(false); setBusqAgregar(""); }, style: { position: "absolute", top: 20, right: 20, background: "none", border: "none", color: "#6b7280", cursor: "pointer" } },
+            React.createElement(Icon, { name: "x", size: 20 })))));
 }
 
 
