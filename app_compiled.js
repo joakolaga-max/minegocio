@@ -494,13 +494,15 @@ function TabProveedores({ data, setData, showToast, busqueda, setBusqueda, onSel
 // ─── TAB MIS PRECIOS ──────────────────────────────────────────────────────────
 function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillProd, clearPrefill }) {
     // Define locally so it always uses latest data.margenes
-    const calcPrecioVenta = (costo, margenKey) => { const m = (data.margenes[margenKey] || 50) / 100; if (m >= 1) return costo; return costo / (1 - m); };
+    const calcPrecioVenta = (costo, margenKey) => { const m = (typeof margenKey === "number" ? margenKey : (data.margenes[margenKey] || 50)) / 100; if (m >= 1) return costo; return costo / (1 - m); };
     const [codigoRef, setCodigoRef] = useState("");
     const [codigoProv, setCodigoProv] = useState("");
     const [margenSel, setMargenSel] = useState("p1");
     const [busqueda, setBusqueda] = useState("");
     const [editIdx, setEditIdx] = useState(null);
     const [photoModal, setPhotoModal] = useState(null);
+    const [margenCustom, setMargenCustom] = useState(false);
+    const [margenCustomVal, setMargenCustomVal] = useState("");
     // Auto-fill when coming from Proveedores
     useEffect(() => {
         if (!prefillProd) return;
@@ -560,12 +562,13 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
             showToast("El código local ya existe", "error");
             return;
         }
+        const margenFinal = margenCustom ? (parseFloat(margenCustomVal) || 50) : margenSel;
         const nuevo = {
             codigoRef: codigoRef.trim(),
             codigoProv: codigoProv.trim(),
             descripcion: encontrado.descripcion,
             precioCosto: encontrado.precio,
-            margen: margenSel,
+            margen: margenFinal,
             proveedor: encontrado.proveedor,
         };
         setData(d => {
@@ -597,17 +600,36 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
     const exportarCSV = () => {
-        const rows = data.misProductos.map(p => {
-            const pv = calcPrecioVenta(p.precioCosto, p.margen);
-            const desc = (p.descripcion || "").replace(/,/g, ";");
-            return [p.codigoRef, p.codigoProv || "", desc, (p.precioCosto||0).toFixed(2), pv.toFixed(2), p.margen].join(",");
-        });
-        const blob = new Blob(["Ref,CodProveedor,Descripcion,PrecioCompra,PrecioVenta,Margen\n" + rows.join("\n")], { type: "text/csv" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "mis_precios.csv";
-        a.click();
-        showToast("CSV exportado listo para importar", "success");
+        try {
+            // Build worksheet data
+            const wsData = [
+                ["Ref", "Cod Proveedor", "Descripcion", "Precio Compra", "Precio Venta", "Margen %"]
+            ];
+            data.misProductos.forEach(p => {
+                const pv = calcPrecioVenta(p.precioCosto, p.margen);
+                const margenDisplay = typeof p.margen === "number" ? p.margen : (data.margenes[p.margen] || 50);
+                wsData.push([
+                    p.codigoRef || "",
+                    p.codigoProv || "",
+                    p.descripcion || "",
+                    parseFloat((p.precioCosto||0).toFixed(2)),
+                    parseFloat(pv.toFixed(2)),
+                    margenDisplay
+                ]);
+            });
+            const wb = window.XLSX.utils.book_new();
+            const ws = window.XLSX.utils.aoa_to_sheet(wsData);
+            // Column widths
+            ws["!cols"] = [
+                { wch: 14 }, { wch: 16 }, { wch: 42 },
+                { wch: 14 }, { wch: 14 }, { wch: 10 }
+            ];
+            window.XLSX.utils.book_append_sheet(wb, ws, "Mis Precios");
+            window.XLSX.writeFile(wb, "mis_precios.xlsx");
+            showToast("Excel exportado correctamente", "success");
+        } catch(e) {
+            showToast("Error al exportar: " + e.message, "error");
+        }
     };
     const actualizarPrecios = () => {
         let actualizados = 0;
@@ -639,7 +661,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
                     " Actualizar precios"),
                 data.misProductos.length > 0 && React.createElement("button", { className: "btn-primary", onClick: exportarCSV },
                     React.createElement(Icon, { name: "download", size: 14 }),
-                    " Exportar CSV"),
+                    " Exportar Excel"),
             data.misProductos.length > 0 && React.createElement("button", { className: "btn-ghost", onClick: () => { const inp = document.createElement("input"); inp.type="file"; inp.accept=".csv,.txt,.xlsx,.xls"; inp.onchange = (e) => { const file=e.target.files[0]; if(!file) return; const isXls=/\.(xlsx|xls)$/i.test(file.name); const reader=new FileReader(); reader.onload=(ev)=>{ let rows=[]; try{ if(isXls){ const buf=new Uint8Array(ev.target.result); const wb=window.XLSX.read(buf,{type:"array"}); const ws=wb.Sheets[wb.SheetNames[0]]; const json=window.XLSX.utils.sheet_to_json(ws,{header:1,defval:""}); rows=json.slice(1).map(r=>({ codigoRef:String(r[0]||"").trim(), codigoProv:String(r[1]||"").trim(), descripcion:String(r[2]||"").trim(), precioCosto:parseFloat(String(r[3]||"0").replace(",","."))||0, margen:r[5]||"p1" })).filter(r=>r.codigoRef); }else{ const lines=ev.target.result.trim().split(/\r?\n/).filter(Boolean); rows=lines.slice(1).map(l=>{ const c=l.split(",").map(s=>s.trim()); return{ codigoRef:c[0]||"", codigoProv:c[1]||"", descripcion:c[2]||"", precioCosto:parseFloat(c[3])||0, margen:c[5]||"p1" }; }).filter(r=>r.codigoRef); } }catch(err){ showToast("Error al leer archivo","error"); return; } if(!rows.length){ showToast("No se encontraron productos","error"); return; } if(!window.confirm("Reemplazar tu lista actual ("+data.misProductos.length+" productos) con "+rows.length+" del archivo?")) return; setData(d=>Object.assign({},d,{misProductos:rows})); showToast("Importados "+rows.length+" productos","success"); }; if(isXls) reader.readAsArrayBuffer(file); else reader.readAsText(file); }; inp.click(); }, style: { display:"flex", alignItems:"center", gap:6 } },
                 React.createElement(Icon, { name: "upload", size: 14 }),
                 " Importar"))),
@@ -669,19 +691,31 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
                         } }))),
             React.createElement("div", { style: { marginBottom: 14 } },
                 React.createElement("label", { style: { fontSize: 12, color: "#6b7280", marginBottom: 6, display: "block" } }, "Margen de venta"),
-                React.createElement("div", { style: { display: "flex", gap: 8 } }, Object.entries(margenLabel).map(([k, v]) => (React.createElement("button", { key: k, onClick: () => setMargenSel(k), style: {
-                        flex: 1, padding: "8px 4px", borderRadius: 10, border: "1px solid",
-                        borderColor: margenSel === k ? "#6366f1" : "#374151",
-                        background: margenSel === k ? "rgba(99,102,241,0.2)" : "transparent",
-                        color: margenSel === k ? "#818cf8" : "#6b7280",
+                React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
+                Object.entries(margenLabel).map(([k, v]) => (React.createElement("button", { key: k, onClick: () => { setMargenSel(k); setMargenCustom(false); }, style: {
+                        flex: 1, minWidth: 48, padding: "8px 4px", borderRadius: 10, border: "1px solid",
+                        borderColor: margenSel === k && !margenCustom ? "#6366f1" : "#374151",
+                        background: margenSel === k && !margenCustom ? "rgba(99,102,241,0.2)" : "transparent",
+                        color: margenSel === k && !margenCustom ? "#818cf8" : "#6b7280",
                         cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14, transition: "all 0.2s"
-                    } }, v)))),
+                    } }, v))),
+                React.createElement("button", { onClick: () => setMargenCustom(!margenCustom), style: {
+                    flex: 1, minWidth: 60, padding: "8px 4px", borderRadius: 10, border: "1px solid",
+                    borderColor: margenCustom ? "#f59e0b" : "#374151",
+                    background: margenCustom ? "rgba(245,158,11,0.2)" : "transparent",
+                    color: margenCustom ? "#f59e0b" : "#6b7280",
+                    cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 14, transition: "all 0.2s"
+                } }, "Otro %"),
+                margenCustom && React.createElement("div", { style: { width: "100%", marginTop: 8, display: "flex", alignItems: "center", gap: 8 } },
+                    React.createElement("input", { type: "number", min: 1, max: 99, step: 0.5, className: "input-field", placeholder: "Ej: 37.5", value: margenCustomVal, onChange: e => { setMargenCustomVal(e.target.value); setMargenSel(parseFloat(e.target.value) || 0); }, style: { flex: 1, textAlign: "center", fontWeight: 700 } }),
+                    React.createElement("span", { style: { color: "#6b7280", fontSize: 14 } }, "%"),
+                    margenCustomVal && React.createElement("span", { style: { color: "#22c55e", fontSize: 12, fontWeight: 600 } }, "→ " + (100 / (100 - parseFloat(margenCustomVal || 0))).toFixed(2) + "x"))),
                 React.createElement("div", { style: { fontSize: 11, color: "#6b7280", marginTop: 6 } }, "Los % exactos se configuran en la pesta\u00F1a \u2699\uFE0F Config")),
             React.createElement("div", { style: { display: "flex", gap: 8 } },
                 React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: "center" }, onClick: agregarProducto },
                     React.createElement(Icon, { name: editIdx !== null ? "check" : "plus", size: 16 }),
                     editIdx !== null ? "Guardar cambios" : "Agregar producto"),
-                editIdx !== null && (React.createElement("button", { className: "btn-ghost", onClick: () => { setEditIdx(null); setCodigoRef(""); setCodigoProv(""); setMargenSel("p1"); } }, "Cancelar")))),
+                editIdx !== null && (React.createElement("button", { className: "btn-ghost", onClick: () => { setEditIdx(null); setCodigoRef(""); setCodigoProv(""); setMargenSel("p1"); setMargenCustom(false); setMargenCustomVal(""); } }, "Cancelar")))),
         data.misProductos.length > 0 && (React.createElement("div", { style: { position: "relative", marginBottom: 16 } },
             React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } },
                 React.createElement(Icon, { name: "search", size: 16 })),
@@ -694,7 +728,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
                         React.createElement("span", { style: { color: "#818cf8", fontWeight: 700, fontFamily: "monospace", fontSize: 13 } }, p.codigoRef),
                         React.createElement("span", { style: { fontSize: 11, color: "#6b7280" } }, "\u2192"),
                         React.createElement("span", { style: { color: "#6b7280", fontFamily: "monospace", fontSize: 12 } }, p.codigoProv),
-                        React.createElement("span", { className: "badge", style: { background: "rgba(99,102,241,0.15)", color: "#818cf8", fontSize: 10 } }, margenLabel[p.margen])),
+                        React.createElement("span", { className: "badge", style: { background: "rgba(99,102,241,0.15)", color: "#818cf8", fontSize: 10 } }, ["p1","p2","p3","p4"].includes(p.margen) ? margenLabel[p.margen] : p.margen + "% ✎")),
                     React.createElement("div", { style: { fontSize: 13, color: "#cbd5e1", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.descripcion),
                     React.createElement("div", { style: { display: "flex", gap: 16, marginTop: 6 } },
                         React.createElement("span", { style: { fontSize: 12, color: "#6b7280" } },
@@ -825,7 +859,7 @@ async function startBarcodeScanner(videoEl, onResult, onError) {
 
 // ─── TAB CALCULADORA ─────────────────────────────────────────────────────────
 function TabCalculadora({ data, showToast, buscarEnProveedores, setData }) {
-    const calcPrecioVenta = (costo, margenKey) => { const m = (data.margenes[margenKey] || 50) / 100; if (m >= 1) return costo; return costo / (1 - m); };
+    const calcPrecioVenta = (costo, margenKey) => { const m = (typeof margenKey === "number" ? margenKey : (data.margenes[margenKey] || 50)) / 100; if (m >= 1) return costo; return costo / (1 - m); };
     const [items, setItems] = useState([]);
     const [codigo, setCodigo] = useState("");
     const [scanning, setScanning] = useState(false);
@@ -1271,15 +1305,23 @@ function TabPedidos({ data, setData, showToast }) {
     };
 
     const exportarProveedor = (provNombre, items) => {
-        const BOM = "\uFEFF";
-        const header = "Codigo Proveedor,Descripcion,Cantidad,Precio Costo\n";
-        const rows = items.map(p => [p.codigoProv||p.codigoRef, (p.descripcion||"").replace(/,/g,";"), p.cantidad||1, (p.precioCosto||0).toFixed(2)].join(",")).join("\n");
-        const blob = new Blob([BOM + header + rows], { type: "text/csv;charset=utf-8" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "Pedido_" + provNombre.replace(/\s+/g,"_") + ".csv";
-        a.click();
-        showToast("Excel exportado para " + provNombre, "success");
+        try {
+            const wsData = [["Cod Proveedor", "Descripcion", "Cantidad", "Precio Costo"]];
+            items.forEach(p => wsData.push([
+                p.codigoProv || p.codigoRef || "",
+                p.descripcion || "",
+                p.cantidad || 1,
+                parseFloat((p.precioCosto||0).toFixed(2))
+            ]));
+            const wb = window.XLSX.utils.book_new();
+            const ws = window.XLSX.utils.aoa_to_sheet(wsData);
+            ws["!cols"] = [{ wch: 16 }, { wch: 42 }, { wch: 10 }, { wch: 14 }];
+            window.XLSX.utils.book_append_sheet(wb, ws, "Pedido");
+            window.XLSX.writeFile(wb, "Pedido_" + provNombre.replace(/\s+/g, "_") + ".xlsx");
+            showToast("Excel exportado para " + provNombre, "success");
+        } catch(e) {
+            showToast("Error al exportar: " + e.message, "error");
+        }
     };
 
     const agregarBajoMinimo = () => {
@@ -1380,7 +1422,7 @@ function TabPedidos({ data, setData, showToast }) {
                             React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } },
                                 React.createElement("span", { style: { fontSize: 12, color: "#6b7280" } }, items.length + " item(s)"),
                                 React.createElement("button", { onClick: () => exportarProveedor(prov, items), style: { background: "linear-gradient(135deg,#22c55e,#16a34a)", color: "#fff", border: "none", borderRadius: 8, padding: "5px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 12, display: "flex", alignItems: "center", gap: 5 } },
-                                    React.createElement(Icon, { name: "download", size: 12 }), " Exportar CSV"))),
+                                    React.createElement(Icon, { name: "download", size: 12 }), " Exportar Excel"))),
                         // Products
                         React.createElement("div", null,
                             items.filter(p => !busqueda || p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) || (p.descripcion||"").toLowerCase().includes(busqueda.toLowerCase())).map((p, i) =>
