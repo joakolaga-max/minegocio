@@ -53,43 +53,29 @@
     // ── Firebase helpers with per-user path ──
     window.__fb = {
       save: async (path, data) => {
-        try { localStorage.setItem("mn_" + path, JSON.stringify(data)); } catch(e) {}
         if (!window.__user) return;
-        try {
-          await setDoc(
-            doc(db, "negocios", window.__user, "data", path),
-            { data: JSON.stringify(data) },
-            { merge: true }
-          );
-        } catch(e) { console.warn("Save error:", path, e); }
+        try { localStorage.setItem("mn_" + path, JSON.stringify(data)); } catch(e) {}
+        await setDoc(
+          doc(db, "negocios", window.__user, "data", path),
+          { data: JSON.stringify(data) },
+          { merge: true }
+        );
       },
 
       load: async (path) => {
-        if (!window.__user) return null;
+        if (!window.__user) return [];
         try {
-          // Try new per-user path first
-          const snap = await getDoc(doc(db, "negocios", window.__user, "data", path));
+          const snap = await getDoc(
+            doc(db, "negocios", window.__user, "data", path)
+          );
           if (snap.exists()) {
             const val = JSON.parse(snap.data().data);
             try { localStorage.setItem("mn_" + path, JSON.stringify(val)); } catch(e) {}
             return val;
           }
-          // Fallback: try old shared path and migrate
-          const oldSnap = await getDoc(doc(db, "negocio", path));
-          if (oldSnap.exists()) {
-            const val = JSON.parse(oldSnap.data().data);
-            // Migrate to new path
-            await setDoc(doc(db, "negocios", window.__user, "data", path), { data: JSON.stringify(val) }, { merge: true });
-            try { localStorage.setItem("mn_" + path, JSON.stringify(val)); } catch(e) {}
-            console.log("Migrated:", path);
-            return val;
-          }
-        } catch(e) { console.warn("Load error:", path, e); }
-        // Last resort: localStorage
-        try {
-          const cached = localStorage.getItem("mn_" + path);
-          return cached ? JSON.parse(cached) : null;
-        } catch(e) { return null; }
+        } catch(e) {}
+        const cached = localStorage.getItem("mn_" + path);
+        return cached ? JSON.parse(cached) : [];
       }
     };
 

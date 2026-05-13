@@ -12,8 +12,7 @@ const DB = {
     stock: {},
     fotos: {},
     ventas: [],
-    pedidos: [],
-    pedidosHistorial: []
+    pedidos: []
 };
 const saveToFirebase = async (path, data) => {
     if (window.__fb)
@@ -230,7 +229,7 @@ function App() {
     useEffect(() => {
         const loadAll = async () => {
             setSyncing(true);
-            const [provData, misData, config, stockData, ventasData, fotosData, pedidosData, pedHistData] = await Promise.all([
+            const [provData, misData, config, stockData, ventasData, fotosData, pedidosData] = await Promise.all([
                 loadFromFirebase("proveedores"),
                 loadFromFirebase("misProductos"),
                 loadFromFirebase("config"),
@@ -238,14 +237,8 @@ function App() {
                 loadFromFirebase("ventas"),
                 loadFromFirebase("fotos"),
                 loadFromFirebase("pedidos"),
-                loadFromFirebase("pedidosHistorial"),
             ]);
-            setData(d => {
-                const newData = Object.assign(Object.assign({}, d), { proveedores: (provData && provData.length) ? provData : d.proveedores, misProductos: misData || d.misProductos, margenes: (config === null || config === void 0 ? void 0 : config.margenes) || d.margenes, stock: stockData || d.stock || {}, ventas: (ventasData || d.ventas || []), fotos: (fotosData || d.fotos || {}), pedidos: (pedidosData || d.pedidos || []), pedidosHistorial: (pedHistData || d.pedidosHistorial || []) });
-                // Set prevDataRef BEFORE setLoaded so save effect doesn't overwrite Firebase on first render
-                prevDataRef.current = newData;
-                return newData;
-            });
+            setData(d => (Object.assign(Object.assign({}, d), { proveedores: (provData && provData.length) ? provData : d.proveedores, misProductos: misData || d.misProductos, margenes: (config === null || config === void 0 ? void 0 : config.margenes) || d.margenes, stock: stockData || d.stock || {}, ventas: (ventasData || d.ventas || []), fotos: (fotosData || d.fotos || {}), pedidos: (pedidosData || d.pedidos || []) })));
             setSyncing(false);
             setLoaded(true);
         };
@@ -299,10 +292,6 @@ function App() {
             if (JSON.stringify(data.pedidos) !== JSON.stringify(prevDataRef.current && prevDataRef.current.pedidos)) {
                 try { localStorage.setItem("mn_pedidos", JSON.stringify(data.pedidos)); } catch(e) {}
                 await saveToFirebase("pedidos", data.pedidos);
-            }
-            if (JSON.stringify(data.pedidosHistorial) !== JSON.stringify(prevDataRef.current && prevDataRef.current.pedidosHistorial)) {
-                try { localStorage.setItem("mn_pedidosHistorial", JSON.stringify(data.pedidosHistorial)); } catch(e) {}
-                await saveToFirebase("pedidosHistorial", data.pedidosHistorial);
             }
             prevDataRef.current = data;
             setSyncing(false);
@@ -513,7 +502,6 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
     const [editIdx, setEditIdx] = useState(null);
     const [photoModal, setPhotoModal] = useState(null);
     const [margenCustom, setMargenCustom] = useState(false);
-    const [divisor, setDivisor] = useState(1);
     const [margenCustomVal, setMargenCustomVal] = useState("");
     // Auto-fill when coming from Proveedores
     useEffect(() => {
@@ -582,7 +570,6 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
             precioCosto: encontrado.precio,
             margen: margenFinal,
             proveedor: encontrado.proveedor,
-            divisor: (parseInt(divisor) > 1) ? parseInt(divisor) : 1,
         };
         setData(d => {
             const lista = [...d.misProductos];
@@ -724,16 +711,11 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
                     React.createElement("span", { style: { color: "#6b7280", fontSize: 14 } }, "%"),
                     margenCustomVal && React.createElement("span", { style: { color: "#22c55e", fontSize: 12, fontWeight: 600 } }, "→ " + (100 / (100 - parseFloat(margenCustomVal || 0))).toFixed(2) + "x"))),
                 React.createElement("div", { style: { fontSize: 11, color: "#6b7280", marginTop: 6 } }, "Los % exactos se configuran en la pesta\u00F1a \u2699\uFE0F Config")),
-            React.createElement("div", { style: { marginBottom: 12 } },
-                React.createElement("label", { style: { fontSize: 12, color: "#6b7280", marginBottom: 6, display: "block" } }, "Dividir precio por (opcional — ej: 100 para precio por metro)"),
-                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
-                    React.createElement("input", { type: "number", min: 1, className: "input-field", value: divisor, onChange: e => setDivisor(Math.max(1, parseInt(e.target.value)||1)), style: { width: 100 }, placeholder: "1" }),
-                    divisor > 1 && React.createElement("span", { style: { fontSize: 12, color: "#22c55e" } }, "÷ " + divisor + " = precio unitario"))),
-        React.createElement("div", { style: { display: "flex", gap: 8 } },
+            React.createElement("div", { style: { display: "flex", gap: 8 } },
                 React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: "center" }, onClick: agregarProducto },
                     React.createElement(Icon, { name: editIdx !== null ? "check" : "plus", size: 16 }),
                     editIdx !== null ? "Guardar cambios" : "Agregar producto"),
-                editIdx !== null && (React.createElement("button", { className: "btn-ghost", onClick: () => { setEditIdx(null); setCodigoRef(""); setCodigoProv(""); setMargenSel("p1"); setDivisor(1); setMargenCustom(false); setMargenCustomVal(""); } }, "Cancelar")))),
+                editIdx !== null && (React.createElement("button", { className: "btn-ghost", onClick: () => { setEditIdx(null); setCodigoRef(""); setCodigoProv(""); setMargenSel("p1"); setMargenCustom(false); setMargenCustomVal(""); } }, "Cancelar")))),
         data.misProductos.length > 0 && (React.createElement("div", { style: { position: "relative", marginBottom: 16 } },
             React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } },
                 React.createElement(Icon, { name: "search", size: 16 })),
@@ -901,15 +883,13 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, setData }) {
             showToast("Código no encontrado en Mis Precios", "error");
             return;
         }
-        const pvTotal = calcPrecioVenta(miProd.precioCosto, miProd.margen);
-        const div = miProd.divisor > 1 ? miProd.divisor : 1;
-        const pv = pvTotal / div;
+        const pv = calcPrecioVenta(miProd.precioCosto, miProd.margen);
         const existe = items.findIndex(i => i.codigoRef === miProd.codigoRef);
         if (existe >= 0) {
             setItems(its => { const n = [...its]; n[existe].cantidad++; return n; });
         }
         else {
-            setItems(its => [...its, { codigoRef: miProd.codigoRef, descripcion: miProd.descripcion + (div > 1 ? " (x1 u.)" : ""), precioVenta: pv, cantidad: 1, divisor: div }]);
+            setItems(its => [...its, { codigoRef: miProd.codigoRef, descripcion: miProd.descripcion, precioVenta: pv, cantidad: 1 }]);
         }
         setCodigo("");
     };
@@ -1290,71 +1270,14 @@ function TabVentas({ data, setData, showToast }) {
 }
 
 
-// ─── 
-// ─── RECEPCION MODAL ─────────────────────────────────────────────────────────
-// ── Recepción modal ──
-    function RecepcionModal({ orden, setOrdenActiva, setData, showToast }) {
-        const [cantidades, setCantidades] = React.useState(
-            Object.fromEntries(orden.items.map(i => [i.codigoRef||i.codigoProv, i.cantidad]))
-        );
-        const confirmarRecepcion = () => {
-            if (!window.confirm("Confirmar recepción? El stock se actualizará con las cantidades recibidas.")) return;
-            setData(d => {
-                // Update stock
-                const newStock = { ...(d.stock||{}) };
-                orden.items.forEach(item => {
-                    const cant = parseInt(cantidades[item.codigoRef||item.codigoProv]) || 0;
-                    if (cant > 0 && item.codigoRef) {
-                        const cur = newStock[item.codigoRef] || { inicial:0, entradas:0, salidas:0, minimo:0 };
-                        newStock[item.codigoRef] = { ...cur, entradas: (cur.entradas||0) + cant };
-                    }
-                });
-                // Update orden estado
-                const newHistorial = (d.pedidosHistorial||[]).map(o => o.id === orden.id
-                    ? { ...o, estado:"recibido", fechaRecibido: new Date().toLocaleDateString("es-AR"), items: o.items.map(i => ({ ...i, cantRecibida: parseInt(cantidades[i.codigoRef||i.codigoProv])||0 })) }
-                    : o
-                );
-                saveToFirebase("pedidosHistorial", newHistorial);
-                return Object.assign({}, d, { stock: newStock, pedidosHistorial: newHistorial });
-            });
-            showToast("Recepción confirmada. Stock actualizado.", "success");
-            setOrdenActiva(null);
-        };
-
-        return React.createElement("div", { style: { position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:400, display:"flex", alignItems:"flex-end", justifyContent:"center" }, onClick: () => setOrdenActiva(null) },
-            React.createElement("div", { style: { background:"#1e2230", borderRadius:"20px 20px 0 0", padding:20, width:"100%", maxWidth:600, maxHeight:"85vh", display:"flex", flexDirection:"column" }, onClick: e => e.stopPropagation() },
-                React.createElement("div", { style: { display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 } },
-                    React.createElement("div", null,
-                        React.createElement("div", { style: { fontWeight:700, fontSize:15, color:"#f1f5f9" } }, "Recepción — " + orden.proveedor),
-                        React.createElement("div", { style: { fontSize:12, color:"#6b7280", marginTop:2 } }, "Enviado: " + orden.fechaEnviado + " — Ajustá las cantidades que llegaron")),
-                    React.createElement("button", { onClick:()=>setOrdenActiva(null), style:{ background:"none", border:"none", color:"#6b7280", cursor:"pointer" } }, React.createElement(Icon, { name:"x", size:20 }))),
-                React.createElement("div", { style: { overflowY:"auto", flex:1, marginBottom:16 } },
-                    orden.items.map((item, i) => React.createElement("div", { key:i, style: { padding:"10px 0", borderBottom:"1px solid #111827", display:"flex", alignItems:"center", gap:10 } },
-                        React.createElement("div", { style: { flex:1, minWidth:0 } },
-                            React.createElement("div", { style: { fontSize:12, color:"#818cf8", fontFamily:"monospace" } }, item.codigoRef || item.codigoProv),
-                            React.createElement("div", { style: { fontSize:13, color:"#cbd5e1", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" } }, item.descripcion)),
-                        React.createElement("div", { style: { display:"flex", alignItems:"center", gap:6, flexShrink:0 } },
-                            React.createElement("div", { style: { fontSize:11, color:"#6b7280" } }, "Pedido: " + item.cantidad),
-                            React.createElement("button", { onClick:()=>setCantidades(c=>({...c,[item.codigoRef||item.codigoProv]:Math.max(0,(parseInt(c[item.codigoRef||item.codigoProv])||0)-1)})), style:{width:26,height:26,borderRadius:6,background:"#374151",border:"none",color:"#f1f5f9",cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}, "−"),
-                            React.createElement("input", { type:"number", min:0, value:cantidades[item.codigoRef||item.codigoProv]||0, onChange:e=>setCantidades(c=>({...c,[item.codigoRef||item.codigoProv]:Math.max(0,parseInt(e.target.value)||0)})), style:{width:48,height:26,borderRadius:6,background:"#111827",border:"1px solid #374151",color:"#f1f5f9",textAlign:"center",fontSize:13,fontWeight:700,fontFamily:"inherit"} }),
-                            React.createElement("button", { onClick:()=>setCantidades(c=>({...c,[item.codigoRef||item.codigoProv]:(parseInt(c[item.codigoRef||item.codigoProv])||0)+1})), style:{width:26,height:26,borderRadius:6,background:"#6366f1",border:"none",color:"#fff",cursor:"pointer",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center"}}, "+")))),
-                React.createElement("button", { onClick:confirmarRecepcion, style:{ background:"linear-gradient(135deg,#22c55e,#16a34a)", color:"#fff", border:"none", borderRadius:12, padding:"13px", width:"100%", cursor:"pointer", fontFamily:"inherit", fontWeight:700, fontSize:15, display:"flex", alignItems:"center", justifyContent:"center", gap:8 } },
-                    React.createElement(Icon, { name:"check", size:16 }), " Confirmar recepción y actualizar stock"))));
-    }
-
 // ─── TAB PEDIDOS ──────────────────────────────────────────────────────────────
 function TabPedidos({ data, setData, showToast }) {
     const [busqueda, setBusqueda] = useState("");
     const [showAgregar, setShowAgregar] = useState(false);
-    const [busqAgregar, setBusqAgregar] = useState("");
-    const [vistaHistorial, setVistaHistorial] = useState(false);
-    const [ordenActiva, setOrdenActiva] = useState(null);
+    const [busquedaAgregar, setBusquedaAgregar] = useState("");
     const pedidos = data.pedidos || [];
-    const historial = [...(data.pedidosHistorial || [])].reverse();
 
-    const fmtPeso = (n) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 0 }).format(n || 0);
-
-    // Group borrador by proveedor
+    // Group by proveedor
     const porProveedor = {};
     pedidos.forEach(p => {
         const prov = p.proveedor || p.codigoProv || "Sin proveedor";
@@ -1362,60 +1285,56 @@ function TabPedidos({ data, setData, showToast }) {
         porProveedor[prov].push(p);
     });
 
-    // Products below minimum not yet in pedidos
+    // Also show productos bajo minimo not yet in pedidos
     const bajoMinimo = (data.misProductos || []).filter(p => {
         const s = (data.stock || {})[p.codigoRef] || {};
-        const actual = (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0);
+        const actual = (s.inicial||0)+(s.entradas||0)-(s.salidas||0);
         return s.minimo > 0 && actual < s.minimo && !pedidos.find(x => x.codigoRef === p.codigoRef);
     });
 
-    // Grand total
-    const totalGeneral = pedidos.reduce((s, p) => s + (p.precioCosto || 0) * (p.cantidad || 1), 0);
+    const filtrados = busqueda
+        ? pedidos.filter(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) || (p.descripcion||"").toLowerCase().includes(busqueda.toLowerCase()) || (p.codigoProv||"").toLowerCase().includes(busqueda.toLowerCase()))
+        : pedidos;
 
-    // Search for agregar modal
-    const resultadosAgregar = busqAgregar.length > 1 ? (() => {
-        const q = busqAgregar.toLowerCase();
-        const results = [];
-        (data.misProductos || []).forEach(p => {
-            if (p.codigoRef.toLowerCase().includes(q) || (p.codigoProv || "").toLowerCase().includes(q) || (p.descripcion || "").toLowerCase().includes(q))
-                results.push(Object.assign({}, p, { _fuente: "mis_precios" }));
-        });
-        const refs = new Set((data.misProductos || []).map(p => p.codigoProv));
-        (data.proveedores || []).forEach(prov => {
-            (prov.productos || []).forEach(prod => {
-                if (!refs.has(prod.codigo) && (prod.codigo.toLowerCase().includes(q) || prod.descripcion.toLowerCase().includes(q)))
-                    results.push({ codigoRef: "", codigoProv: prod.codigo, descripcion: prod.descripcion, precioCosto: prod.precio, proveedor: prov.nombre, _fuente: "proveedor" });
-            });
-        });
-        return results.slice(0, 30);
-    })() : [];
+    const quitarDePedido = (codigoRef) => {
+        setData(d => Object.assign({}, d, { pedidos: (d.pedidos||[]).filter(x => x.codigoRef !== codigoRef) }));
+    };
 
-    const quitarDePedido = (ref) => setData(d => Object.assign({}, d, { pedidos: (d.pedidos || []).filter(x => (x.codigoRef || x.codigoProv) !== ref) }));
+    const cambiarCantidad = (codigoRef, delta) => {
+        setData(d => Object.assign({}, d, { pedidos: (d.pedidos||[]).map(x => x.codigoRef === codigoRef ? Object.assign({}, x, { cantidad: Math.max(1, (x.cantidad||1)+delta) }) : x) }));
+    };
 
-    const cambiarCantidad = (ref, delta) => setData(d => Object.assign({}, d, {
-        pedidos: (d.pedidos || []).map(x => (x.codigoRef || x.codigoProv) === ref ? Object.assign({}, x, { cantidad: Math.max(1, (x.cantidad || 1) + delta) }) : x)
-    }));
+    const exportarProveedor = (provNombre, items) => {
+        try {
+            const wsData = [["Cod Proveedor", "Descripcion", "Cantidad", "Precio Costo"]];
+            items.forEach(p => wsData.push([
+                p.codigoProv || p.codigoRef || "",
+                p.descripcion || "",
+                p.cantidad || 1,
+                parseFloat((p.precioCosto||0).toFixed(2))
+            ]));
+            const wb = window.XLSX.utils.book_new();
+            const ws = window.XLSX.utils.aoa_to_sheet(wsData);
+            ws["!cols"] = [{ wch: 16 }, { wch: 42 }, { wch: 10 }, { wch: 14 }];
+            window.XLSX.utils.book_append_sheet(wb, ws, "Pedido");
+            window.XLSX.writeFile(wb, "Pedido_" + provNombre.replace(/\s+/g, "_") + ".xlsx");
+            showToast("Excel exportado para " + provNombre, "success");
+        } catch(e) {
+            showToast("Error al exportar: " + e.message, "error");
+        }
+    };
 
     const agregarBajoMinimo = () => {
         if (!bajoMinimo.length) return;
         setData(d => {
             const nuevos = bajoMinimo.map(p => {
-                const s = (d.stock || {})[p.codigoRef] || {};
-                const actual = (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0);
-                const deficit = Math.max(0, (s.minimo || 1) - actual);
-                // Smart suggestion: sales velocity last 30 days
-                const thirtyAgo = new Date(); thirtyAgo.setDate(thirtyAgo.getDate() - 30);
-                const sold = (d.ventas || [])
-                    .filter(v => { try { const [dd,mm,yy] = v.fecha.split("/"); return new Date(yy,mm-1,dd) >= thirtyAgo; } catch(e) { return false; } })
-                    .flatMap(v => v.items || [])
-                    .filter(i => i.codigoRef === p.codigoRef)
-                    .reduce((s, i) => s + (i.cantidad || 1), 0);
-                const sugerido = Math.max(deficit, Math.ceil(sold / 30 * 15), 1);
-                return { codigoRef: p.codigoRef, codigoProv: p.codigoProv || "", descripcion: p.descripcion, cantidad: sugerido, proveedor: p.proveedor || "", precioCosto: p.precioCosto || 0 };
+                const s = (d.stock||{})[p.codigoRef]||{};
+                const actual = (s.inicial||0)+(s.entradas||0)-(s.salidas||0);
+                return { codigoRef: p.codigoRef, codigoProv: p.codigoProv||"", descripcion: p.descripcion, cantidad: Math.max(1,(s.minimo||1)-Math.max(0,actual)), proveedor: p.proveedor||"", precioCosto: p.precioCosto||0 };
             });
-            return Object.assign({}, d, { pedidos: [...(d.pedidos || []), ...nuevos] });
+            return Object.assign({}, d, { pedidos: [...(d.pedidos||[]), ...nuevos] });
         });
-        showToast(bajoMinimo.length + " productos agregados", "success");
+        showToast(bajoMinimo.length + " productos bajo mínimo agregados", "success");
     };
 
     const limpiarTodo = () => {
@@ -1424,303 +1343,143 @@ function TabPedidos({ data, setData, showToast }) {
         showToast("Lista limpiada", "info");
     };
 
-    const exportarProveedor = (provNombre, items) => {
-        try {
-            const wsData = [["Cod Proveedor", "Descripcion", "Cantidad", "Precio Costo"]];
-            items.forEach(p => wsData.push([p.codigoProv || p.codigoRef || "", p.descripcion || "", p.cantidad || 1, parseFloat((p.precioCosto || 0).toFixed(2))]));
-            const wb = window.XLSX.utils.book_new();
-            const ws = window.XLSX.utils.aoa_to_sheet(wsData);
-            ws["!cols"] = [{ wch: 16 }, { wch: 42 }, { wch: 10 }, { wch: 14 }];
-            window.XLSX.utils.book_append_sheet(wb, ws, "Pedido");
-            window.XLSX.writeFile(wb, "Pedido_" + provNombre.replace(/\s+/g, "_") + ".xlsx");
-        } catch(e) { showToast("Error al exportar", "error"); }
-    };
-
-    const enviarWhatsApp = (provNombre, items) => {
-        const total = items.reduce((s, i) => s + (i.precioCosto || 0) * (i.cantidad || 1), 0);
-        const msg = "Pedido para *" + provNombre + "*:\n\n"
-            + items.map(i => "• " + i.descripcion + " — x" + i.cantidad).join("\n")
-            + "\n\n_Total estimado: " + fmtPeso(total) + "_";
-        window.open("https://wa.me/?text=" + encodeURIComponent(msg));
-    };
-
-    const enviarPedido = (provNombre, items) => {
-        if (!window.confirm("Marcar pedido a " + provNombre + " como ENVIADO?")) return;
-        const orden = {
-            id: Date.now(),
-            proveedor: provNombre,
-            items: items.map(i => Object.assign({}, i, { cantRecibida: null })),
-            estado: "enviado",
-            fechaCreado: new Date().toLocaleDateString("es-AR"),
-            fechaEnviado: new Date().toLocaleDateString("es-AR"),
-            horaEnviado: new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }),
-            fechaRecibido: null,
-            totalEstimado: items.reduce((s, i) => s + (i.precioCosto || 0) * (i.cantidad || 1), 0)
-        };
-        setData(d => {
-            const newPedidos = (d.pedidos || []).filter(x => (x.proveedor || x.codigoProv || "Sin proveedor") !== provNombre);
-            const newHistorial = [...(d.pedidosHistorial || []), orden];
-            saveToFirebase("pedidosHistorial", newHistorial);
-            return Object.assign({}, d, { pedidos: newPedidos, pedidosHistorial: newHistorial });
-        });
-        showToast("Pedido enviado a " + provNombre, "success");
-        exportarProveedor(provNombre, items);
-    };
-
-    // Recepcion Modal
-    const RecepcionModal = ({ orden }) => {
-        const [cantidades, setCantidades] = React.useState(
-            Object.fromEntries(orden.items.map(i => [i.codigoRef || i.codigoProv, i.cantidad || 1]))
-        );
-        const confirmarRecepcion = () => {
-            if (!window.confirm("Confirmar recepcion? El stock se actualizará con las cantidades recibidas.")) return;
-            setData(d => {
-                const newStock = Object.assign({}, d.stock || {});
-                orden.items.forEach(item => {
-                    const cant = parseInt(cantidades[item.codigoRef || item.codigoProv]) || 0;
-                    if (cant > 0 && item.codigoRef) {
-                        const cur = newStock[item.codigoRef] || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
-                        newStock[item.codigoRef] = Object.assign({}, cur, { entradas: (cur.entradas || 0) + cant });
-                    }
-                });
-                const newHistorial = (d.pedidosHistorial || []).map(o => o.id === orden.id
-                    ? Object.assign({}, o, { estado: "recibido", fechaRecibido: new Date().toLocaleDateString("es-AR"), items: o.items.map(i => Object.assign({}, i, { cantRecibida: parseInt(cantidades[i.codigoRef || i.codigoProv]) || 0 })) })
-                    : o
-                );
-                saveToFirebase("pedidosHistorial", newHistorial);
-                return Object.assign({}, d, { stock: newStock, pedidosHistorial: newHistorial });
-            });
-            showToast("Stock actualizado!", "success");
-            setOrdenActiva(null);
-        };
-
-        return React.createElement("div", { style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 400, display: "flex", alignItems: "flex-end", justifyContent: "center" }, onClick: () => setOrdenActiva(null) },
-            React.createElement("div", { style: { background: "#1e2230", borderRadius: "20px 20px 0 0", padding: 20, width: "100%", maxWidth: 600, maxHeight: "85vh", display: "flex", flexDirection: "column" }, onClick: e => e.stopPropagation() },
-                React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 } },
-                    React.createElement("div", null,
-                        React.createElement("div", { style: { fontWeight: 700, fontSize: 15, color: "#f1f5f9" } }, "Recepcion — " + orden.proveedor),
-                        React.createElement("div", { style: { fontSize: 12, color: "#6b7280", marginTop: 2 } }, "Ajusta las cantidades que llegaron")),
-                    React.createElement("button", { onClick: () => setOrdenActiva(null), style: { background: "none", border: "none", color: "#6b7280", cursor: "pointer" } }, React.createElement(Icon, { name: "x", size: 20 }))),
-                React.createElement("div", { style: { overflowY: "auto", flex: 1, marginBottom: 16 } },
-                    orden.items.map((item, i) =>
-                        React.createElement("div", { key: i, style: { padding: "10px 0", borderBottom: "1px solid #111827", display: "flex", alignItems: "center", gap: 10 } },
-                            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                                React.createElement("div", { style: { fontSize: 12, color: "#818cf8", fontFamily: "monospace" } }, item.codigoRef || item.codigoProv),
-                                React.createElement("div", { style: { fontSize: 13, color: "#cbd5e1", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, item.descripcion)),
-                            React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6, flexShrink: 0 } },
-                                React.createElement("div", { style: { fontSize: 11, color: "#6b7280" } }, "Ped: " + item.cantidad),
-                                React.createElement("button", { onClick: () => setCantidades(c => Object.assign({}, c, { [item.codigoRef || item.codigoProv]: Math.max(0, (parseInt(c[item.codigoRef || item.codigoProv]) || 0) - 1) })), style: { width: 26, height: 26, borderRadius: 6, background: "#374151", border: "none", color: "#f1f5f9", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" } }, "−"),
-                                React.createElement("input", { type: "number", min: 0, value: cantidades[item.codigoRef || item.codigoProv] || 0, onChange: e => setCantidades(c => Object.assign({}, c, { [item.codigoRef || item.codigoProv]: Math.max(0, parseInt(e.target.value) || 0) })), style: { width: 48, height: 26, borderRadius: 6, background: "#111827", border: "1px solid #374151", color: "#f1f5f9", textAlign: "center", fontSize: 13, fontWeight: 700, fontFamily: "inherit" } }),
-                                React.createElement("button", { onClick: () => setCantidades(c => Object.assign({}, c, { [item.codigoRef || item.codigoProv]: (parseInt(c[item.codigoRef || item.codigoProv]) || 0) + 1 })), style: { width: 26, height: 26, borderRadius: 6, background: "#6366f1", border: "none", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" } }, "+")))),
-                React.createElement("button", { onClick: confirmarRecepcion, style: { background: "linear-gradient(135deg,#22c55e,#16a34a)", color: "#fff", border: "none", borderRadius: 12, padding: 13, width: "100%", cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 15, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 } },
-                    React.createElement(Icon, { name: "check", size: 16 }), " Confirmar recepcion y actualizar stock"))));
-    };
-
-    return React.createElement(React.Fragment, null,
-
-        // ── Main card ──
-        React.createElement("div", { className: "card" },
-
-            // Header
-            React.createElement("div", { style: { marginBottom: 16, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 10 } },
-                React.createElement("div", null,
-                    React.createElement("div", { className: "section-title" }, "Pedidos"),
-                    React.createElement("div", { style: { fontSize: 13, color: "#6b7280", marginTop: 4 } }, pedidos.length + " producto(s) en borrador")),
-                React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
-                    React.createElement("button", { onClick: () => setVistaHistorial(!vistaHistorial), style: { background: vistaHistorial ? "rgba(99,102,241,0.2)" : "rgba(99,102,241,0.1)", border: "1px solid #6366f1", color: "#818cf8", borderRadius: 10, padding: "8px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12 } },
-                        vistaHistorial ? "Ver Borrador" : "Historial (" + historial.length + ")"),
-                    !vistaHistorial && bajoMinimo.length > 0 && React.createElement("button", { onClick: agregarBajoMinimo, style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.35)", color: "#ef4444", borderRadius: 10, padding: "8px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12, display: "flex", alignItems: "center", gap: 6 } },
-                        React.createElement(Icon, { name: "alert", size: 13 }), bajoMinimo.length + " bajo minimo"),
-                    !vistaHistorial && pedidos.length > 0 && React.createElement("button", { onClick: limpiarTodo, style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.35)", color: "#ef4444", borderRadius: 10, padding: "8px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12 } }, "Limpiar todo"))),
-
-            // Search + add
-            !vistaHistorial && React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 14 } },
-                React.createElement("div", { style: { position: "relative", flex: 1 } },
-                    React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } }, React.createElement(Icon, { name: "search", size: 16 })),
-                    React.createElement("input", { className: "input-field", placeholder: "Buscar en pedidos...", value: busqueda, onChange: e => setBusqueda(e.target.value), style: { paddingLeft: 38 } })),
-                React.createElement("button", { onClick: () => setShowAgregar(true), className: "btn-primary", style: { flexShrink: 0, padding: "10px 14px" } },
-                    React.createElement(Icon, { name: "plus", size: 18 }))),
-
-            // ── BORRADOR VIEW ──
-            !vistaHistorial && (pedidos.length === 0
-                ? React.createElement("div", { style: { textAlign: "center", padding: "50px 20px", color: "#374151" } },
-                    React.createElement(Icon, { name: "box", size: 44 }),
-                    React.createElement("div", { style: { marginTop: 14, fontSize: 15, color: "#6b7280" } }, "Lista de pedidos vacia"),
-                    React.createElement("div", { style: { fontSize: 12, color: "#4b5563", marginTop: 6 } }, "Usa + para agregar o el boton de bajo minimo"))
-                : React.createElement("div", null,
-                    // Proveedor groups
-                    React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 16, marginBottom: 16 } },
-                        Object.entries(porProveedor)
-                            .filter(function(entry) { var prov=entry[0]; var items=entry[1]; return !busqueda || items.some(function(p) {
-                                return (p.codigoRef||"").toLowerCase().includes(busqueda.toLowerCase()) ||
-                                    (p.descripcion||"").toLowerCase().includes(busqueda.toLowerCase()) ||
-                                    (p.codigoProv||"").toLowerCase().includes(busqueda.toLowerCase());
-                            }); })
-                            .map(function(entry) { var prov=entry[0]; var items=entry[1];
-                                var total = items.reduce(function(s,i){ return s+(i.precioCosto||0)*(i.cantidad||1); }, 0);
-                                return React.createElement("div", { key: prov, style: { background: "#1e2230", borderRadius: 14, border: "1px solid #1e2535", overflow: "hidden" } },
-                                    React.createElement("div", { style: { padding: "12px 16px", borderBottom: "1px solid #111827", background: "rgba(99,102,241,0.08)" } },
-                                        React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } },
-                                            React.createElement("div", { style: { fontWeight: 700, fontSize: 14, color: "#818cf8" } }, prov),
-                                            React.createElement("div", { style: { fontSize: 13, color: "#22c55e", fontWeight: 700 } }, fmtPeso(total))),
-                                        React.createElement("div", { style: { display: "flex", gap: 8 } },
-                                            React.createElement("button", { onClick: function(){ exportarProveedor(prov, items); }, style: { flex: 1, background: "rgba(99,102,241,0.15)", color: "#818cf8", border: "1px solid #6366f1", borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 } },
-                                                React.createElement(Icon, { name: "download", size: 12 }), " Excel"),
-                                            React.createElement("button", { onClick: function(){ enviarWhatsApp(prov, items); }, style: { flex: 1, background: "rgba(37,211,102,0.15)", color: "#25d366", border: "1px solid #25d366", borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 } },
-                                                " WA"),
-                                            React.createElement("button", { onClick: function(){ enviarPedido(prov, items); }, style: { flex: 2, background: "linear-gradient(135deg,#22c55e,#16a34a)", color: "#fff", border: "none", borderRadius: 8, padding: "7px 10px", cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 } },
-                                                React.createElement(Icon, { name: "check", size: 12 }), " Enviado"))),
-                                    React.createElement("div", null,
-                                        items.filter(function(p) {
-                                            return !busqueda ||
-                                                (p.codigoRef||"").toLowerCase().includes(busqueda.toLowerCase()) ||
-                                                (p.descripcion||"").toLowerCase().includes(busqueda.toLowerCase()) ||
-                                                (p.codigoProv||"").toLowerCase().includes(busqueda.toLowerCase());
-                                        }).map(function(p, i) {
-                                            return React.createElement("div", { key: p.codigoRef||p.codigoProv||i, style: { padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, borderBottom: i < items.length-1 ? "1px solid #111827" : "none" } },
-                                                React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                                                    React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } },
-                                                        React.createElement("span", { style: { fontSize: 12, color: "#818cf8", fontFamily: "monospace", fontWeight: 700 } }, p.codigoRef||p.codigoProv),
-                                                        p.codigoProv && p.codigoRef && React.createElement("span", { style: { fontSize: 11, color: "#4b5563" } }, p.codigoProv)),
-                                                    React.createElement("div", { style: { fontSize: 13, color: "#cbd5e1", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.descripcion)),
-                                                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } },
-                                                    React.createElement("button", { onClick: function(){ cambiarCantidad(p.codigoRef||p.codigoProv, -1); }, style: { width: 28, height: 28, borderRadius: 6, background: "#374151", border: "none", color: "#f1f5f9", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" } }, "−"),
-                                                    React.createElement("input", { type: "number", min: 1, value: p.cantidad||1, onChange: function(e){ setData(function(d){ return Object.assign({},d,{pedidos:(d.pedidos||[]).map(function(x){ return (x.codigoRef||x.codigoProv)===(p.codigoRef||p.codigoProv)?Object.assign({},x,{cantidad:Math.max(1,parseInt(e.target.value)||1)}):x; })}); }); }, style: { width: 44, height: 28, borderRadius: 6, background: "#1e2230", border: "1px solid #374151", color: "#f1f5f9", textAlign: "center", fontSize: 13, fontWeight: 700, fontFamily: "inherit" } }),
-                                                    React.createElement("button", { onClick: function(){ cambiarCantidad(p.codigoRef||p.codigoProv, 1); }, style: { width: 28, height: 28, borderRadius: 6, background: "#6366f1", border: "none", color: "#fff", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" } }, "+"),
-                                                    React.createElement("button", { onClick: function(){ quitarDePedido(p.codigoRef||p.codigoProv); }, style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", borderRadius: 6, padding: "5px 7px", cursor: "pointer", display: "flex", alignItems: "center" } },
-                                                        React.createElement(Icon, { name: "trash", size: 13 }))));
-                                        })));
-                            })),
-                    // Grand total
-                    React.createElement("div", { style: { background: "linear-gradient(135deg,#1e3a2e,#1a3025)", borderRadius: 14, border: "1px solid #166534", padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" } },
-                        React.createElement("div", { style: { fontSize: 13, color: "#86efac", fontWeight: 600 } }, "Total estimado del pedido"),
-                        React.createElement("div", { style: { fontSize: 20, fontWeight: 700, color: "#22c55e" } }, fmtPeso(totalGeneral)))),
-
-            // ── HISTORIAL VIEW ──
-            vistaHistorial && (historial.length === 0
-                ? React.createElement("div", { style: { textAlign: "center", padding: "50px 20px", color: "#374151" } },
-                    React.createElement(Icon, { name: "download", size: 44 }),
-                    React.createElement("div", { style: { marginTop: 14, fontSize: 15, color: "#6b7280" } }, "No hay pedidos enviados aun"))
-                : React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10 } },
-                    historial.map((orden, i) =>
-                        React.createElement("div", { key: orden.id || i, style: { background: "#1e2230", borderRadius: 14, border: "1px solid #1e2535", overflow: "hidden" } },
-                            React.createElement("div", { style: { padding: "12px 16px", borderBottom: "1px solid #111827", display: "flex", justifyContent: "space-between", alignItems: "center" } },
-                                React.createElement("div", null,
-                                    React.createElement("div", { style: { fontWeight: 700, fontSize: 14, color: "#f1f5f9" } }, orden.proveedor),
-                                    React.createElement("div", { style: { fontSize: 11, color: "#6b7280", marginTop: 2 } },
-                                        orden.estado === "recibido" ? "Recibido: " + orden.fechaRecibido : "Enviado: " + orden.fechaEnviado + " " + (orden.horaEnviado || ""))),
-                                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
-                                    React.createElement("span", { style: { fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: orden.estado === "recibido" ? "rgba(34,197,94,0.15)" : "rgba(251,191,36,0.15)", color: orden.estado === "recibido" ? "#22c55e" : "#fbbf24" } },
-                                        orden.estado === "recibido" ? "✓ Recibido" : "Enviado"),
-                                    orden.estado === "enviado" && React.createElement("button", { onClick: () => setOrdenActiva(orden), style: { background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff", border: "none", borderRadius: 8, padding: "6px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 12 } }, "Recibir"))),
-                            React.createElement("div", { style: { padding: "8px 16px 12px" } },
-                                orden.items.slice(0, 3).map((item, j) =>
-                                    React.createElement("div", { key: j, style: { display: "flex", justifyContent: "space-between", fontSize: 12, color: "#94a3b8", padding: "2px 0" } },
-                                        React.createElement("span", null, (item.cantRecibida != null ? item.cantRecibida + "/" : "") + (item.cantidad || 1) + "x " + item.descripcion),
-                                        item.cantRecibida != null && item.cantRecibida < item.cantidad
-                                            ? React.createElement("span", { style: { color: "#ef4444", fontSize: 11 } }, "Falto " + (item.cantidad - item.cantRecibida))
-                                            : null)),
-                                orden.items.length > 3 && React.createElement("div", { style: { fontSize: 11, color: "#4b5563", marginTop: 4 } }, "+ " + (orden.items.length - 3) + " productos mas"))))))),
-
-        // Recepcion Modal
-        ordenActiva && React.createElement(RecepcionModal, { orden: ordenActiva }),
-
-        // Agregar Modal
-        showAgregar && React.createElement("div", { style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 400, display: "flex", alignItems: "flex-end", justifyContent: "center" }, onClick: () => { setShowAgregar(false); setBusqAgregar(""); } },
-            React.createElement("div", { style: { background: "#1e2230", borderRadius: "20px 20px 0 0", padding: 20, width: "100%", maxWidth: 600, maxHeight: "80vh", display: "flex", flexDirection: "column" }, onClick: e => e.stopPropagation() },
-                React.createElement("div", { style: { fontWeight: 700, fontSize: 15, color: "#f1f5f9", marginBottom: 12 } }, "Agregar producto al pedido"),
-                React.createElement("div", { style: { position: "relative", marginBottom: 12 } },
-                    React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } }, React.createElement(Icon, { name: "search", size: 16 })),
-                    React.createElement("input", { className: "input-field", placeholder: "Buscar en Mis Precios y Proveedores...", value: busqAgregar, onChange: e => setBusqAgregar(e.target.value), autoFocus: true, style: { paddingLeft: 38 } })),
-                React.createElement("div", { style: { overflowY: "auto", flex: 1 } },
-                    busqAgregar.length < 2
-                        ? React.createElement("div", { style: { textAlign: "center", padding: "30px 20px", color: "#4b5563", fontSize: 13 } }, "Escribi al menos 2 caracteres")
-                        : resultadosAgregar.length === 0
-                            ? React.createElement("div", { style: { textAlign: "center", padding: "30px 20px", color: "#4b5563", fontSize: 13 } }, "Sin resultados")
-                            : resultadosAgregar.map((p, i) =>
-                                React.createElement("div", { key: i, onClick: () => {
-                                    if (p._fuente === "proveedor") {
-                                        if (window.confirm("No esta en Mis Precios. Agregarlo primero?")) { setShowAgregar(false); setBusqAgregar(""); }
-                                        return;
-                                    }
-                                    if ((data.pedidos || []).find(x => x.codigoRef === p.codigoRef)) { showToast("Ya esta en pedidos", "info"); return; }
-                                    setData(d => Object.assign({}, d, { pedidos: [...(d.pedidos || []), { codigoRef: p.codigoRef, codigoProv: p.codigoProv || "", descripcion: p.descripcion, cantidad: 1, proveedor: p.proveedor || "", precioCosto: p.precioCosto || 0 }] }));
-                                    showToast("Agregado: " + p.descripcion, "success");
-                                    setBusqAgregar("");
-                                }, style: { padding: "10px 12px", borderRadius: 10, marginBottom: 6, background: "#111827", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" } },
-                                    React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                                        React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } },
-                                            React.createElement("span", { style: { fontSize: 11, color: "#818cf8", fontFamily: "monospace", fontWeight: 700 } }, p.codigoRef || p.codigoProv),
-                                            React.createElement("span", { className: "badge", style: { background: p._fuente === "mis_precios" ? "rgba(34,197,94,0.15)" : "rgba(99,102,241,0.15)", color: p._fuente === "mis_precios" ? "#22c55e" : "#818cf8", fontSize: 10 } }, p._fuente === "mis_precios" ? "Mis Precios" : p.proveedor)),
-                                        React.createElement("div", { style: { fontSize: 13, color: "#cbd5e1", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.descripcion)),
-                                    p.precioCosto && React.createElement("div", { style: { fontSize: 13, color: "#22c55e", fontWeight: 700, flexShrink: 0 } }, "$" + (p.precioCosto || 0).toFixed(0)))))))));
-}
-
-
-// ─── TAB VENTAS ───────────────────────────────────────────────────────────────
-function TabVentas({ data, setData, showToast }) {
-    const ventas = [...(data.ventas || [])].reverse();
-    const totalHoy = ventas
-        .filter(v => v.fecha === new Date().toLocaleDateString("es-AR"))
-        .reduce((s, v) => s + v.total, 0);
-    const fmt2 = (n) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 2 }).format(n || 0);
-    const borrarVenta = (ventaId) => {
-        if (!window.confirm("Borrar esta venta del registro?")) return;
-        setData(d => {
-            const nuevas = (d.ventas || []).filter(v => v.id !== ventaId);
-            saveToFirebase("ventas", nuevas);
-            try { localStorage.setItem("mn_ventas", JSON.stringify(nuevas)); } catch(e) {}
-            return Object.assign({}, d, { ventas: nuevas });
-        });
-        showToast("Venta eliminada", "info");
-    };
-    const borrarTodo = () => {
-        if (!window.confirm("Borrar TODO el historial de ventas? Esta accion no se puede deshacer.")) return;
-        setData(d => {
-            saveToFirebase("ventas", []);
-            try { localStorage.setItem("mn_ventas", JSON.stringify([])); } catch(e) {}
-            return Object.assign({}, d, { ventas: [] });
-        });
-        showToast("Historial borrado", "info");
-    };
-    return React.createElement("div", { className: "card" },
-        React.createElement("div", { style: { marginBottom: 20, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 } },
+    return React.createElement(React.Fragment, null, React.createElement("div", { className: "card" },
+        // Header
+        React.createElement("div", { style: { marginBottom: 16, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 10 } },
             React.createElement("div", null,
-                React.createElement("div", { className: "section-title" }, "Registro de Ventas"),
-                React.createElement("div", { style: { fontSize: 13, color: "#6b7280", marginTop: 4 } }, "Historial de ventas confirmadas")),
-            ventas.length > 0 && React.createElement("button", { onClick: borrarTodo, style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.35)", color: "#ef4444", borderRadius: 10, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 13, display: "flex", alignItems: "center", gap: 6 } },
-                React.createElement(Icon, { name: "trash", size: 14 }), " Borrar todo")),
-        ventas.length > 0 && React.createElement("div", { style: { background: "linear-gradient(135deg,#1e3a2e,#1a3025)", borderRadius: 14, border: "1px solid #166534", padding: "14px 18px", marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" } },
-            React.createElement("div", { style: { fontSize: 13, color: "#86efac", fontWeight: 600 } }, "Total del dia"),
-            React.createElement("div", { style: { fontSize: 22, fontWeight: 700, color: "#22c55e", fontFamily: "'Space Grotesk',sans-serif" } }, fmt2(totalHoy))),
-        ventas.length === 0
-            ? React.createElement("div", { style: { textAlign: "center", padding: "60px 20px", color: "#374151" } },
-                React.createElement(Icon, { name: "download", size: 48 }),
-                React.createElement("div", { style: { marginTop: 16, fontSize: 15, color: "#6b7280" } }, "No hay ventas registradas"))
-            : React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 10 } },
-                ventas.map((v, i) => React.createElement("div", { key: v.id || i, style: { background: "#1e2230", borderRadius: 14, border: "1px solid #1e2535", overflow: "hidden" } },
-                    React.createElement("div", { style: { padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #111827" } },
+                React.createElement("div", { className: "section-title" }, "Pedidos"),
+                React.createElement("div", { style: { fontSize: 13, color: "#6b7280", marginTop: 4 } }, pedidos.length + " producto(s) en lista")),
+            React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
+                bajoMinimo.length > 0 && React.createElement("button", { onClick: agregarBajoMinimo, style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.35)", color: "#ef4444", borderRadius: 10, padding: "8px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12, display: "flex", alignItems: "center", gap: 6 } },
+                    React.createElement(Icon, { name: "alert", size: 13 }), bajoMinimo.length + " bajo minimo"),
+                pedidos.length > 0 && React.createElement("button", { onClick: limpiarTodo, style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.35)", color: "#ef4444", borderRadius: 10, padding: "8px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12 } }, "Limpiar todo"))),
+
+        // Search
+        React.createElement("div", { style: { position: "relative", marginBottom: 14 } },
+            React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } }, React.createElement(Icon, { name: "search", size: 16 })),
+            React.createElement("input", { className: "input-field", placeholder: "Buscar en pedidos...", value: busqueda, onChange: e => setBusqueda(e.target.value), style: { paddingLeft: 38 } })),
+
+        React.createElement("div", { style: { marginBottom: 14 } },
+            React.createElement("button", { onClick: () => setShowAgregar(!showAgregar), className: "btn-primary", style: { width: "100%", justifyContent: "center" } },
+                React.createElement(Icon, { name: "plus", size: 16 }), showAgregar ? " Cerrar búsqueda" : " Agregar producto"),
+            showAgregar && React.createElement("div", { style: { background: "#111827", borderRadius: 12, border: "1px solid #1e2535", padding: 14, marginTop: 10 } },
+                React.createElement("div", { style: { position: "relative", marginBottom: 10 } },
+                    React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } }, React.createElement(Icon, { name: "search", size: 16 })),
+                    React.createElement("input", { className: "input-field", placeholder: "Buscar en proveedores y mis precios...", value: busquedaAgregar, onChange: e => setBusquedaAgregar(e.target.value), style: { paddingLeft: 38 } })),
+                busquedaAgregar.length > 1 && React.createElement("div", { style: { maxHeight: 240, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 } },
+                    (() => {
+                        const term = busquedaAgregar.toLowerCase();
+                        const resultsMisProd = (data.misProductos||[]).filter(p =>
+                            p.codigoRef.toLowerCase().includes(term) || (p.descripcion||"").toLowerCase().includes(term) || (p.codigoProv||"").toLowerCase().includes(term)
+                        ).slice(0,5).map(p => ({ ...p, fuente: "mis_precios" }));
+                        const resultsProv = [];
+                        (data.proveedores||[]).forEach(prov => {
+                            (prov.productos||[]).filter(p =>
+                                p.codigo.toLowerCase().includes(term) || (p.descripcion||"").toLowerCase().includes(term)
+                            ).slice(0,3).forEach(p => resultsProv.push({ ...p, codigoProv: p.codigo, fuente: "proveedor", proveedor: prov.nombre }));
+                        });
+                        const todos = [...resultsMisProd, ...resultsProv.slice(0,8)];
+                        if (!todos.length) return React.createElement("div", { style: { textAlign: "center", padding: "12px", color: "#6b7280", fontSize: 13 } }, "Sin resultados");
+                        return todos.map((p, i) => React.createElement("div", { key: i, style: { background: "#1e2230", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 } },
+                            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                                React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } },
+                                    React.createElement("span", { style: { fontSize: 12, color: "#818cf8", fontFamily: "monospace", fontWeight: 700 } }, p.codigoRef || p.codigo),
+                                    React.createElement("span", { className: "badge", style: { background: p.fuente === "mis_precios" ? "rgba(34,197,94,0.15)" : "rgba(99,102,241,0.15)", color: p.fuente === "mis_precios" ? "#22c55e" : "#818cf8", fontSize: 10 } }, p.fuente === "mis_precios" ? "Mis Precios" : p.proveedor)),
+                                React.createElement("div", { style: { fontSize: 12, color: "#cbd5e1", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.descripcion)),
+                            p.fuente === "mis_precios"
+                                ? React.createElement("button", { onClick: () => {
+                                        if ((data.pedidos||[]).find(x => x.codigoRef === p.codigoRef)) { showToast("Ya está en pedidos","info"); return; }
+                                        setData(d => Object.assign({}, d, { pedidos: [...(d.pedidos||[]), { codigoRef: p.codigoRef, codigoProv: p.codigoProv||"", descripcion: p.descripcion, cantidad: 1, proveedor: p.proveedor||"", precioCosto: p.precioCosto||0 }] }));
+                                        showToast("Agregado a pedidos","success"); setBusquedaAgregar(""); setShowAgregar(false);
+                                    }, className: "btn-primary", style: { padding: "6px 12px", fontSize: 12 } }, "+ Pedir")
+                                : React.createElement("div", { style: { display: "flex", gap: 6 } },
+                                    React.createElement("button", { onClick: () => {
+                                            if ((data.pedidos||[]).find(x => x.codigoProv === p.codigoProv)) { showToast("Ya está en pedidos","info"); return; }
+                                            setData(d => Object.assign({}, d, { pedidos: [...(d.pedidos||[]), { codigoRef: p.codigoProv, codigoProv: p.codigoProv, descripcion: p.descripcion, cantidad: 1, proveedor: p.proveedor, precioCosto: p.precio||0 }] }));
+                                            showToast("Agregado a pedidos","success"); setBusquedaAgregar(""); setShowAgregar(false);
+                                        }, className: "btn-primary", style: { padding: "6px 12px", fontSize: 12 } }, "+ Pedir"),
+                                    React.createElement("button", { onClick: () => { window.__prefillPedido = p; setData(d => d); showToast("Andá a Mis Precios para cargarlo","info"); }, className: "btn-ghost", style: { padding: "6px 10px", fontSize: 11 } }, "→ Mis P."))));
+                    })()
+                )
+            )),
+
+        // Empty state
+        pedidos.length === 0
+            ? React.createElement("div", { style: { textAlign: "center", padding: "50px 20px", color: "#374151" } },
+                React.createElement(Icon, { name: "box", size: 44 }),
+                React.createElement("div", { style: { marginTop: 14, fontSize: 15, color: "#6b7280" } }, "No hay productos en la lista de pedidos"),
+                React.createElement("div", { style: { fontSize: 12, color: "#4b5563", marginTop: 6 } }, "Usá el botón + Pedir en Stock o agregá los productos bajo mínimo"))
+
+            // Grouped by proveedor
+            : React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 16 } },
+                Object.entries(porProveedor).filter(([prov, items]) =>
+                    !busqueda || items.some(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) || (p.descripcion||"").toLowerCase().includes(busqueda.toLowerCase()))
+                ).map(([prov, items]) =>
+                    React.createElement("div", { key: prov, style: { background: "#1e2230", borderRadius: 14, border: "1px solid #1e2535", overflow: "hidden" } },
+                        // Proveedor header
+                        React.createElement("div", { style: { padding: "12px 16px", borderBottom: "1px solid #111827", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(99,102,241,0.08)" } },
+                            React.createElement("div", { style: { fontWeight: 700, fontSize: 14, color: "#818cf8" } }, prov),
+                            React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } },
+                                React.createElement("span", { style: { fontSize: 12, color: "#6b7280" } }, items.length + " item(s)"),
+                                React.createElement("button", { onClick: () => exportarProveedor(prov, items), style: { background: "linear-gradient(135deg,#22c55e,#16a34a)", color: "#fff", border: "none", borderRadius: 8, padding: "5px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 12, display: "flex", alignItems: "center", gap: 5 } },
+                                    React.createElement(Icon, { name: "download", size: 12 }), " Exportar Excel"))),
+                        // Products
                         React.createElement("div", null,
-                            React.createElement("div", { style: { fontWeight: 700, fontSize: 13, color: "#f1f5f9" } }, v.fecha),
-                            React.createElement("div", { style: { fontSize: 12, color: "#6b7280", marginTop: 2 } }, v.hora + " - " + v.items.length + " producto(s)")),
-                        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
-                            React.createElement("div", { style: { fontWeight: 700, fontSize: 16, color: "#22c55e" } }, fmt2(v.total)),
-                            React.createElement("button", { onClick: () => borrarVenta(v.id), style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", borderRadius: 8, padding: "5px 8px", cursor: "pointer", display: "flex", alignItems: "center" } },
-                                React.createElement(Icon, { name: "trash", size: 14 })))),
-                    React.createElement("div", { style: { padding: "8px 16px 12px" } },
-                        v.items.map((item, j) => React.createElement("div", { key: j, style: { display: "flex", justifyContent: "space-between", fontSize: 12, color: "#94a3b8", padding: "3px 0" } },
-                            React.createElement("span", null, item.cantidad + "x " + item.descripcion),
-                            React.createElement("span", { style: { color: "#6b7280" } }, fmt2(item.precioVenta * item.cantidad)))))))));
+                            items.filter(p => !busqueda || p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) || (p.descripcion||"").toLowerCase().includes(busqueda.toLowerCase())).map((p, i) =>
+                                React.createElement("div", { key: p.codigoRef, style: { padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, borderBottom: i < items.length-1 ? "1px solid #111827" : "none" } },
+                                    React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                                        React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } },
+                                            React.createElement("span", { style: { fontSize: 12, color: "#818cf8", fontFamily: "monospace", fontWeight: 700 } }, p.codigoRef),
+                                            React.createElement("span", { style: { fontSize: 11, color: "#4b5563" } }, p.codigoProv)),
+                                        React.createElement("div", { style: { fontSize: 13, color: "#cbd5e1", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.descripcion)),
+                                    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } },
+                                        React.createElement("button", { onClick: () => cambiarCantidad(p.codigoRef, -1), style: { width: 28, height: 28, borderRadius: 6, background: "#374151", border: "none", color: "#f1f5f9", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" } }, "−"),
+                                        React.createElement("input", { type: "number", min: 1, value: p.cantidad||1, onChange: e => setData(d => Object.assign({}, d, { pedidos: (d.pedidos||[]).map(x => x.codigoRef===p.codigoRef ? Object.assign({},x,{cantidad:Math.max(1,parseInt(e.target.value)||1)}) : x) })), style: { width: 44, height: 28, borderRadius: 6, background: "#1e2230", border: "1px solid #374151", color: "#f1f5f9", textAlign: "center", fontSize: 13, fontWeight: 700, fontFamily: "inherit" } }),
+                                        React.createElement("button", { onClick: () => cambiarCantidad(p.codigoRef, 1), style: { width: 28, height: 28, borderRadius: 6, background: "#6366f1", border: "none", color: "#fff", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" } }, "+"),
+                                        React.createElement("button", { onClick: () => quitarDePedido(p.codigoRef), style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", borderRadius: 6, padding: "5px 7px", cursor: "pointer", display: "flex", alignItems: "center" } },
+                                            React.createElement(Icon, { name: "trash", size: 13 }))))))))),
+    showAgregar && React.createElement("div", {
+        style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 400, display: "flex", alignItems: "flex-end", justifyContent: "center" },
+        onClick: () => { setShowAgregar(false); setBusqAgregar(""); }
+    },
+        React.createElement("div", {
+            style: { background: "#1e2230", borderRadius: "20px 20px 0 0", padding: 20, width: "100%", maxWidth: 600, maxHeight: "80vh", display: "flex", flexDirection: "column" },
+            onClick: e => e.stopPropagation()
+        },
+            React.createElement("div", { style: { fontWeight: 700, fontSize: 15, color: "#f1f5f9", marginBottom: 12 } }, "Agregar producto al pedido"),
+            React.createElement("div", { style: { position: "relative", marginBottom: 12 } },
+                React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } }, React.createElement(Icon, { name: "search", size: 16 })),
+                React.createElement("input", { className: "input-field", placeholder: "Buscar en Mis Precios y Proveedores...", value: busqAgregar, onChange: e => setBusqAgregar(e.target.value), autoFocus: true, style: { paddingLeft: 38 } })),
+            React.createElement("div", { style: { overflowY: "auto", flex: 1 } },
+                busqAgregar.length < 2
+                    ? React.createElement("div", { style: { textAlign: "center", padding: "30px 20px", color: "#4b5563", fontSize: 13 } }, "Escribi al menos 2 caracteres para buscar")
+                    : resultadosAgregar.length === 0
+                        ? React.createElement("div", { style: { textAlign: "center", padding: "30px 20px", color: "#4b5563", fontSize: 13 } }, "No se encontraron resultados")
+                        : resultadosAgregar.map((p, i) => React.createElement("div", { key: i, style: { padding: "10px 12px", borderRadius: 10, marginBottom: 6, background: "#111827", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }, onClick: () => {
+                            if (p._fuente === "proveedor") {
+                                if (window.confirm("Este producto no está en Mis Precios. ¿Querés agregarlo primero?")) {
+                                    setShowAgregar(false); setBusqAgregar("");
+                                    // Signal to navigate to precios with prefill
+                                    window.__prefillProd = { codigo: p.codigoProv };
+                                    window.dispatchEvent(new CustomEvent("navigateToPrecios", { detail: p }));
+                                }
+                                return;
+                            }
+                            const yaEsta = (data.pedidos||[]).find(x => x.codigoRef === p.codigoRef);
+                            if (yaEsta) { showToast("Ya está en pedidos", "info"); return; }
+                            setData(d => Object.assign({}, d, { pedidos: [...(d.pedidos||[]), { codigoRef: p.codigoRef, codigoProv: p.codigoProv||"", descripcion: p.descripcion, cantidad: 1, proveedor: p.proveedor||"", precioCosto: p.precioCosto||0 }] }));
+                            showToast("Agregado: " + p.descripcion, "success");
+                            setBusqAgregar("");
+                        } },
+                            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                                React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } },
+                                    React.createElement("span", { style: { fontSize: 11, color: "#818cf8", fontFamily: "monospace", fontWeight: 700 } }, p.codigoRef || p.codigoProv),
+                                    React.createElement("span", { className: "badge", style: { background: p._fuente === "mis_precios" ? "rgba(34,197,94,0.15)" : "rgba(99,102,241,0.15)", color: p._fuente === "mis_precios" ? "#22c55e" : "#818cf8", fontSize: 10 } }, p._fuente === "mis_precios" ? "Mis Precios" : p.proveedor)),
+                                React.createElement("div", { style: { fontSize: 13, color: "#cbd5e1", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.descripcion)),
+                            React.createElement("div", { style: { fontSize: 13, color: "#22c55e", fontWeight: 700, flexShrink: 0 } }, p.precioCosto ? "$" + (p.precioCosto||0).toFixed(0) : ""))))),
+        React.createElement("button", { onClick: () => { setShowAgregar(false); setBusqAgregar(""); }, style: { position: "absolute", top: 20, right: 20, background: "none", border: "none", color: "#6b7280", cursor: "pointer" } },
+            React.createElement(Icon, { name: "x", size: 20 })))));
 }
 
 
-// ─── TAB PEDIDOS ──────────────────────────────────────────────────────────────
-
-
-(function(){
-  function startApp(){
-    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
-  }
-  if(window.__authReady) startApp();
-  else { window.addEventListener('authReady', startApp, {once:true}); setTimeout(startApp, 5000); }
-})();
+(function(){function startApp(){ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));}if(window.__fbReady)startApp();else{window.addEventListener('fbReady',startApp,{once:true});setTimeout(startApp,4000);}})();
