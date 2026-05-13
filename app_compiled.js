@@ -889,13 +889,16 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, setData }) {
             showToast("Código no encontrado en Mis Precios", "error");
             return;
         }
-        const pv = calcPrecioVenta(miProd.precioCosto, miProd.margen);
+        const pvTotal = calcPrecioVenta(miProd.precioCosto, miProd.margen);
+        const div = (miProd.divisor && miProd.divisor > 1) ? miProd.divisor : 1;
+        const pv = pvTotal / div;
+        const descDiv = div > 1 ? miProd.descripcion + " (÷" + div + ")" : miProd.descripcion;
         const existe = items.findIndex(i => i.codigoRef === miProd.codigoRef);
         if (existe >= 0) {
             setItems(its => { const n = [...its]; n[existe].cantidad++; return n; });
         }
         else {
-            setItems(its => [...its, { codigoRef: miProd.codigoRef, descripcion: miProd.descripcion, precioVenta: pv, cantidad: 1 }]);
+            setItems(its => [...its, { codigoRef: miProd.codigoRef, descripcion: descDiv, precioVenta: pv, cantidad: 1, divisor: div }]);
         }
         setCodigo("");
     };
@@ -1021,7 +1024,7 @@ function TabCalculadora({ data, showToast, buscarEnProveedores, setData }) {
                                 React.createElement("span", { style: { fontSize: 12, color: "#818cf8", fontFamily: "monospace", fontWeight: 700 } }, p.codigoRef),
                                 p.codigoProv && React.createElement("span", { style: { fontSize: 11, color: "#4b5563" } }, p.codigoProv)),
                             React.createElement("div", { style: { fontSize: 13, color: "#cbd5e1", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.descripcion)),
-                        React.createElement("div", { style: { fontSize: 13, color: "#22c55e", fontWeight: 700, flexShrink: 0 } }, "$" + calcPrecioVenta(p.precioCosto, p.margen).toFixed(0)))))),
+                        React.createElement("div", { style: { fontSize: 13, color: "#22c55e", fontWeight: 700, flexShrink: 0 } }, (() => { const d=(p.divisor&&p.divisor>1)?p.divisor:1; return "$"+(calcPrecioVenta(p.precioCosto,p.margen)/d).toFixed(0)+(d>1?" c/u":""); })()))))),
             scanning && (React.createElement("div", { style: { position: "fixed", bottom: 0, left: 0, right: 0, height: "55vh", background: "#000", zIndex: 500, display: "flex", flexDirection: "column", borderRadius: "20px 20px 0 0", overflow: "hidden" } },
                 React.createElement("video", { ref: videoRef, autoPlay: true, playsInline: true, muted: true, style: { width: "100%", flex: 1, objectFit: "cover", display: "block" } }),
                 React.createElement("div", { style: { position: "absolute", inset: 0, border: "2px solid #6366f1", borderRadius: 12, pointerEvents: "none" } }),
