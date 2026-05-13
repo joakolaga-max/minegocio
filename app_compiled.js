@@ -1551,12 +1551,12 @@ function TabPedidos({ data, setData, showToast }) {
                     // Proveedor groups
                     React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 16, marginBottom: 16 } },
                         Object.entries(porProveedor)
-                            .filter(([prov, items]) => !busqueda || items.some(function(p) {
+                            .filter(function(entry) { var prov=entry[0]; var items=entry[1]; return !busqueda || items.some(function(p) {
                                 return (p.codigoRef||"").toLowerCase().includes(busqueda.toLowerCase()) ||
                                     (p.descripcion||"").toLowerCase().includes(busqueda.toLowerCase()) ||
                                     (p.codigoProv||"").toLowerCase().includes(busqueda.toLowerCase());
-                            }))
-                            .map(function([prov, items]) {
+                            }); })
+                            .map(function(entry) { var prov=entry[0]; var items=entry[1];
                                 var total = items.reduce(function(s,i){ return s+(i.precioCosto||0)*(i.cantidad||1); }, 0);
                                 return React.createElement("div", { key: prov, style: { background: "#1e2230", borderRadius: 14, border: "1px solid #1e2535", overflow: "hidden" } },
                                     React.createElement("div", { style: { padding: "12px 16px", borderBottom: "1px solid #111827", background: "rgba(99,102,241,0.08)" } },
