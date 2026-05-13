@@ -1147,6 +1147,7 @@ function TabStock({ data, setData, showToast }) {
                         React.createElement("div", null,
                             React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
                                 React.createElement("span", { style: { color: "#818cf8", fontFamily: "monospace", fontWeight: 700, fontSize: 13 } }, p.codigoRef),
+                                p.codigoProv && React.createElement("span", { style: { color: "#4b5563", fontSize: 11, marginLeft: 6 } }, p.codigoProv),
                                 bajo && React.createElement("span", { className: "badge", style: { background: "rgba(239,68,68,0.2)", color: "#ef4444" } }, "\u26A0 Bajo m\u00EDnimo")),
                             React.createElement("div", { style: { fontSize: 13, color: "#cbd5e1", marginTop: 2 } }, p.descripcion)),
                         React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
