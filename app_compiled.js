@@ -12,7 +12,8 @@ const DB = {
     stock: {},
     fotos: {},
     ventas: [],
-    pedidos: []
+    pedidos: [],
+    pedidosHistorial: []
 };
 const saveToFirebase = async (path, data) => {
     if (window.__fb)
@@ -229,7 +230,7 @@ function App() {
     useEffect(() => {
         const loadAll = async () => {
             setSyncing(true);
-            const [provData, misData, config, stockData, ventasData, fotosData, pedidosData] = await Promise.all([
+            const [provData, misData, config, stockData, ventasData, fotosData, pedidosData, pedHistData] = await Promise.all([
                 loadFromFirebase("proveedores"),
                 loadFromFirebase("misProductos"),
                 loadFromFirebase("config"),
@@ -237,8 +238,9 @@ function App() {
                 loadFromFirebase("ventas"),
                 loadFromFirebase("fotos"),
                 loadFromFirebase("pedidos"),
+                loadFromFirebase("pedidosHistorial"),
             ]);
-            setData(d => (Object.assign(Object.assign({}, d), { proveedores: (provData && provData.length) ? provData : d.proveedores, misProductos: misData || d.misProductos, margenes: (config === null || config === void 0 ? void 0 : config.margenes) || d.margenes, stock: stockData || d.stock || {}, ventas: (ventasData || d.ventas || []), fotos: (fotosData || d.fotos || {}), pedidos: (pedidosData || d.pedidos || []) })));
+            setData(d => (Object.assign(Object.assign({}, d), { proveedores: (provData && provData.length) ? provData : d.proveedores, misProductos: misData || d.misProductos, margenes: (config === null || config === void 0 ? void 0 : config.margenes) || d.margenes, stock: stockData || d.stock || {}, ventas: (ventasData || d.ventas || []), fotos: (fotosData || d.fotos || {}), pedidos: (pedidosData || d.pedidos || []), pedidosHistorial: (pedHistData || d.pedidosHistorial || []) })));
             setSyncing(false);
             setLoaded(true);
         };
@@ -292,6 +294,10 @@ function App() {
             if (JSON.stringify(data.pedidos) !== JSON.stringify(prevDataRef.current && prevDataRef.current.pedidos)) {
                 try { localStorage.setItem("mn_pedidos", JSON.stringify(data.pedidos)); } catch(e) {}
                 await saveToFirebase("pedidos", data.pedidos);
+            }
+            if (JSON.stringify(data.pedidosHistorial) !== JSON.stringify(prevDataRef.current && prevDataRef.current.pedidosHistorial)) {
+                try { localStorage.setItem("mn_pedidosHistorial", JSON.stringify(data.pedidosHistorial)); } catch(e) {}
+                await saveToFirebase("pedidosHistorial", data.pedidosHistorial);
             }
             prevDataRef.current = data;
             setSyncing(false);
@@ -1274,211 +1280,285 @@ function TabVentas({ data, setData, showToast }) {
 function TabPedidos({ data, setData, showToast }) {
     const [busqueda, setBusqueda] = useState("");
     const [showAgregar, setShowAgregar] = useState(false);
-    const [busquedaAgregar, setBusquedaAgregar] = useState("");
+    const [busqAgregar, setBusqAgregar] = useState("");
+    const [vistaHistorial, setVistaHistorial] = useState(false);
+    const [ordenActiva, setOrdenActiva] = useState(null);
     const pedidos = data.pedidos || [];
+    const historial = (data.pedidosHistorial || []).slice().reverse();
 
-    // Group by proveedor
+    const fmtPeso = function(n) { return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", minimumFractionDigits: 0 }).format(n || 0); };
+
     const porProveedor = {};
-    pedidos.forEach(p => {
-        const prov = p.proveedor || p.codigoProv || "Sin proveedor";
+    pedidos.forEach(function(p) {
+        var prov = p.proveedor || p.codigoProv || "Sin proveedor";
         if (!porProveedor[prov]) porProveedor[prov] = [];
         porProveedor[prov].push(p);
     });
 
-    // Also show productos bajo minimo not yet in pedidos
-    const bajoMinimo = (data.misProductos || []).filter(p => {
-        const s = (data.stock || {})[p.codigoRef] || {};
-        const actual = (s.inicial||0)+(s.entradas||0)-(s.salidas||0);
-        return s.minimo > 0 && actual < s.minimo && !pedidos.find(x => x.codigoRef === p.codigoRef);
+    const bajoMinimo = (data.misProductos || []).filter(function(p) {
+        var s = ((data.stock || {})[p.codigoRef]) || {};
+        var actual = (s.inicial||0)+(s.entradas||0)-(s.salidas||0);
+        return s.minimo > 0 && actual < s.minimo && !pedidos.find(function(x){ return x.codigoRef === p.codigoRef; });
     });
 
-    const filtrados = busqueda
-        ? pedidos.filter(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) || (p.descripcion||"").toLowerCase().includes(busqueda.toLowerCase()) || (p.codigoProv||"").toLowerCase().includes(busqueda.toLowerCase()))
-        : pedidos;
+    const totalGeneral = pedidos.reduce(function(s,p){ return s+(p.precioCosto||0)*(p.cantidad||1); }, 0);
 
-    const quitarDePedido = (codigoRef) => {
-        setData(d => Object.assign({}, d, { pedidos: (d.pedidos||[]).filter(x => x.codigoRef !== codigoRef) }));
-    };
-
-    const cambiarCantidad = (codigoRef, delta) => {
-        setData(d => Object.assign({}, d, { pedidos: (d.pedidos||[]).map(x => x.codigoRef === codigoRef ? Object.assign({}, x, { cantidad: Math.max(1, (x.cantidad||1)+delta) }) : x) }));
-    };
-
-    const exportarProveedor = (provNombre, items) => {
-        try {
-            const wsData = [["Cod Proveedor", "Descripcion", "Cantidad", "Precio Costo"]];
-            items.forEach(p => wsData.push([
-                p.codigoProv || p.codigoRef || "",
-                p.descripcion || "",
-                p.cantidad || 1,
-                parseFloat((p.precioCosto||0).toFixed(2))
-            ]));
-            const wb = window.XLSX.utils.book_new();
-            const ws = window.XLSX.utils.aoa_to_sheet(wsData);
-            ws["!cols"] = [{ wch: 16 }, { wch: 42 }, { wch: 10 }, { wch: 14 }];
-            window.XLSX.utils.book_append_sheet(wb, ws, "Pedido");
-            window.XLSX.writeFile(wb, "Pedido_" + provNombre.replace(/\s+/g, "_") + ".xlsx");
-            showToast("Excel exportado para " + provNombre, "success");
-        } catch(e) {
-            showToast("Error al exportar: " + e.message, "error");
-        }
-    };
-
-    const agregarBajoMinimo = () => {
-        if (!bajoMinimo.length) return;
-        setData(d => {
-            const nuevos = bajoMinimo.map(p => {
-                const s = (d.stock||{})[p.codigoRef]||{};
-                const actual = (s.inicial||0)+(s.entradas||0)-(s.salidas||0);
-                return { codigoRef: p.codigoRef, codigoProv: p.codigoProv||"", descripcion: p.descripcion, cantidad: Math.max(1,(s.minimo||1)-Math.max(0,actual)), proveedor: p.proveedor||"", precioCosto: p.precioCosto||0 };
-            });
-            return Object.assign({}, d, { pedidos: [...(d.pedidos||[]), ...nuevos] });
+    const resultadosAgregar = busqAgregar.length > 1 ? (function() {
+        var q = busqAgregar.toLowerCase();
+        var results = [];
+        (data.misProductos || []).forEach(function(p) {
+            if ((p.codigoRef||"").toLowerCase().includes(q) || (p.codigoProv||"").toLowerCase().includes(q) || (p.descripcion||"").toLowerCase().includes(q))
+                results.push(Object.assign({}, p, { _fuente: "mis_precios" }));
         });
-        showToast(bajoMinimo.length + " productos bajo mínimo agregados", "success");
+        var refs = new Set((data.misProductos||[]).map(function(p){ return p.codigoProv; }));
+        (data.proveedores||[]).forEach(function(prov) {
+            (prov.productos||[]).forEach(function(prod) {
+                if (!refs.has(prod.codigo) && ((prod.codigo||"").toLowerCase().includes(q) || (prod.descripcion||"").toLowerCase().includes(q)))
+                    results.push({ codigoRef:"", codigoProv:prod.codigo, descripcion:prod.descripcion, precioCosto:prod.precio, proveedor:prov.nombre, _fuente:"proveedor" });
+            });
+        });
+        return results.slice(0, 30);
+    })() : [];
+
+    var quitarDePedido = function(ref) {
+        setData(function(d){ return Object.assign({},d,{pedidos:(d.pedidos||[]).filter(function(x){ return (x.codigoRef||x.codigoProv)!==ref; })}); });
     };
 
-    const limpiarTodo = () => {
+    var cambiarCantidad = function(ref, delta) {
+        setData(function(d){ return Object.assign({},d,{pedidos:(d.pedidos||[]).map(function(x){ return (x.codigoRef||x.codigoProv)===ref?Object.assign({},x,{cantidad:Math.max(1,(x.cantidad||1)+delta)}):x; })}); });
+    };
+
+    var agregarBajoMinimo = function() {
+        if (!bajoMinimo.length) return;
+        setData(function(d) {
+            var nuevos = bajoMinimo.map(function(p) {
+                var s = ((d.stock||{})[p.codigoRef])||{};
+                var actual = (s.inicial||0)+(s.entradas||0)-(s.salidas||0);
+                var deficit = Math.max(0,(s.minimo||1)-actual);
+                var thirtyAgo = new Date(); thirtyAgo.setDate(thirtyAgo.getDate()-30);
+                var sold = (d.ventas||[]).filter(function(v){ try{ var parts=v.fecha.split("/"); return new Date(parts[2],parts[1]-1,parts[0])>=thirtyAgo; }catch(e){return false;} })
+                    .flatMap(function(v){ return v.items||[]; }).filter(function(i){ return i.codigoRef===p.codigoRef; }).reduce(function(s,i){ return s+(i.cantidad||1); },0);
+                var sugerido = Math.max(deficit, Math.ceil(sold/30*15), 1);
+                return { codigoRef:p.codigoRef, codigoProv:p.codigoProv||"", descripcion:p.descripcion, cantidad:sugerido, proveedor:p.proveedor||"", precioCosto:p.precioCosto||0 };
+            });
+            return Object.assign({},d,{pedidos:[...(d.pedidos||[]),...nuevos]});
+        });
+        showToast(bajoMinimo.length+" productos agregados","success");
+    };
+
+    var limpiarTodo = function() {
         if (!window.confirm("Limpiar toda la lista de pedidos?")) return;
-        setData(d => Object.assign({}, d, { pedidos: [] }));
-        showToast("Lista limpiada", "info");
+        setData(function(d){ return Object.assign({},d,{pedidos:[]}); });
+        showToast("Lista limpiada","info");
     };
 
-    return React.createElement(React.Fragment, null, React.createElement("div", { className: "card" },
-        // Header
-        React.createElement("div", { style: { marginBottom: 16, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 10 } },
-            React.createElement("div", null,
-                React.createElement("div", { className: "section-title" }, "Pedidos"),
-                React.createElement("div", { style: { fontSize: 13, color: "#6b7280", marginTop: 4 } }, pedidos.length + " producto(s) en lista")),
-            React.createElement("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
-                bajoMinimo.length > 0 && React.createElement("button", { onClick: agregarBajoMinimo, style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.35)", color: "#ef4444", borderRadius: 10, padding: "8px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12, display: "flex", alignItems: "center", gap: 6 } },
-                    React.createElement(Icon, { name: "alert", size: 13 }), bajoMinimo.length + " bajo minimo"),
-                pedidos.length > 0 && React.createElement("button", { onClick: limpiarTodo, style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.35)", color: "#ef4444", borderRadius: 10, padding: "8px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 12 } }, "Limpiar todo"))),
+    var exportarProveedor = function(provNombre, items) {
+        try {
+            var wsData = [["Cod Proveedor","Descripcion","Cantidad","Precio Costo"]];
+            items.forEach(function(p){ wsData.push([p.codigoProv||p.codigoRef||"",p.descripcion||"",p.cantidad||1,parseFloat((p.precioCosto||0).toFixed(2))]); });
+            var wb = window.XLSX.utils.book_new();
+            var ws = window.XLSX.utils.aoa_to_sheet(wsData);
+            ws["!cols"]=[{wch:16},{wch:42},{wch:10},{wch:14}];
+            window.XLSX.utils.book_append_sheet(wb,ws,"Pedido");
+            window.XLSX.writeFile(wb,"Pedido_"+provNombre.replace(/\s+/g,"_")+".xlsx");
+        } catch(e){ showToast("Error al exportar","error"); }
+    };
 
-        // Search
-        React.createElement("div", { style: { position: "relative", marginBottom: 14 } },
-            React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } }, React.createElement(Icon, { name: "search", size: 16 })),
-            React.createElement("input", { className: "input-field", placeholder: "Buscar en pedidos...", value: busqueda, onChange: e => setBusqueda(e.target.value), style: { paddingLeft: 38 } })),
+    var enviarWhatsApp = function(provNombre, items) {
+        var total = items.reduce(function(s,i){ return s+(i.precioCosto||0)*(i.cantidad||1); },0);
+        var msg = "Pedido para *"+provNombre+"*:\n\n"+items.map(function(i){ return "• "+i.descripcion+" — x"+i.cantidad; }).join("\n")+"\n\n_Total estimado: "+fmtPeso(total)+"_";
+        window.open("https://wa.me/?text="+encodeURIComponent(msg));
+    };
 
-        React.createElement("div", { style: { marginBottom: 14 } },
-            React.createElement("button", { onClick: () => setShowAgregar(!showAgregar), className: "btn-primary", style: { width: "100%", justifyContent: "center" } },
-                React.createElement(Icon, { name: "plus", size: 16 }), showAgregar ? " Cerrar búsqueda" : " Agregar producto"),
-            showAgregar && React.createElement("div", { style: { background: "#111827", borderRadius: 12, border: "1px solid #1e2535", padding: 14, marginTop: 10 } },
-                React.createElement("div", { style: { position: "relative", marginBottom: 10 } },
-                    React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } }, React.createElement(Icon, { name: "search", size: 16 })),
-                    React.createElement("input", { className: "input-field", placeholder: "Buscar en proveedores y mis precios...", value: busquedaAgregar, onChange: e => setBusquedaAgregar(e.target.value), style: { paddingLeft: 38 } })),
-                busquedaAgregar.length > 1 && React.createElement("div", { style: { maxHeight: 240, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 } },
-                    (() => {
-                        const term = busquedaAgregar.toLowerCase();
-                        const resultsMisProd = (data.misProductos||[]).filter(p =>
-                            p.codigoRef.toLowerCase().includes(term) || (p.descripcion||"").toLowerCase().includes(term) || (p.codigoProv||"").toLowerCase().includes(term)
-                        ).slice(0,5).map(p => ({ ...p, fuente: "mis_precios" }));
-                        const resultsProv = [];
-                        (data.proveedores||[]).forEach(prov => {
-                            (prov.productos||[]).filter(p =>
-                                p.codigo.toLowerCase().includes(term) || (p.descripcion||"").toLowerCase().includes(term)
-                            ).slice(0,3).forEach(p => resultsProv.push({ ...p, codigoProv: p.codigo, fuente: "proveedor", proveedor: prov.nombre }));
-                        });
-                        const todos = [...resultsMisProd, ...resultsProv.slice(0,8)];
-                        if (!todos.length) return React.createElement("div", { style: { textAlign: "center", padding: "12px", color: "#6b7280", fontSize: 13 } }, "Sin resultados");
-                        return todos.map((p, i) => React.createElement("div", { key: i, style: { background: "#1e2230", borderRadius: 10, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 } },
-                            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                                React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } },
-                                    React.createElement("span", { style: { fontSize: 12, color: "#818cf8", fontFamily: "monospace", fontWeight: 700 } }, p.codigoRef || p.codigo),
-                                    React.createElement("span", { className: "badge", style: { background: p.fuente === "mis_precios" ? "rgba(34,197,94,0.15)" : "rgba(99,102,241,0.15)", color: p.fuente === "mis_precios" ? "#22c55e" : "#818cf8", fontSize: 10 } }, p.fuente === "mis_precios" ? "Mis Precios" : p.proveedor)),
-                                React.createElement("div", { style: { fontSize: 12, color: "#cbd5e1", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.descripcion)),
-                            p.fuente === "mis_precios"
-                                ? React.createElement("button", { onClick: () => {
-                                        if ((data.pedidos||[]).find(x => x.codigoRef === p.codigoRef)) { showToast("Ya está en pedidos","info"); return; }
-                                        setData(d => Object.assign({}, d, { pedidos: [...(d.pedidos||[]), { codigoRef: p.codigoRef, codigoProv: p.codigoProv||"", descripcion: p.descripcion, cantidad: 1, proveedor: p.proveedor||"", precioCosto: p.precioCosto||0 }] }));
-                                        showToast("Agregado a pedidos","success"); setBusquedaAgregar(""); setShowAgregar(false);
-                                    }, className: "btn-primary", style: { padding: "6px 12px", fontSize: 12 } }, "+ Pedir")
-                                : React.createElement("div", { style: { display: "flex", gap: 6 } },
-                                    React.createElement("button", { onClick: () => {
-                                            if ((data.pedidos||[]).find(x => x.codigoProv === p.codigoProv)) { showToast("Ya está en pedidos","info"); return; }
-                                            setData(d => Object.assign({}, d, { pedidos: [...(d.pedidos||[]), { codigoRef: p.codigoProv, codigoProv: p.codigoProv, descripcion: p.descripcion, cantidad: 1, proveedor: p.proveedor, precioCosto: p.precio||0 }] }));
-                                            showToast("Agregado a pedidos","success"); setBusquedaAgregar(""); setShowAgregar(false);
-                                        }, className: "btn-primary", style: { padding: "6px 12px", fontSize: 12 } }, "+ Pedir"),
-                                    React.createElement("button", { onClick: () => { window.__prefillPedido = p; setData(d => d); showToast("Andá a Mis Precios para cargarlo","info"); }, className: "btn-ghost", style: { padding: "6px 10px", fontSize: 11 } }, "→ Mis P."))));
-                    })()
-                )
-            )),
+    var enviarPedido = function(provNombre, items) {
+        if (!window.confirm("Marcar pedido a "+provNombre+" como ENVIADO?")) return;
+        var orden = {
+            id: Date.now(), proveedor: provNombre,
+            items: items.map(function(i){ return Object.assign({},i,{cantRecibida:null}); }),
+            estado:"enviado",
+            fechaEnviado: new Date().toLocaleDateString("es-AR"),
+            horaEnviado: new Date().toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}),
+            fechaRecibido: null,
+            totalEstimado: items.reduce(function(s,i){ return s+(i.precioCosto||0)*(i.cantidad||1); },0)
+        };
+        setData(function(d) {
+            var newPedidos = (d.pedidos||[]).filter(function(x){ return (x.proveedor||x.codigoProv||"Sin proveedor")!==provNombre; });
+            var newHistorial = [...(d.pedidosHistorial||[]),orden];
+            saveToFirebase("pedidosHistorial",newHistorial);
+            return Object.assign({},d,{pedidos:newPedidos,pedidosHistorial:newHistorial});
+        });
+        showToast("Pedido enviado a "+provNombre,"success");
+        exportarProveedor(provNombre,items);
+    };
 
-        // Empty state
-        pedidos.length === 0
-            ? React.createElement("div", { style: { textAlign: "center", padding: "50px 20px", color: "#374151" } },
-                React.createElement(Icon, { name: "box", size: 44 }),
-                React.createElement("div", { style: { marginTop: 14, fontSize: 15, color: "#6b7280" } }, "No hay productos en la lista de pedidos"),
-                React.createElement("div", { style: { fontSize: 12, color: "#4b5563", marginTop: 6 } }, "Usá el botón + Pedir en Stock o agregá los productos bajo mínimo"))
+    var RecepcionModal = function(props) {
+        var orden = props.orden;
+        var initCants = {};
+        orden.items.forEach(function(i){ initCants[i.codigoRef||i.codigoProv]=i.cantidad||1; });
+        var cantState = useState(initCants);
+        var cantidades = cantState[0]; var setCantidades = cantState[1];
+        var confirmar = function() {
+            if (!window.confirm("Confirmar recepcion? El stock se actualizara con las cantidades recibidas.")) return;
+            setData(function(d) {
+                var newStock = Object.assign({},d.stock||{});
+                orden.items.forEach(function(item) {
+                    var cant = parseInt(cantidades[item.codigoRef||item.codigoProv])||0;
+                    if (cant>0 && item.codigoRef) {
+                        var cur = newStock[item.codigoRef]||{inicial:0,entradas:0,salidas:0,minimo:0};
+                        newStock[item.codigoRef]=Object.assign({},cur,{entradas:(cur.entradas||0)+cant});
+                    }
+                });
+                var newHistorial = (d.pedidosHistorial||[]).map(function(o) {
+                    return o.id===orden.id ? Object.assign({},o,{estado:"recibido",fechaRecibido:new Date().toLocaleDateString("es-AR"),items:o.items.map(function(i){ return Object.assign({},i,{cantRecibida:parseInt(cantidades[i.codigoRef||i.codigoProv])||0}); })}) : o;
+                });
+                saveToFirebase("pedidosHistorial",newHistorial);
+                return Object.assign({},d,{stock:newStock,pedidosHistorial:newHistorial});
+            });
+            showToast("Stock actualizado!","success");
+            setOrdenActiva(null);
+        };
+        return React.createElement("div", {style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:400,display:"flex",alignItems:"flex-end",justifyContent:"center"},onClick:function(){setOrdenActiva(null);}},
+            React.createElement("div", {style:{background:"#1e2230",borderRadius:"20px 20px 0 0",padding:20,width:"100%",maxWidth:600,maxHeight:"85vh",display:"flex",flexDirection:"column"},onClick:function(e){e.stopPropagation();}},
+                React.createElement("div", {style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
+                    React.createElement("div", null,
+                        React.createElement("div", {style:{fontWeight:700,fontSize:15,color:"#f1f5f9"}}, "Recepcion — "+orden.proveedor),
+                        React.createElement("div", {style:{fontSize:12,color:"#6b7280",marginTop:2}}, "Ajusta las cantidades que llegaron")),
+                    React.createElement("button", {onClick:function(){setOrdenActiva(null);},style:{background:"none",border:"none",color:"#6b7280",cursor:"pointer"}}, React.createElement(Icon,{name:"x",size:20}))),
+                React.createElement("div", {style:{overflowY:"auto",flex:1,marginBottom:16}},
+                    orden.items.map(function(item,i) {
+                        return React.createElement("div", {key:i,style:{padding:"10px 0",borderBottom:"1px solid #111827",display:"flex",alignItems:"center",gap:10}},
+                            React.createElement("div", {style:{flex:1,minWidth:0}},
+                                React.createElement("div", {style:{fontSize:12,color:"#818cf8",fontFamily:"monospace"}}, item.codigoRef||item.codigoProv),
+                                React.createElement("div", {style:{fontSize:13,color:"#cbd5e1",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}, item.descripcion)),
+                            React.createElement("div", {style:{display:"flex",alignItems:"center",gap:6,flexShrink:0}},
+                                React.createElement("div", {style:{fontSize:11,color:"#6b7280"}}, "Ped: "+item.cantidad),
+                                React.createElement("button", {onClick:function(){setCantidades(function(c){ var n=Object.assign({},c); n[item.codigoRef||item.codigoProv]=Math.max(0,(parseInt(n[item.codigoRef||item.codigoProv])||0)-1); return n; });},style:{width:26,height:26,borderRadius:6,background:"#374151",border:"none",color:"#f1f5f9",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}, "−"),
+                                React.createElement("input", {type:"number",min:0,value:cantidades[item.codigoRef||item.codigoProv]||0,onChange:function(e){setCantidades(function(c){ var n=Object.assign({},c); n[item.codigoRef||item.codigoProv]=Math.max(0,parseInt(e.target.value)||0); return n; });},style:{width:48,height:26,borderRadius:6,background:"#111827",border:"1px solid #374151",color:"#f1f5f9",textAlign:"center",fontSize:13,fontWeight:700,fontFamily:"inherit"}}),
+                                React.createElement("button", {onClick:function(){setCantidades(function(c){ var n=Object.assign({},c); n[item.codigoRef||item.codigoProv]=(parseInt(n[item.codigoRef||item.codigoProv])||0)+1; return n; });},style:{width:26,height:26,borderRadius:6,background:"#6366f1",border:"none",color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}, "+")));
+                    })),
+                React.createElement("button", {onClick:confirmar,style:{background:"linear-gradient(135deg,#22c55e,#16a34a)",color:"#fff",border:"none",borderRadius:12,padding:13,width:"100%",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",gap:8}},
+                    React.createElement(Icon,{name:"check",size:16}), " Confirmar y actualizar stock")));
+    };
 
-            // Grouped by proveedor
-            : React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 16 } },
-                Object.entries(porProveedor).filter(([prov, items]) =>
-                    !busqueda || items.some(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) || (p.descripcion||"").toLowerCase().includes(busqueda.toLowerCase()))
-                ).map(([prov, items]) =>
-                    React.createElement("div", { key: prov, style: { background: "#1e2230", borderRadius: 14, border: "1px solid #1e2535", overflow: "hidden" } },
-                        // Proveedor header
-                        React.createElement("div", { style: { padding: "12px 16px", borderBottom: "1px solid #111827", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(99,102,241,0.08)" } },
-                            React.createElement("div", { style: { fontWeight: 700, fontSize: 14, color: "#818cf8" } }, prov),
-                            React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } },
-                                React.createElement("span", { style: { fontSize: 12, color: "#6b7280" } }, items.length + " item(s)"),
-                                React.createElement("button", { onClick: () => exportarProveedor(prov, items), style: { background: "linear-gradient(135deg,#22c55e,#16a34a)", color: "#fff", border: "none", borderRadius: 8, padding: "5px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 12, display: "flex", alignItems: "center", gap: 5 } },
-                                    React.createElement(Icon, { name: "download", size: 12 }), " Exportar Excel"))),
-                        // Products
-                        React.createElement("div", null,
-                            items.filter(p => !busqueda || p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) || (p.descripcion||"").toLowerCase().includes(busqueda.toLowerCase())).map((p, i) =>
-                                React.createElement("div", { key: p.codigoRef, style: { padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, borderBottom: i < items.length-1 ? "1px solid #111827" : "none" } },
-                                    React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                                        React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } },
-                                            React.createElement("span", { style: { fontSize: 12, color: "#818cf8", fontFamily: "monospace", fontWeight: 700 } }, p.codigoRef),
-                                            React.createElement("span", { style: { fontSize: 11, color: "#4b5563" } }, p.codigoProv)),
-                                        React.createElement("div", { style: { fontSize: 13, color: "#cbd5e1", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.descripcion)),
-                                    React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 6 } },
-                                        React.createElement("button", { onClick: () => cambiarCantidad(p.codigoRef, -1), style: { width: 28, height: 28, borderRadius: 6, background: "#374151", border: "none", color: "#f1f5f9", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" } }, "−"),
-                                        React.createElement("input", { type: "number", min: 1, value: p.cantidad||1, onChange: e => setData(d => Object.assign({}, d, { pedidos: (d.pedidos||[]).map(x => x.codigoRef===p.codigoRef ? Object.assign({},x,{cantidad:Math.max(1,parseInt(e.target.value)||1)}) : x) })), style: { width: 44, height: 28, borderRadius: 6, background: "#1e2230", border: "1px solid #374151", color: "#f1f5f9", textAlign: "center", fontSize: 13, fontWeight: 700, fontFamily: "inherit" } }),
-                                        React.createElement("button", { onClick: () => cambiarCantidad(p.codigoRef, 1), style: { width: 28, height: 28, borderRadius: 6, background: "#6366f1", border: "none", color: "#fff", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" } }, "+"),
-                                        React.createElement("button", { onClick: () => quitarDePedido(p.codigoRef), style: { background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444", borderRadius: 6, padding: "5px 7px", cursor: "pointer", display: "flex", alignItems: "center" } },
-                                            React.createElement(Icon, { name: "trash", size: 13 }))))))))),
-    showAgregar && React.createElement("div", {
-        style: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.88)", zIndex: 400, display: "flex", alignItems: "flex-end", justifyContent: "center" },
-        onClick: () => { setShowAgregar(false); setBusqAgregar(""); }
-    },
-        React.createElement("div", {
-            style: { background: "#1e2230", borderRadius: "20px 20px 0 0", padding: 20, width: "100%", maxWidth: 600, maxHeight: "80vh", display: "flex", flexDirection: "column" },
-            onClick: e => e.stopPropagation()
-        },
-            React.createElement("div", { style: { fontWeight: 700, fontSize: 15, color: "#f1f5f9", marginBottom: 12 } }, "Agregar producto al pedido"),
-            React.createElement("div", { style: { position: "relative", marginBottom: 12 } },
-                React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } }, React.createElement(Icon, { name: "search", size: 16 })),
-                React.createElement("input", { className: "input-field", placeholder: "Buscar en Mis Precios y Proveedores...", value: busqAgregar, onChange: e => setBusqAgregar(e.target.value), autoFocus: true, style: { paddingLeft: 38 } })),
-            React.createElement("div", { style: { overflowY: "auto", flex: 1 } },
-                busqAgregar.length < 2
-                    ? React.createElement("div", { style: { textAlign: "center", padding: "30px 20px", color: "#4b5563", fontSize: 13 } }, "Escribi al menos 2 caracteres para buscar")
-                    : resultadosAgregar.length === 0
-                        ? React.createElement("div", { style: { textAlign: "center", padding: "30px 20px", color: "#4b5563", fontSize: 13 } }, "No se encontraron resultados")
-                        : resultadosAgregar.map((p, i) => React.createElement("div", { key: i, style: { padding: "10px 12px", borderRadius: 10, marginBottom: 6, background: "#111827", display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }, onClick: () => {
-                            if (p._fuente === "proveedor") {
-                                if (window.confirm("Este producto no está en Mis Precios. ¿Querés agregarlo primero?")) {
-                                    setShowAgregar(false); setBusqAgregar("");
-                                    // Signal to navigate to precios with prefill
-                                    window.__prefillProd = { codigo: p.codigoProv };
-                                    window.dispatchEvent(new CustomEvent("navigateToPrecios", { detail: p }));
-                                }
-                                return;
-                            }
-                            const yaEsta = (data.pedidos||[]).find(x => x.codigoRef === p.codigoRef);
-                            if (yaEsta) { showToast("Ya está en pedidos", "info"); return; }
-                            setData(d => Object.assign({}, d, { pedidos: [...(d.pedidos||[]), { codigoRef: p.codigoRef, codigoProv: p.codigoProv||"", descripcion: p.descripcion, cantidad: 1, proveedor: p.proveedor||"", precioCosto: p.precioCosto||0 }] }));
-                            showToast("Agregado: " + p.descripcion, "success");
-                            setBusqAgregar("");
-                        } },
-                            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                                React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } },
-                                    React.createElement("span", { style: { fontSize: 11, color: "#818cf8", fontFamily: "monospace", fontWeight: 700 } }, p.codigoRef || p.codigoProv),
-                                    React.createElement("span", { className: "badge", style: { background: p._fuente === "mis_precios" ? "rgba(34,197,94,0.15)" : "rgba(99,102,241,0.15)", color: p._fuente === "mis_precios" ? "#22c55e" : "#818cf8", fontSize: 10 } }, p._fuente === "mis_precios" ? "Mis Precios" : p.proveedor)),
-                                React.createElement("div", { style: { fontSize: 13, color: "#cbd5e1", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, p.descripcion)),
-                            React.createElement("div", { style: { fontSize: 13, color: "#22c55e", fontWeight: 700, flexShrink: 0 } }, p.precioCosto ? "$" + (p.precioCosto||0).toFixed(0) : ""))))),
-        React.createElement("button", { onClick: () => { setShowAgregar(false); setBusqAgregar(""); }, style: { position: "absolute", top: 20, right: 20, background: "none", border: "none", color: "#6b7280", cursor: "pointer" } },
-            React.createElement(Icon, { name: "x", size: 20 })))));
+    return React.createElement(React.Fragment, null,
+        React.createElement("div", {className:"card"},
+            React.createElement("div", {style:{marginBottom:16,display:"flex",alignItems:"flex-start",justifyContent:"space-between",flexWrap:"wrap",gap:10}},
+                React.createElement("div", null,
+                    React.createElement("div", {className:"section-title"}, "Pedidos"),
+                    React.createElement("div", {style:{fontSize:13,color:"#6b7280",marginTop:4}}, pedidos.length+" producto(s) en borrador")),
+                React.createElement("div", {style:{display:"flex",gap:8,flexWrap:"wrap"}},
+                    React.createElement("button", {onClick:function(){setVistaHistorial(function(v){return !v;});},style:{background:vistaHistorial?"rgba(99,102,241,0.2)":"rgba(99,102,241,0.1)",border:"1px solid #6366f1",color:"#818cf8",borderRadius:10,padding:"8px 12px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:12}},
+                        vistaHistorial?"Ver Borrador":"Historial ("+historial.length+")"),
+                    !vistaHistorial && bajoMinimo.length>0 && React.createElement("button", {onClick:agregarBajoMinimo,style:{background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.35)",color:"#ef4444",borderRadius:10,padding:"8px 12px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:12,display:"flex",alignItems:"center",gap:6}},
+                        React.createElement(Icon,{name:"alert",size:13}), bajoMinimo.length+" bajo minimo"),
+                    !vistaHistorial && pedidos.length>0 && React.createElement("button", {onClick:limpiarTodo,style:{background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.35)",color:"#ef4444",borderRadius:10,padding:"8px 12px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:12}}, "Limpiar todo"))),
+
+            !vistaHistorial && React.createElement("div", {style:{display:"flex",gap:8,marginBottom:14}},
+                React.createElement("div", {style:{position:"relative",flex:1}},
+                    React.createElement("div", {style:{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#6b7280"}}, React.createElement(Icon,{name:"search",size:16})),
+                    React.createElement("input", {className:"input-field",placeholder:"Buscar en pedidos...",value:busqueda,onChange:function(e){setBusqueda(e.target.value);},style:{paddingLeft:38}})),
+                React.createElement("button", {onClick:function(){setShowAgregar(true);},className:"btn-primary",style:{flexShrink:0,padding:"10px 14px"}},
+                    React.createElement(Icon,{name:"plus",size:18}))),
+
+            !vistaHistorial && (pedidos.length===0
+                ? React.createElement("div", {style:{textAlign:"center",padding:"50px 20px",color:"#374151"}},
+                    React.createElement(Icon,{name:"box",size:44}),
+                    React.createElement("div", {style:{marginTop:14,fontSize:15,color:"#6b7280"}}, "Lista de pedidos vacia"),
+                    React.createElement("div", {style:{fontSize:12,color:"#4b5563",marginTop:6}}, "Usa + para agregar o el boton de bajo minimo"))
+                : React.createElement("div", null,
+                    React.createElement("div", {style:{display:"flex",flexDirection:"column",gap:16,marginBottom:16}},
+                        Object.keys(porProveedor).filter(function(prov){
+                            return !busqueda || porProveedor[prov].some(function(p){
+                                return (p.codigoRef||"").toLowerCase().includes(busqueda.toLowerCase())||(p.descripcion||"").toLowerCase().includes(busqueda.toLowerCase())||(p.codigoProv||"").toLowerCase().includes(busqueda.toLowerCase());
+                            });
+                        }).map(function(prov) {
+                            var items = porProveedor[prov];
+                            var total = items.reduce(function(s,i){return s+(i.precioCosto||0)*(i.cantidad||1);},0);
+                            return React.createElement("div", {key:prov,style:{background:"#1e2230",borderRadius:14,border:"1px solid #1e2535",overflow:"hidden"}},
+                                React.createElement("div", {style:{padding:"12px 16px",borderBottom:"1px solid #111827",background:"rgba(99,102,241,0.08)"}},
+                                    React.createElement("div", {style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}},
+                                        React.createElement("div", {style:{fontWeight:700,fontSize:14,color:"#818cf8"}}, prov),
+                                        React.createElement("div", {style:{fontSize:13,color:"#22c55e",fontWeight:700}}, fmtPeso(total))),
+                                    React.createElement("div", {style:{display:"flex",gap:8}},
+                                        React.createElement("button", {onClick:function(){exportarProveedor(prov,items);},style:{flex:1,background:"rgba(99,102,241,0.15)",color:"#818cf8",border:"1px solid #6366f1",borderRadius:8,padding:"7px 10px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",gap:5}},
+                                            React.createElement(Icon,{name:"download",size:12}), " Excel"),
+                                        React.createElement("button", {onClick:function(){enviarWhatsApp(prov,items);},style:{flex:1,background:"rgba(37,211,102,0.15)",color:"#25d366",border:"1px solid #25d366",borderRadius:8,padding:"7px 10px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",gap:5}},
+                                            " WA"),
+                                        React.createElement("button", {onClick:function(){enviarPedido(prov,items);},style:{flex:2,background:"linear-gradient(135deg,#22c55e,#16a34a)",color:"#fff",border:"none",borderRadius:8,padding:"7px 10px",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",gap:5}},
+                                            React.createElement(Icon,{name:"check",size:12}), " Enviado"))),
+                                React.createElement("div", null,
+                                    items.filter(function(p){
+                                        return !busqueda||(p.codigoRef||"").toLowerCase().includes(busqueda.toLowerCase())||(p.descripcion||"").toLowerCase().includes(busqueda.toLowerCase())||(p.codigoProv||"").toLowerCase().includes(busqueda.toLowerCase());
+                                    }).map(function(p,i) {
+                                        return React.createElement("div", {key:p.codigoRef||p.codigoProv||i,style:{padding:"10px 16px",display:"flex",alignItems:"center",gap:10,borderBottom:i<items.length-1?"1px solid #111827":"none"}},
+                                            React.createElement("div", {style:{flex:1,minWidth:0}},
+                                                React.createElement("div", {style:{display:"flex",gap:8,alignItems:"center"}},
+                                                    React.createElement("span", {style:{fontSize:12,color:"#818cf8",fontFamily:"monospace",fontWeight:700}}, p.codigoRef||p.codigoProv),
+                                                    p.codigoProv&&p.codigoRef&&React.createElement("span", {style:{fontSize:11,color:"#4b5563"}}, p.codigoProv)),
+                                                React.createElement("div", {style:{fontSize:13,color:"#cbd5e1",marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}, p.descripcion)),
+                                            React.createElement("div", {style:{display:"flex",alignItems:"center",gap:6}},
+                                                React.createElement("button", {onClick:function(){cambiarCantidad(p.codigoRef||p.codigoProv,-1);},style:{width:28,height:28,borderRadius:6,background:"#374151",border:"none",color:"#f1f5f9",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}, "−"),
+                                                React.createElement("input", {type:"number",min:1,value:p.cantidad||1,onChange:function(e){ var ref=p.codigoRef||p.codigoProv; var val=Math.max(1,parseInt(e.target.value)||1); setData(function(d){return Object.assign({},d,{pedidos:(d.pedidos||[]).map(function(x){return (x.codigoRef||x.codigoProv)===ref?Object.assign({},x,{cantidad:val}):x;})});});},style:{width:44,height:28,borderRadius:6,background:"#1e2230",border:"1px solid #374151",color:"#f1f5f9",textAlign:"center",fontSize:13,fontWeight:700,fontFamily:"inherit"}}),
+                                                React.createElement("button", {onClick:function(){cambiarCantidad(p.codigoRef||p.codigoProv,1);},style:{width:28,height:28,borderRadius:6,background:"#6366f1",border:"none",color:"#fff",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"}}, "+"),
+                                                React.createElement("button", {onClick:function(){quitarDePedido(p.codigoRef||p.codigoProv);},style:{background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.3)",color:"#ef4444",borderRadius:6,padding:"5px 7px",cursor:"pointer",display:"flex",alignItems:"center"}},
+                                                    React.createElement(Icon,{name:"trash",size:13}))));
+                                    })));
+                        })),
+                    React.createElement("div", {style:{background:"linear-gradient(135deg,#1e3a2e,#1a3025)",borderRadius:14,border:"1px solid #166534",padding:"14px 18px",display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                        React.createElement("div", {style:{fontSize:13,color:"#86efac",fontWeight:600}}, "Total estimado del pedido"),
+                        React.createElement("div", {style:{fontSize:20,fontWeight:700,color:"#22c55e"}}, fmtPeso(totalGeneral))))),
+
+            vistaHistorial && (historial.length===0
+                ? React.createElement("div", {style:{textAlign:"center",padding:"50px 20px",color:"#374151"}},
+                    React.createElement(Icon,{name:"download",size:44}),
+                    React.createElement("div", {style:{marginTop:14,fontSize:15,color:"#6b7280"}}, "No hay pedidos enviados aun"))
+                : React.createElement("div", {style:{display:"flex",flexDirection:"column",gap:10}},
+                    historial.map(function(orden,i) {
+                        return React.createElement("div", {key:orden.id||i,style:{background:"#1e2230",borderRadius:14,border:"1px solid #1e2535",overflow:"hidden"}},
+                            React.createElement("div", {style:{padding:"12px 16px",borderBottom:"1px solid #111827",display:"flex",justifyContent:"space-between",alignItems:"center"}},
+                                React.createElement("div", null,
+                                    React.createElement("div", {style:{fontWeight:700,fontSize:14,color:"#f1f5f9"}}, orden.proveedor),
+                                    React.createElement("div", {style:{fontSize:11,color:"#6b7280",marginTop:2}}, orden.estado==="recibido"?"Recibido: "+orden.fechaRecibido:"Enviado: "+orden.fechaEnviado+" "+(orden.horaEnviado||""))),
+                                React.createElement("div", {style:{display:"flex",alignItems:"center",gap:8}},
+                                    React.createElement("span", {style:{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20,background:orden.estado==="recibido"?"rgba(34,197,94,0.15)":"rgba(251,191,36,0.15)",color:orden.estado==="recibido"?"#22c55e":"#fbbf24"}},
+                                        orden.estado==="recibido"?"✓ Recibido":"Enviado"),
+                                    orden.estado==="enviado"&&React.createElement("button", {onClick:function(){setOrdenActiva(orden);},style:{background:"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"#fff",border:"none",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:12}}, "Recibir"))),
+                            React.createElement("div", {style:{padding:"8px 16px 12px"}},
+                                orden.items.slice(0,3).map(function(item,j) {
+                                    return React.createElement("div", {key:j,style:{display:"flex",justifyContent:"space-between",fontSize:12,color:"#94a3b8",padding:"2px 0"}},
+                                        React.createElement("span", null, (item.cantRecibida!=null?item.cantRecibida+"/":"")+(item.cantidad||1)+"x "+item.descripcion),
+                                        item.cantRecibida!=null&&item.cantRecibida<item.cantidad?React.createElement("span", {style:{color:"#ef4444",fontSize:11}}, "Falto "+(item.cantidad-item.cantRecibida)):null);
+                                }),
+                                orden.items.length>3&&React.createElement("div", {style:{fontSize:11,color:"#4b5563",marginTop:4}}, "+ "+(orden.items.length-3)+" productos mas")));
+                    })))),
+
+        ordenActiva && React.createElement(RecepcionModal, {orden:ordenActiva}),
+
+        showAgregar && React.createElement("div", {style:{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:400,display:"flex",alignItems:"flex-end",justifyContent:"center"},onClick:function(){setShowAgregar(false);setBusqAgregar("");}},
+            React.createElement("div", {style:{background:"#1e2230",borderRadius:"20px 20px 0 0",padding:20,width:"100%",maxWidth:600,maxHeight:"80vh",display:"flex",flexDirection:"column"},onClick:function(e){e.stopPropagation();}},
+                React.createElement("div", {style:{fontWeight:700,fontSize:15,color:"#f1f5f9",marginBottom:12}}, "Agregar producto al pedido"),
+                React.createElement("div", {style:{position:"relative",marginBottom:12}},
+                    React.createElement("div", {style:{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#6b7280"}}, React.createElement(Icon,{name:"search",size:16})),
+                    React.createElement("input", {className:"input-field",placeholder:"Buscar en Mis Precios y Proveedores...",value:busqAgregar,onChange:function(e){setBusqAgregar(e.target.value);},autoFocus:true,style:{paddingLeft:38}})),
+                React.createElement("div", {style:{overflowY:"auto",flex:1}},
+                    busqAgregar.length<2
+                        ? React.createElement("div", {style:{textAlign:"center",padding:"30px 20px",color:"#4b5563",fontSize:13}}, "Escribi al menos 2 caracteres")
+                        : resultadosAgregar.length===0
+                            ? React.createElement("div", {style:{textAlign:"center",padding:"30px 20px",color:"#4b5563",fontSize:13}}, "Sin resultados")
+                            : resultadosAgregar.map(function(p,i) {
+                                return React.createElement("div", {key:i,onClick:function(){
+                                    if (p._fuente==="proveedor"){if(window.confirm("No esta en Mis Precios. Agregarlo primero?"))setShowAgregar(false);return;}
+                                    if((data.pedidos||[]).find(function(x){return x.codigoRef===p.codigoRef;})){showToast("Ya esta en pedidos","info");return;}
+                                    setData(function(d){return Object.assign({},d,{pedidos:[...(d.pedidos||[]),{codigoRef:p.codigoRef,codigoProv:p.codigoProv||"",descripcion:p.descripcion,cantidad:1,proveedor:p.proveedor||"",precioCosto:p.precioCosto||0}]});});
+                                    showToast("Agregado: "+p.descripcion,"success");setBusqAgregar("");
+                                },style:{padding:"10px 12px",borderRadius:10,marginBottom:6,background:"#111827",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}},
+                                    React.createElement("div", {style:{flex:1,minWidth:0}},
+                                        React.createElement("div", {style:{display:"flex",gap:6,alignItems:"center"}},
+                                            React.createElement("span", {style:{fontSize:11,color:"#818cf8",fontFamily:"monospace",fontWeight:700}}, p.codigoRef||p.codigoProv),
+                                            React.createElement("span", {className:"badge",style:{background:p._fuente==="mis_precios"?"rgba(34,197,94,0.15)":"rgba(99,102,241,0.15)",color:p._fuente==="mis_precios"?"#22c55e":"#818cf8",fontSize:10}}, p._fuente==="mis_precios"?"Mis Precios":p.proveedor)),
+                                        React.createElement("div", {style:{fontSize:13,color:"#cbd5e1",marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}, p.descripcion)),
+                                    p.precioCosto&&React.createElement("div", {style:{fontSize:13,color:"#22c55e",fontWeight:700,flexShrink:0}}, "$"+(p.precioCosto||0).toFixed(0)));
+                            })))));
 }
 
 
