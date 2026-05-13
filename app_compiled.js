@@ -1630,5 +1630,13 @@ function TabVentas({ data, setData, showToast }) {
 }
 
 
-// ─── // ─── TAB PEDIDOS ──────────────────────────────────────────────────────────────
+// ─── TAB PEDIDOS ──────────────────────────────────────────────────────────────
 
+
+(function(){
+  function startApp(){
+    ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+  }
+  if(window.__authReady) startApp();
+  else { window.addEventListener('authReady', startApp, {once:true}); setTimeout(startApp, 5000); }
+})();
