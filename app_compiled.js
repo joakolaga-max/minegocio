@@ -1290,7 +1290,17 @@ function TabPedidos({ data, setData, showToast }) {
 
     const porProveedor = {};
     pedidos.forEach(function(p) {
-        var prov = p.proveedor || p.codigoProv || "Sin proveedor";
+        var provName = p.proveedor;
+        if (!provName && p.codigoProv) {
+            for (var pi = 0; pi < (data.proveedores||[]).length; pi++) {
+                var pv = data.proveedores[pi];
+                if (pv.productos && pv.productos.find(function(x){ return x.codigo === p.codigoProv; })) {
+                    provName = pv.nombre;
+                    break;
+                }
+            }
+        }
+        var prov = provName || p.codigoProv || "Sin proveedor";
         if (!porProveedor[prov]) porProveedor[prov] = [];
         porProveedor[prov].push(p);
     });
