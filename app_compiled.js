@@ -240,7 +240,10 @@ function App() {
                 loadFromFirebase("pedidos"),
                 loadFromFirebase("pedidosHistorial"),
             ]);
-            setData(d => (Object.assign(Object.assign({}, d), { proveedores: (provData && provData.length) ? provData : d.proveedores, misProductos: misData || d.misProductos, margenes: (config === null || config === void 0 ? void 0 : config.margenes) || d.margenes, stock: stockData || d.stock || {}, ventas: (ventasData || d.ventas || []), fotos: (fotosData || d.fotos || {}), pedidos: (pedidosData || d.pedidos || []), pedidosHistorial: (pedHistData || d.pedidosHistorial || []) })));
+            setData(d => { const newData = Object.assign(Object.assign({}, d), { proveedores: (provData && provData.length) ? provData : d.proveedores, misProductos: misData || d.misProductos, margenes: (config === null || config === void 0 ? void 0 : config.margenes) || d.margenes, stock: stockData || d.stock || {}, ventas: (ventasData || d.ventas || []), fotos: (fotosData || d.fotos || {}), pedidos: (pedidosData || d.pedidos || []), pedidosHistorial: (pedHistData || d.pedidosHistorial || []) });
+                prevDataRef.current = newData;
+                return newData;
+            });
             setSyncing(false);
             setLoaded(true);
         };
@@ -508,6 +511,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
     const [editIdx, setEditIdx] = useState(null);
     const [photoModal, setPhotoModal] = useState(null);
     const [margenCustom, setMargenCustom] = useState(false);
+    const [divisor, setDivisor] = useState(1);
     const [margenCustomVal, setMargenCustomVal] = useState("");
     // Auto-fill when coming from Proveedores
     useEffect(() => {
@@ -576,6 +580,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
             precioCosto: encontrado.precio,
             margen: margenFinal,
             proveedor: encontrado.proveedor,
+            divisor: divisor > 1 ? parseInt(divisor) : 1,
         };
         setData(d => {
             const lista = [...d.misProductos];
@@ -602,6 +607,7 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
         setCodigoRef(p.codigoRef);
         setCodigoProv(p.codigoProv);
         setMargenSel(p.margen);
+        setDivisor(p.divisor || 1);
         setEditIdx(i);
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
@@ -717,11 +723,16 @@ function TabMisPrecios({ data, setData, showToast, buscarEnProveedores, prefillP
                     React.createElement("span", { style: { color: "#6b7280", fontSize: 14 } }, "%"),
                     margenCustomVal && React.createElement("span", { style: { color: "#22c55e", fontSize: 12, fontWeight: 600 } }, "→ " + (100 / (100 - parseFloat(margenCustomVal || 0))).toFixed(2) + "x"))),
                 React.createElement("div", { style: { fontSize: 11, color: "#6b7280", marginTop: 6 } }, "Los % exactos se configuran en la pesta\u00F1a \u2699\uFE0F Config")),
-            React.createElement("div", { style: { display: "flex", gap: 8 } },
+            React.createElement("div", { style: { marginBottom: 12, padding: "10px 14px", background: "#111827", borderRadius: 10 } },
+                React.createElement("label", { style: { fontSize: 12, color: "#6b7280", display: "block", marginBottom: 8 } }, "Dividir precio por (para vender por metro/unidad)"),
+                React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
+                    React.createElement("input", { type: "number", min: 1, value: divisor, onChange: e => setDivisor(Math.max(1, parseInt(e.target.value)||1)), style: { width: 80, height: 36, borderRadius: 8, background: "#1e2230", border: "1px solid #374151", color: "#f1f5f9", textAlign: "center", fontSize: 14, fontFamily: "inherit" }, placeholder: "1" }),
+                    divisor > 1 && React.createElement("span", { style: { fontSize: 12, color: "#22c55e" } }, "÷ " + divisor + " = precio unitario"))),
+        React.createElement("div", { style: { display: "flex", gap: 8 } },
                 React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: "center" }, onClick: agregarProducto },
                     React.createElement(Icon, { name: editIdx !== null ? "check" : "plus", size: 16 }),
                     editIdx !== null ? "Guardar cambios" : "Agregar producto"),
-                editIdx !== null && (React.createElement("button", { className: "btn-ghost", onClick: () => { setEditIdx(null); setCodigoRef(""); setCodigoProv(""); setMargenSel("p1"); setMargenCustom(false); setMargenCustomVal(""); } }, "Cancelar")))),
+                editIdx !== null && (React.createElement("button", { className: "btn-ghost", onClick: () => { setEditIdx(null); setCodigoRef(""); setCodigoProv(""); setMargenSel("p1"); setDivisor(1); setMargenCustom(false); setMargenCustomVal(""); } }, "Cancelar")))),
         data.misProductos.length > 0 && (React.createElement("div", { style: { position: "relative", marginBottom: 16 } },
             React.createElement("div", { style: { position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" } },
                 React.createElement(Icon, { name: "search", size: 16 })),
