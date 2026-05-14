@@ -96,5 +96,24 @@ for (const file of files) {
 }
 
 fs.mkdirSync('./dist', { recursive: true });
+// Post-process: fix common issues
+bundle = bundle.replace(
+  '(0, client_1.createRoot)(root)',
+  'ReactDOM.createRoot(root)'
+);
+bundle = bundle.replace(
+  /const __require = \(name\) => \{[\s\S]*?return __modules\[name\] \|\| \{\};\n\};/,
+  `const __require = (name) => {
+  if (name === 'react') return React;
+  if (name === 'react-dom' || name === 'react-dom/client') return ReactDOM;
+  const key = name.replace(/^\\.\\//,'').replace(/\\.\\.\\/[^/]+\\//g,'').replace(/\\.(tsx?|jsx?)$/,'');
+  if (__modules[key]) return __modules[key];
+  for (const k of Object.keys(__modules)) {
+    if (k === key || k.endsWith('/' + key) || k.endsWith(key)) return __modules[k];
+  }
+  return {};
+};`
+);
+
 fs.writeFileSync('./dist/app.js', bundle);
 console.log(`Bundle created: dist/app.js (${(bundle.length/1024).toFixed(1)}kb)`);

@@ -8,7 +8,14 @@ const __modules = {};
 const __require = (name) => {
   if (name === 'react') return React;
   if (name === 'react-dom' || name === 'react-dom/client') return ReactDOM;
-  return __modules[name] || {};
+  // Normalize relative paths to module names
+  const key = name.replace(/^\.\//,'').replace(/\.\.\/[^/]+\//g,'').replace(/\.(tsx?|jsx?)$/,'');
+  if (__modules[key]) return __modules[key];
+  // Try finding by suffix
+  for (const k of Object.keys(__modules)) {
+    if (k === key || k.endsWith('/' + key) || k.endsWith(key)) return __modules[k];
+  }
+  return {};
 };
 
 // === src/types.ts ===
@@ -765,7 +772,7 @@ const react_1 = __importDefault(require("react"));
 const App_1 = __importDefault(require("./App"));
 const root = document.getElementById('root');
 if (root) {
-    (0, client_1.createRoot)(root).render(react_1.default.createElement(App_1.default, null));
+    ReactDOM.createRoot(root).render(react_1.default.createElement(App_1.default, null));
 }
 
 __modules['main'] = exports;
