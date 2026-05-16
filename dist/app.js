@@ -578,56 +578,80 @@ function parseXLSX(buffer) {
 function TabProveedores({ data, setData, showToast, onNavigate }) {
     const [activeTab, setActiveTab] = React.useState(0);
     const [busqueda, setBusqueda] = React.useState('');
-    const fileRef = React.useRef(null);
     const [loading, setLoading] = React.useState(false);
     const prov = (data.proveedores || [])[activeTab] || { id: activeTab, nombre: "", productos: [] };
     const productos = busqueda
         ? prov.productos.filter(p => p.codigo.toLowerCase().includes(busqueda.toLowerCase()) ||
             p.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
         : prov.productos;
-    const handleFile = async (e) => {
-        const file = e.target.files?.[0];
+    const cargarArchivo = (file) => {
         if (!file)
             return;
         setLoading(true);
-        try {
-            const isXls = /\.(xlsx|xls)$/i.test(file.name);
-            const productos = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = ev => {
-                    try {
-                        if (isXls)
-                            resolve(parseXLSX(ev.target.result));
-                        else
-                            resolve(parseCSV(ev.target.result));
+        const isXls = /\.(xlsx|xls)$/i.test(file.name);
+        const reader = new FileReader();
+        reader.onload = ev => {
+            try {
+                const result = ev.target?.result;
+                let productos;
+                if (isXls) {
+                    const w = window;
+                    if (!w.XLSX) {
+                        showToast('XLSX no disponible', 'error');
+                        setLoading(false);
+                        return;
                     }
-                    catch (err) {
-                        reject(err);
+                    const data = new Uint8Array(result);
+                    const wb = w.XLSX.read(data, { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rows = w.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+                    productos = [];
+                    for (const cols of rows) {
+                        const cod = String(cols[0] ?? '').trim();
+                        const desc = String(cols[1] ?? '').trim();
+                        if (!cod || !desc)
+                            continue;
+                        if (cod.toUpperCase() === 'CODIGO' || cod.toUpperCase() === 'COD')
+                            continue;
+                        const precio = parseArgentino(String(cols[2] ?? '0'));
+                        productos.push({ codigo: cod.toUpperCase(), descripcion: desc, precio });
                     }
-                };
-                if (isXls)
-                    reader.readAsArrayBuffer(file);
-                else
-                    reader.readAsText(file);
-            });
-            if (productos.length === 0) {
-                showToast('No se encontraron productos', 'error');
-                return;
+                }
+                else {
+                    productos = parseCSV(result);
+                }
+                if (productos.length === 0) {
+                    showToast('No se encontraron productos válidos', 'error');
+                    setLoading(false);
+                    return;
+                }
+                setData(d => {
+                    const provs = [...d.proveedores];
+                    provs[activeTab] = { ...provs[activeTab], productos };
+                    return { ...d, proveedores: provs };
+                });
+                showToast(`${productos.length} productos cargados`, 'success');
             }
-            setData(d => {
-                const provs = [...d.proveedores];
-                provs[activeTab] = { ...provs[activeTab], productos };
-                return { ...d, proveedores: provs };
-            });
-            showToast(`${productos.length} productos cargados`, 'success');
-        }
-        catch {
-            showToast('Error al leer el archivo', 'error');
-        }
-        finally {
+            catch (err) {
+                console.error('Error parsing file:', err);
+                showToast('Error al leer el archivo: ' + String(err).slice(0, 50), 'error');
+            }
             setLoading(false);
-            e.target.value = '';
-        }
+        };
+        reader.onerror = () => {
+            showToast('Error al abrir el archivo', 'error');
+            setLoading(false);
+        };
+        if (isXls)
+            reader.readAsArrayBuffer(file);
+        else
+            reader.readAsText(file);
+    };
+    const handleFile = (e) => {
+        const file = e.target.files?.[0];
+        if (file)
+            cargarArchivo(file);
+        e.target.value = '';
     };
     const limpiar = () => {
         if (!window.confirm(`Limpiar todos los productos de ${prov.nombre}?`))
@@ -652,8 +676,17 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
                 React.createElement("span", { style: { fontSize: 16, fontWeight: 700, color: '#f1f5f9' } }, prov.nombre || `Proveedor ${activeTab + 1}`),
                 React.createElement("span", { style: { fontSize: 13, color: prov.productos.length > 0 ? '#22c55e' : '#4b5563', fontWeight: 600 } }, prov.productos.length > 0 ? `${prov.productos.length} productos` : 'Sin cargar')),
             React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 14 } },
-                React.createElement("input", { ref: fileRef, type: "file", accept: ".csv,.txt,.xlsx,.xls", style: { display: 'none' }, onChange: handleFile }),
-                React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: 'center' }, onClick: () => fileRef.current?.click(), disabled: loading },
+                React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: 'center' }, onClick: () => {
+                        const inp = document.createElement('input');
+                        inp.type = 'file';
+                        inp.accept = '.csv,.txt,.xlsx,.xls';
+                        inp.onchange = (e) => {
+                            const file = e.target?.files?.[0];
+                            if (file)
+                                cargarArchivo(file);
+                        };
+                        inp.click();
+                    }, disabled: loading },
                     React.createElement(Icon, { name: "upload", size: 16 }),
                     loading ? 'Cargando...' : 'Cargar lista'),
                 prov.productos.length > 0 && (React.createElement("button", { className: "btn-danger", onClick: limpiar, style: { padding: '11px 14px' } },
