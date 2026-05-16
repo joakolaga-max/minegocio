@@ -556,12 +556,24 @@ function parseXLSX(buffer) {
     const wb = w.XLSX.read(new Uint8Array(buffer), { type: 'array' });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = w.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-    const start = isNaN(parseArgentino(String(rows[0]?.[2] || ''))) ? 1 : 0;
-    return rows.slice(start).map((cols) => ({
-        codigo: String(cols[0] || '').toUpperCase().trim(),
-        descripcion: String(cols[1] || '').trim(),
-        precio: parseArgentino(String(cols[2] || '0')),
-    })).filter(p => p.codigo && p.descripcion);
+    const productos = [];
+    for (const cols of rows) {
+        const cod = String(cols[0] ?? '').trim();
+        const desc = String(cols[1] ?? '').trim();
+        const priceRaw = String(cols[2] ?? '0').trim();
+        // Skip empty rows and header rows
+        if (!cod || !desc)
+            continue;
+        if (cod.toUpperCase() === 'CODIGO' || cod.toUpperCase() === 'COD')
+            continue;
+        const precio = parseArgentino(priceRaw);
+        productos.push({
+            codigo: cod.toUpperCase(),
+            descripcion: desc,
+            precio: precio,
+        });
+    }
+    return productos;
 }
 function TabProveedores({ data, setData, showToast, onNavigate }) {
     const [activeTab, setActiveTab] = React.useState(0);
