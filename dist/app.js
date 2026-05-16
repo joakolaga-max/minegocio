@@ -676,7 +676,7 @@ function TabMisPrecios({ data, setData, showToast }) {
     const [margenCustomVal, setMargenCustomVal] = React.useState('');
     const [divisor, setDivisor] = React.useState(1);
     const [editIdx, setEditIdx] = React.useState(null);
-    const [scanRef, setScanRef] = React.useState(false);
+    const [scanBarcode, setScanBarcode] = React.useState(false);
     const [photoModal, setPhotoModal] = React.useState(null);
     const margenFinal = margenCustom ? (parseFloat(margenCustomVal) || 50) : margenSel;
     const buscarEnProveedores = React.useCallback((codigo) => {
@@ -779,14 +779,14 @@ function TabMisPrecios({ data, setData, showToast }) {
                 React.createElement("div", { className: "section-title", style: { marginBottom: 0 } }, editIdx !== null ? 'Editar producto' : 'Agregar producto'),
                 editIdx !== null && (React.createElement("button", { className: "btn-ghost", style: { padding: '6px 12px', fontSize: 12 }, onClick: () => { setEditIdx(null); setCodigoRef(''); setCodigoProv(''); setMargenSel('p1'); setMargenCustom(false); setDivisor(1); } }, "Cancelar"))),
             React.createElement("div", { style: { marginBottom: 10 } },
-                React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 } }, "C\u00F3digo REF (interno)"),
-                React.createElement("div", { style: { display: 'flex', gap: 8 } },
-                    React.createElement("input", { className: "input-field", style: { flex: 1 }, value: codigoRef, onChange: e => setCodigoRef(e.target.value.toUpperCase()), placeholder: "Ej: CAB001" }),
-                    React.createElement("button", { className: "btn-ghost", style: { padding: '10px 14px' }, onClick: () => setScanRef(true) },
-                        React.createElement(Icon, { name: "camera", size: 18 })))),
+                React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 } }, "C\u00F3digo REF (tu descripci\u00F3n interna)"),
+                React.createElement("input", { className: "input-field", value: codigoRef, onChange: e => setCodigoRef(e.target.value.toUpperCase()), placeholder: "Ej: CABLE-MANG-16" })),
             React.createElement("div", { style: { marginBottom: 10 } },
-                React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 } }, "C\u00F3digo proveedor"),
-                React.createElement("input", { className: "input-field", value: codigoProv, onChange: e => setCodigoProv(e.target.value.toUpperCase()), placeholder: "Ej: 7793759212659" }),
+                React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 } }, "C\u00F3digo de barras"),
+                React.createElement("div", { style: { display: 'flex', gap: 8 } },
+                    React.createElement("input", { className: "input-field", style: { flex: 1 }, value: codigoProv, onChange: e => setCodigoProv(e.target.value.toUpperCase()), placeholder: "Escane\u00E1 o escrib\u00ED el c\u00F3digo" }),
+                    React.createElement("button", { className: "btn-ghost", style: { padding: '10px 14px' }, onClick: () => setScanBarcode(true) },
+                        React.createElement(Icon, { name: "camera", size: 18 }))),
                 codigoProv && (() => {
                     const found = buscarEnProveedores(codigoProv);
                     return found ? (React.createElement("div", { style: { fontSize: 12, color: '#22c55e', marginTop: 4 } },
@@ -889,7 +889,7 @@ function TabMisPrecios({ data, setData, showToast }) {
                             React.createElement("button", { onClick: () => eliminar(data.misProductos.indexOf(p)), style: { background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
                                 React.createElement(Icon, { name: "trash", size: 14 }))))));
             })))),
-        scanRef && (React.createElement(Scanner, { onResult: code => { setScanRef(false); setCodigoRef(code.toUpperCase()); }, onClose: () => setScanRef(false) })),
+        scanBarcode && (React.createElement(Scanner, { onResult: code => { setScanBarcode(false); setCodigoProv(code.toUpperCase()); }, onClose: () => setScanBarcode(false) })),
         photoModal && (React.createElement("div", { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }, onClick: () => setPhotoModal(null) },
             React.createElement("div", { style: { background: '#1e2230', borderRadius: 20, padding: 24, width: '100%', maxWidth: 420 }, onClick: e => e.stopPropagation() },
                 React.createElement("div", { style: { fontWeight: 700, fontSize: 15, color: '#f1f5f9', marginBottom: 4 } }, photoModal.descripcion),
