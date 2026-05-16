@@ -534,6 +534,10 @@ function TabCalculadora({ data, setData, showToast }) {
 
 
 // ── src/tabs/TabProveedores.tsx ──
+const parsePrecio = (s) => {
+    const clean = String(s || '0').trim().replace(/\.(?=\d{3})/g, '').replace(',', '.');
+    return parseFloat(clean) || 0;
+};
 function parseCSV(text) {
     const lines = text.trim().split(/\r?\n/).filter(Boolean);
     if (lines.length === 0)
@@ -542,7 +546,7 @@ function parseCSV(text) {
     const sep = lines[0].includes(';') ? ';' : ',';
     const rows = lines.map(l => l.split(sep).map(c => c.trim().replace(/^"|"$/g, '')));
     // Skip header if first row has no number in position 2
-    const start = isNaN((parseFloat(String(rows[0]?.[2] || '').trim().replace(/\.(?=\d{3})/g,'').replace(',','.'))||0)) && rows.length > 1 ? 1 : 0;
+    const start = isNaN(parsePrecio(rows[0]?.[2] || '')) && rows.length > 1 ? 1 : 0;
     return rows.slice(start).map(cols => ({
         codigo: (cols[0] || '').toUpperCase(),
         descripcion: cols[1] || '',
@@ -566,7 +570,7 @@ function parseXLSX(buffer) {
             continue;
         if (cod.toUpperCase() === 'CODIGO' || cod.toUpperCase() === 'COD')
             continue;
-        const precio = (parseFloat(String(priceRaw).trim().replace(/\.(?=\d{3})/g,'').replace(',','.'))||0);
+        const precio = parsePrecio(priceRaw);
         productos.push({
             codigo: cod.toUpperCase(),
             descripcion: desc,

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AppData, Proveedor, Producto } from '../types';
 import { Icon } from '../components/Icon';
-import { parseArgentino } from '../lib/utils';
+
 
 interface Props {
   data: AppData;
@@ -9,6 +9,11 @@ interface Props {
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   onNavigate?: (tab: string, codigoProv?: string) => void;
 }
+
+const parsePrecio = (s: string): number => {
+  const clean = String(s || '0').trim().replace(/\.(?=\d{3})/g, '').replace(',', '.');
+  return parseFloat(clean) || 0;
+};
 
 function parseCSV(text: string): Producto[] {
   const lines = text.trim().split(/\r?\n/).filter(Boolean);
@@ -19,7 +24,7 @@ function parseCSV(text: string): Producto[] {
   const rows = lines.map(l => l.split(sep).map(c => c.trim().replace(/^"|"$/g, '')));
 
   // Skip header if first row has no number in position 2
-  const start = isNaN(parseArgentino(rows[0]?.[2] || '')) && rows.length > 1 ? 1 : 0;
+  const start = isNaN(parsePrecio(rows[0]?.[2] || '')) && rows.length > 1 ? 1 : 0;
 
   return rows.slice(start).map(cols => ({
     codigo: (cols[0] || '').toUpperCase(),
@@ -42,7 +47,7 @@ function parseXLSX(buffer: ArrayBuffer): Producto[] {
     // Skip empty rows and header rows
     if (!cod || !desc) continue;
     if (cod.toUpperCase() === 'CODIGO' || cod.toUpperCase() === 'COD') continue;
-    const precio = parseArgentino(priceRaw);
+    const precio = parsePrecio(priceRaw);
     productos.push({
       codigo: cod.toUpperCase(),
       descripcion: desc,
