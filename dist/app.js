@@ -552,7 +552,7 @@ function parseXLSX(buffer) {
         precio: parseArgentino(String(cols[2] || '0')),
     })).filter(p => p.codigo && p.descripcion);
 }
-function TabProveedores({ data, setData, showToast }) {
+function TabProveedores({ data, setData, showToast, onNavigate }) {
     const [activeTab, setActiveTab] = React.useState(0);
     const [busqueda, setBusqueda] = React.useState('');
     const fileRef = React.useRef(null);
@@ -624,15 +624,15 @@ function TabProveedores({ data, setData, showToast }) {
         });
     };
     return (React.createElement("div", null,
-        React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 } }, (data.proveedores || []).map((p, i) => (React.createElement("button", { key: i, onClick: () => { setActiveTab(i); setBusqueda(''); }, style: {
-                width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid',
+        React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6, marginBottom: 12 } }, (data.proveedores || []).map((p, i) => (React.createElement("button", { key: i, onClick: () => { setActiveTab(i); setBusqueda(''); }, style: {
+                flexShrink: 0, padding: '7px 12px', borderRadius: 20, border: '1px solid',
                 borderColor: activeTab === i ? '#6366f1' : '#1e2535',
-                background: activeTab === i ? 'rgba(99,102,241,0.12)' : '#161b27',
+                background: activeTab === i ? 'rgba(99,102,241,0.15)' : '#161b27',
                 cursor: 'pointer', fontFamily: 'inherit',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                display: 'flex', alignItems: 'center', gap: 6,
             } },
-            React.createElement("span", { style: { fontSize: 14, fontWeight: activeTab === i ? 700 : 500, color: activeTab === i ? '#818cf8' : '#94a3b8' } }, p.nombre || `Proveedor ${i + 1}`),
-            React.createElement("span", { style: { fontSize: 12, color: p.productos.length > 0 ? '#22c55e' : '#4b5563', fontWeight: 600 } }, p.productos.length > 0 ? `${p.productos.length} productos` : 'Sin cargar'))))),
+            React.createElement("span", { style: { fontSize: 13, fontWeight: activeTab === i ? 700 : 500, color: activeTab === i ? '#818cf8' : '#94a3b8', whiteSpace: 'nowrap' } }, p.nombre || `Proveedor ${i + 1}`),
+            React.createElement("span", { style: { fontSize: 11, color: p.productos.length > 0 ? '#22c55e' : '#4b5563', fontWeight: 600, background: 'rgba(0,0,0,0.3)', borderRadius: 10, padding: '1px 6px' } }, p.productos.length > 0 ? p.productos.length : '—'))))),
         React.createElement("div", { className: "card" },
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 } },
                 React.createElement("input", { className: "input-field", value: prov.nombre, onChange: e => updateNombre(e.target.value), style: { flex: 1, fontWeight: 600 }, placeholder: "Nombre del proveedor" }),
@@ -658,11 +658,12 @@ function TabProveedores({ data, setData, showToast }) {
             prov.productos.length === 0 ? (React.createElement("div", { style: { textAlign: 'center', padding: '40px 20px', color: '#374151' } },
                 React.createElement(Icon, { name: "upload", size: 40 }),
                 React.createElement("div", { style: { marginTop: 12, fontSize: 14, color: '#6b7280' } }, "Carg\u00E1 la lista de precios del proveedor"))) : (React.createElement("div", { style: { maxHeight: 400, overflowY: 'auto' } },
-                productos.slice(0, 200).map((p, i) => (React.createElement("div", { key: i, style: {
+                productos.slice(0, 200).map((p, i) => (React.createElement("div", { key: i, onClick: () => onNavigate && onNavigate('precios', p.codigo), style: {
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                        padding: '8px 0', borderBottom: i < productos.length - 1 ? '1px solid #1e2535' : 'none',
-                        gap: 10,
-                    } },
+                        padding: '10px 0', borderBottom: i < productos.length - 1 ? '1px solid #1e2535' : 'none',
+                        gap: 10, cursor: onNavigate ? 'pointer' : 'default',
+                    }, onMouseEnter: e => { if (onNavigate)
+                        e.currentTarget.style.background = 'rgba(99,102,241,0.05)'; }, onMouseLeave: e => { e.currentTarget.style.background = 'transparent'; } },
                     React.createElement("div", { style: { flex: 1, minWidth: 0 } },
                         React.createElement("span", { style: { fontSize: 11, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700, marginRight: 8 } }, p.codigo),
                         React.createElement("span", { style: { fontSize: 13, color: '#cbd5e1' } }, p.descripcion)),
@@ -678,7 +679,7 @@ function TabProveedores({ data, setData, showToast }) {
 
 // ── src/tabs/TabMisPrecios.tsx ──
 const MARGEN_LABELS = { p1: '% 1', p2: '% 2', p3: '% 3', p4: '% 4' };
-function TabMisPrecios({ data, setData, showToast }) {
+function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPending }) {
     const [busqueda, setBusqueda] = React.useState('');
     const [codigoRef, setCodigoRef] = React.useState('');
     const [codigoProv, setCodigoProv] = React.useState('');
@@ -690,6 +691,15 @@ function TabMisPrecios({ data, setData, showToast }) {
     const [scanBarcode, setScanBarcode] = React.useState(false);
     const [photoModal, setPhotoModal] = React.useState(null);
     const margenFinal = margenCustom ? (parseFloat(margenCustomVal) || 50) : margenSel;
+    // Auto-fill codigoProv when navigating from Proveedores
+    React.useEffect(() => {
+        if (pendingCodProv) {
+            setCodigoProv(pendingCodProv.toUpperCase());
+            onClearPending?.();
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }, [pendingCodProv]);
     const buscarEnProveedores = React.useCallback((codigo) => {
         for (const prov of data.proveedores) {
             const p = prov.productos.find(x => x.codigo === codigo.toUpperCase());
@@ -1524,6 +1534,7 @@ function App() {
     const { data, setData, loaded, syncing } = useAppData(user);
     const [tab, setTab] = React.useState(() => localStorage.getItem('mn_lastTab') || 'calc');
     const [menuOpen, setMenuOpen] = React.useState(false);
+    const [pendingCodProv, setPendingCodProv] = React.useState();
     const [toast, setToast] = React.useState(null);
     React.useEffect(() => {
         const onAuth = () => setUser(window.__user || null);
@@ -1533,6 +1544,11 @@ function App() {
     const showToast = React.useCallback((msg, type = 'success') => {
         setToast({ msg, type });
     }, []);
+    const onNavigate = (tabId, codigoProv) => {
+        switchTab(tabId);
+        if (codigoProv)
+            setPendingCodProv(codigoProv);
+    };
     const switchTab = (id) => {
         setTab(id);
         setMenuOpen(false);
@@ -1568,8 +1584,8 @@ function App() {
             React.createElement("div", { style: { fontSize: 40, marginBottom: 16 } }, "\u26A1"),
             React.createElement("div", null, "Cargando datos..."))) : (React.createElement(React.Fragment, null,
             tab === 'calc' && React.createElement(TabCalculadora, { ...tabProps }),
-            tab === 'proveedores' && React.createElement(TabProveedores, { ...tabProps }),
-            tab === 'precios' && React.createElement(TabMisPrecios, { ...tabProps }),
+            tab === 'proveedores' && React.createElement(TabProveedores, { ...tabProps, onNavigate: onNavigate }),
+            tab === 'precios' && React.createElement(TabMisPrecios, { ...tabProps, pendingCodProv: pendingCodProv, onClearPending: () => setPendingCodProv(undefined) }),
             tab === 'stock' && React.createElement(TabStock, { ...tabProps }),
             tab === 'ventas' && React.createElement(TabVentas, { ...tabProps }),
             tab === 'pedidos' && React.createElement(TabPedidos, { ...tabProps }),
