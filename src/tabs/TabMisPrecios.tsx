@@ -180,26 +180,34 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
           )}
         </div>
 
-        {/* Codigo de barras - with scanner, FIRST */}
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 }}>Código de barras</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input className="input-field" style={{ flex: 1 }} value={codigoProv}
-              onChange={e => setCodigoProv(e.target.value.toUpperCase())} placeholder="Escaneá o escribí el código" />
-            <button className="btn-ghost" style={{ padding: '10px 14px' }} onClick={() => setScanBarcode(true)}>
-              <Icon name="camera" size={18} />
-            </button>
+        {/* Cód. Proveedor + Cód. Barras - dos columnas */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 }}>Cód. proveedor</label>
+            <input className="input-field" style={{ fontSize: 13 }} value={codigoProv}
+              onChange={e => setCodigoProv(e.target.value.toUpperCase())} placeholder="Ej: FC1561" />
           </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 }}>Cód. de barras</label>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input className="input-field" style={{ flex: 1, fontSize: 13 }} value={codigoBarras}
+                onChange={e => setCodigoBarras(e.target.value)} placeholder="Opcional" />
+              <button className="btn-ghost" style={{ padding: '10px 10px', flexShrink: 0 }} onClick={() => setScanBarcode(true)}>
+                <Icon name="camera" size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
         {codigoProv && (() => {
-            const found = buscarEnProveedores(codigoProv);
-            return found ? (
-              <div style={{ fontSize: 12, color: '#22c55e', marginBottom: 8 }}>
-                ✓ {found.descripcion} — ${found.precio.toFixed(2)}
-              </div>
-            ) : (
-              <div style={{ fontSize: 12, color: '#ef4444', marginBottom: 8 }}>No encontrado en proveedores</div>
-            );
-          })()}
+          const found = buscarEnProveedores(codigoProv);
+          return found ? (
+            <div style={{ fontSize: 12, color: '#22c55e', marginBottom: 8 }}>
+              ✓ {found.descripcion} — ${found.precio.toFixed(2)}
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: '#ef4444', marginBottom: 8 }}>No encontrado en proveedores</div>
+          );
+        })()}
 
         {/* Descripcion - REF field, SECOND */}
         <div style={{ marginBottom: 10 }}>
