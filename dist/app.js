@@ -724,7 +724,7 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
 
 
 // ── src/tabs/TabMisPrecios.tsx ──
-const MARGEN_LABELS = { p1: '% 1', p2: '% 2', p3: '% 3', p4: '% 4' };
+const MARGEN_LABELS = { p1: 'p1', p2: 'p2', p3: 'p3', p4: 'p4' };
 function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPending }) {
     const [busqueda, setBusqueda] = React.useState('');
     const [codigoRef, setCodigoRef] = React.useState('');
@@ -920,38 +920,44 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
             React.createElement("div", { style: { marginBottom: 10 } },
                 React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 } }, "Margen"),
                 React.createElement("div", { style: { display: 'flex', gap: 6, flexWrap: 'wrap' } },
-                    Object.entries(MARGEN_LABELS).map(([k, v]) => (React.createElement("button", { key: k, onClick: () => { setMargenSel(k); setMargenCustom(false); }, style: {
-                            flex: 1, minWidth: 60, padding: '8px 4px', borderRadius: 10, border: '1px solid',
+                    Object.entries(MARGEN_LABELS).map(([k]) => (React.createElement("button", { key: k, onClick: () => { setMargenSel(k); setMargenCustom(false); }, style: {
+                            flex: 1, minWidth: 50, padding: '8px 4px', borderRadius: 10, border: '1px solid',
                             borderColor: margenSel === k && !margenCustom ? '#6366f1' : '#374151',
                             background: margenSel === k && !margenCustom ? 'rgba(99,102,241,0.2)' : 'transparent',
                             color: margenSel === k && !margenCustom ? '#818cf8' : '#6b7280',
-                            cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13,
+                            cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 14,
                         } },
-                        v,
-                        " (",
                         data.margenes[k],
-                        "%)"))),
+                        "%"))),
                     React.createElement("button", { onClick: () => setMargenCustom(!margenCustom), style: {
-                            flex: 1, minWidth: 60, padding: '8px 4px', borderRadius: 10, border: '1px solid',
+                            flex: 1, minWidth: 50, padding: '8px 4px', borderRadius: 10, border: '1px solid',
                             borderColor: margenCustom ? '#6366f1' : '#374151',
                             background: margenCustom ? 'rgba(99,102,241,0.2)' : 'transparent',
                             color: margenCustom ? '#818cf8' : '#6b7280',
                             cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13,
                         } }, "Otro %")),
-                margenCustom && (React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 } },
-                    React.createElement("input", { type: "number", className: "input-field", style: { width: 100 }, value: margenCustomVal, onChange: e => setMargenCustomVal(e.target.value), placeholder: "%", min: 0, max: 99 }),
-                    margenCustomVal && (React.createElement("span", { style: { fontSize: 12, color: '#22c55e' } },
-                        "\u2192 ",
-                        (100 / (1 - parseFloat(margenCustomVal) / 100)).toFixed(2),
-                        "x"))))),
-            React.createElement("div", { style: { marginBottom: 14 } },
-                React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 } }, "Dividir precio por (ej: 100 para precio por metro)"),
-                React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },
-                    React.createElement("input", { type: "number", min: 1, className: "input-field", style: { width: 100 }, value: divisor, onChange: e => setDivisor(Math.max(1, parseInt(e.target.value) || 1)) }),
+                margenCustom && (React.createElement("div", { style: { display: 'flex', gap: 10, marginTop: 10, alignItems: 'flex-end' } },
+                    React.createElement("div", { style: { flex: 1 } },
+                        React.createElement("label", { style: { fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 } }, "% manual"),
+                        React.createElement("input", { type: "number", className: "input-field", style: { textAlign: 'center', fontWeight: 700 }, value: margenCustomVal, onChange: e => setMargenCustomVal(e.target.value), placeholder: "Ej: 45", min: 0, max: 99 }),
+                        margenCustomVal && (React.createElement("div", { style: { fontSize: 11, color: '#22c55e', marginTop: 3 } },
+                            "\u2192 ",
+                            (100 / (1 - parseFloat(margenCustomVal) / 100)).toFixed(2),
+                            "x"))),
+                    React.createElement("div", { style: { flex: 1 } },
+                        React.createElement("label", { style: { fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 } }, "Dividir por"),
+                        React.createElement("input", { type: "number", min: 1, className: "input-field", style: { textAlign: 'center', fontWeight: 700 }, value: divisor, onChange: e => setDivisor(Math.max(1, parseInt(e.target.value) || 1)) }),
+                        divisor > 1 && React.createElement("div", { style: { fontSize: 11, color: '#22c55e', marginTop: 3 } },
+                            "\u00F7 ",
+                            divisor,
+                            " = c/u")))),
+                !margenCustom && (React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 } },
+                    React.createElement("div", { style: { fontSize: 12, color: '#6b7280' } }, "Dividir por:"),
+                    React.createElement("input", { type: "number", min: 1, className: "input-field", style: { width: 80, textAlign: 'center', fontWeight: 700 }, value: divisor, onChange: e => setDivisor(Math.max(1, parseInt(e.target.value) || 1)) }),
                     divisor > 1 && React.createElement("span", { style: { fontSize: 12, color: '#22c55e' } },
                         "\u00F7 ",
                         divisor,
-                        " = precio unitario"))),
+                        " = c/u")))),
             codigoProv && (() => {
                 const found = buscarEnProveedores(codigoProv);
                 if (!found)
@@ -963,9 +969,62 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                         fmt(pv),
                         divisor > 1 ? ` (${fmt(pv / divisor)} c/u)` : '')));
             })(),
-            React.createElement("button", { className: "btn-primary", style: { width: '100%', justifyContent: 'center' }, onClick: agregarProducto },
-                React.createElement(Icon, { name: editIdx !== null ? 'check' : 'plus', size: 16 }),
-                editIdx !== null ? 'Guardar cambios' : 'Agregar producto')),
+            React.createElement("div", { style: { display: 'flex', gap: 8 } },
+                React.createElement("button", { className: "btn-ghost", style: { padding: '12px 14px', flexShrink: 0 }, title: "Importar desde Excel", onClick: () => {
+                        const inp = document.createElement('input');
+                        inp.type = 'file';
+                        inp.accept = '.xlsx,.xls';
+                        inp.onchange = (e) => {
+                            const file = e.target?.files?.[0];
+                            if (!file)
+                                return;
+                            const w = window;
+                            if (!w.XLSX) {
+                                showToast('XLSX no disponible', 'error');
+                                return;
+                            }
+                            const reader = new FileReader();
+                            reader.onload = ev => {
+                                try {
+                                    const wb = w.XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+                                    const ws = wb.Sheets[wb.SheetNames[0]];
+                                    const rows = w.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+                                    const start = String(rows[0]?.[0] || '').toLowerCase().includes('ref') ? 1 : 0;
+                                    const nuevos = rows.slice(start).map((cols) => {
+                                        const ref = String(cols[0] || '').trim().toUpperCase();
+                                        const codProv = String(cols[1] || '').trim().toUpperCase();
+                                        const desc = String(cols[2] || '').trim();
+                                        const costo = parseFloat(String(cols[3] || '0').replace(',', '.')) || 0;
+                                        const margenVal = parseFloat(String(cols[5] || '50').replace(',', '.')) || 50;
+                                        if (!ref || !codProv)
+                                            return null;
+                                        return { codigoRef: ref, codigoProv: codProv, descripcion: desc, precioCosto: costo, margen: margenVal, proveedor: '', divisor: 1 };
+                                    }).filter(Boolean);
+                                    if (nuevos.length === 0) {
+                                        showToast('Sin productos válidos', 'error');
+                                        return;
+                                    }
+                                    if (!window.confirm(`Importar ${nuevos.length} productos?`))
+                                        return;
+                                    setData(d => {
+                                        const refs = new Set(nuevos.map((p) => p.codigoRef));
+                                        const filtered = (d.misProductos || []).filter((p) => !refs.has(p.codigoRef));
+                                        return { ...d, misProductos: [...filtered, ...nuevos] };
+                                    });
+                                    showToast(`${nuevos.length} productos importados`, 'success');
+                                }
+                                catch (err) {
+                                    showToast('Error al leer el archivo', 'error');
+                                }
+                            };
+                            reader.readAsArrayBuffer(file);
+                        };
+                        inp.click();
+                    } },
+                    React.createElement(Icon, { name: "upload", size: 16 })),
+                React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: 'center' }, onClick: agregarProducto },
+                    React.createElement(Icon, { name: editIdx !== null ? 'check' : 'plus', size: 16 }),
+                    editIdx !== null ? 'Guardar cambios' : 'Agregar producto'))),
         React.createElement("div", { className: "card" },
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 } },
                 React.createElement("div", null,
@@ -986,8 +1045,8 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                 const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
                 const foto = data.fotos[p.codigoRef];
                 const margenLabel = typeof p.margen === 'number'
-                    ? `${p.margen}% ✎`
-                    : `${MARGEN_LABELS[p.margen] || p.margen} (${data.margenes[p.margen]}%)`;
+                    ? `${p.margen}%`
+                    : `${data.margenes[p.margen]}%`;
                 return (React.createElement("div", { key: i, style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', padding: '12px 14px' } },
                     React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },
                         foto && React.createElement("img", { src: foto, alt: "", style: { width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 } }),

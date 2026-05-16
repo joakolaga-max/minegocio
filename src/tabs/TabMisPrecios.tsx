@@ -12,7 +12,7 @@ interface Props {
   onClearPending?: () => void;
 }
 
-const MARGEN_LABELS: Record<string, string> = { p1: '% 1', p2: '% 2', p3: '% 3', p4: '% 4' };
+const MARGEN_LABELS: Record<string, string> = { p1: 'p1', p2: 'p2', p3: 'p3', p4: 'p4' };
 
 export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPending }: Props) {
   const [busqueda, setBusqueda] = useState('');
@@ -220,19 +220,19 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
         <div style={{ marginBottom: 10 }}>
           <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 }}>Margen</label>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {Object.entries(MARGEN_LABELS).map(([k, v]) => (
+            {Object.entries(MARGEN_LABELS).map(([k]) => (
               <button key={k} onClick={() => { setMargenSel(k); setMargenCustom(false); }} style={{
-                flex: 1, minWidth: 60, padding: '8px 4px', borderRadius: 10, border: '1px solid',
+                flex: 1, minWidth: 50, padding: '8px 4px', borderRadius: 10, border: '1px solid',
                 borderColor: margenSel === k && !margenCustom ? '#6366f1' : '#374151',
                 background: margenSel === k && !margenCustom ? 'rgba(99,102,241,0.2)' : 'transparent',
                 color: margenSel === k && !margenCustom ? '#818cf8' : '#6b7280',
-                cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13,
+                cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 14,
               }}>
-                {v} ({data.margenes[k as keyof typeof data.margenes]}%)
+                {data.margenes[k as keyof typeof data.margenes]}%
               </button>
             ))}
             <button onClick={() => setMargenCustom(!margenCustom)} style={{
-              flex: 1, minWidth: 60, padding: '8px 4px', borderRadius: 10, border: '1px solid',
+              flex: 1, minWidth: 50, padding: '8px 4px', borderRadius: 10, border: '1px solid',
               borderColor: margenCustom ? '#6366f1' : '#374151',
               background: margenCustom ? 'rgba(99,102,241,0.2)' : 'transparent',
               color: margenCustom ? '#818cf8' : '#6b7280',
@@ -241,30 +241,39 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
               Otro %
             </button>
           </div>
+
+          {/* Cuando pulsa Otro%: margen manual + divisor en la misma fila */}
           {margenCustom && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
-              <input type="number" className="input-field" style={{ width: 100 }}
-                value={margenCustomVal} onChange={e => setMargenCustomVal(e.target.value)}
-                placeholder="%" min={0} max={99} />
-              {margenCustomVal && (
-                <span style={{ fontSize: 12, color: '#22c55e' }}>
-                  → {(100 / (1 - parseFloat(margenCustomVal) / 100)).toFixed(2)}x
-                </span>
-              )}
+            <div style={{ display: 'flex', gap: 10, marginTop: 10, alignItems: 'flex-end' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 }}>% manual</label>
+                <input type="number" className="input-field" style={{ textAlign: 'center', fontWeight: 700 }}
+                  value={margenCustomVal} onChange={e => setMargenCustomVal(e.target.value)}
+                  placeholder="Ej: 45" min={0} max={99} />
+                {margenCustomVal && (
+                  <div style={{ fontSize: 11, color: '#22c55e', marginTop: 3 }}>
+                    → {(100 / (1 - parseFloat(margenCustomVal) / 100)).toFixed(2)}x
+                  </div>
+                )}
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 }}>Dividir por</label>
+                <input type="number" min={1} className="input-field" style={{ textAlign: 'center', fontWeight: 700 }}
+                  value={divisor} onChange={e => setDivisor(Math.max(1, parseInt(e.target.value) || 1))} />
+                {divisor > 1 && <div style={{ fontSize: 11, color: '#22c55e', marginTop: 3 }}>÷ {divisor} = c/u</div>}
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Divisor */}
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 }}>
-            Dividir precio por (ej: 100 para precio por metro)
-          </label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <input type="number" min={1} className="input-field" style={{ width: 100 }}
-              value={divisor} onChange={e => setDivisor(Math.max(1, parseInt(e.target.value) || 1))} />
-            {divisor > 1 && <span style={{ fontSize: 12, color: '#22c55e' }}>÷ {divisor} = precio unitario</span>}
-          </div>
+          {/* Divisor normal cuando no está en Otro% */}
+          {!margenCustom && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+              <div style={{ fontSize: 12, color: '#6b7280' }}>Dividir por:</div>
+              <input type="number" min={1} className="input-field" style={{ width: 80, textAlign: 'center', fontWeight: 700 }}
+                value={divisor} onChange={e => setDivisor(Math.max(1, parseInt(e.target.value) || 1))} />
+              {divisor > 1 && <span style={{ fontSize: 12, color: '#22c55e' }}>÷ {divisor} = c/u</span>}
+            </div>
+          )}
         </div>
 
         {/* Price preview */}
@@ -282,10 +291,57 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
           );
         })()}
 
-        <button className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={agregarProducto}>
-          <Icon name={editIdx !== null ? 'check' : 'plus'} size={16} />
-          {editIdx !== null ? 'Guardar cambios' : 'Agregar producto'}
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            className="btn-ghost"
+            style={{ padding: '12px 14px', flexShrink: 0 }}
+            title="Importar desde Excel"
+            onClick={() => {
+              const inp = document.createElement('input');
+              inp.type = 'file'; inp.accept = '.xlsx,.xls';
+              inp.onchange = (e: any) => {
+                const file = e.target?.files?.[0];
+                if (!file) return;
+                const w = window as any;
+                if (!w.XLSX) { showToast('XLSX no disponible', 'error'); return; }
+                const reader = new FileReader();
+                reader.onload = ev => {
+                  try {
+                    const wb = w.XLSX.read(new Uint8Array(ev.target!.result as ArrayBuffer), { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rows: any[][] = w.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+                    const start = String(rows[0]?.[0] || '').toLowerCase().includes('ref') ? 1 : 0;
+                    const nuevos = rows.slice(start).map((cols: any[]) => {
+                      const ref = String(cols[0] || '').trim().toUpperCase();
+                      const codProv = String(cols[1] || '').trim().toUpperCase();
+                      const desc = String(cols[2] || '').trim();
+                      const costo = parseFloat(String(cols[3] || '0').replace(',', '.')) || 0;
+                      const margenVal = parseFloat(String(cols[5] || '50').replace(',', '.')) || 50;
+                      if (!ref || !codProv) return null;
+                      return { codigoRef: ref, codigoProv: codProv, descripcion: desc, precioCosto: costo, margen: margenVal, proveedor: '', divisor: 1 };
+                    }).filter(Boolean);
+                    if (nuevos.length === 0) { showToast('Sin productos válidos', 'error'); return; }
+                    if (!window.confirm(`Importar ${nuevos.length} productos?`)) return;
+                    setData(d => {
+                      const refs = new Set(nuevos.map((p: any) => p.codigoRef));
+                      const filtered = (d.misProductos || []).filter((p: any) => !refs.has(p.codigoRef));
+                      return { ...d, misProductos: [...filtered, ...nuevos as any] };
+                    });
+                    showToast(`${nuevos.length} productos importados`, 'success');
+                  } catch(err) { showToast('Error al leer el archivo', 'error'); }
+                };
+                reader.readAsArrayBuffer(file);
+              };
+              inp.click();
+            }}
+          >
+            <Icon name="upload" size={16} />
+          </button>
+          <button className="btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={agregarProducto}>
+            <Icon name={editIdx !== null ? 'check' : 'plus'} size={16} />
+            {editIdx !== null ? 'Guardar cambios' : 'Agregar producto'}
+          </button>
+        </div>
       </div>
 
       {/* Product list card */}
@@ -326,8 +382,8 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
               const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
               const foto = data.fotos[p.codigoRef];
               const margenLabel = typeof p.margen === 'number'
-                ? `${p.margen}% ✎`
-                : `${MARGEN_LABELS[p.margen] || p.margen} (${data.margenes[p.margen as keyof typeof data.margenes]}%)`;
+                ? `${p.margen}%`
+                : `${data.margenes[p.margen as keyof typeof data.margenes]}%`;
 
               return (
                 <div key={i}
