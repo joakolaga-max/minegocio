@@ -329,9 +329,9 @@ function LoginScreen({ onLogin }) {
         setLoading(true);
         try {
             if (action === 'login')
-                await w.loginUser(email.trim(), password);
+                await w.login(email.trim(), password);
             else
-                await w.registerUser(email.trim(), password);
+                await w.register(email.trim(), password);
             onLogin();
         }
         catch (e) {
