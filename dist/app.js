@@ -548,7 +548,7 @@ function TabProveedores({ data, setData, showToast }) {
     const [busqueda, setBusqueda] = React.useState('');
     const fileRef = React.useRef(null);
     const [loading, setLoading] = React.useState(false);
-    const prov = data.proveedores[activeTab];
+    const prov = (data.proveedores || [])[activeTab] || { nombre: "", productos: [] };
     const productos = busqueda
         ? prov.productos.filter(p => p.codigo.toLowerCase().includes(busqueda.toLowerCase()) ||
             p.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
@@ -615,7 +615,7 @@ function TabProveedores({ data, setData, showToast }) {
         });
     };
     return (React.createElement("div", null,
-        React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 12 } }, data.proveedores.map((p, i) => (React.createElement("button", { key: i, onClick: () => { setActiveTab(i); setBusqueda(''); }, style: {
+        React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 12 } }, (data.proveedores || []).map((p, i) => (React.createElement("button", { key: i, onClick: () => { setActiveTab(i); setBusqueda(''); }, style: {
                 flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: '1px solid',
                 borderColor: activeTab === i ? '#6366f1' : '#374151',
                 background: activeTab === i ? 'rgba(99,102,241,0.15)' : 'transparent',
@@ -647,7 +647,7 @@ function TabProveedores({ data, setData, showToast }) {
             prov.productos.length === 0 ? (React.createElement("div", { style: { textAlign: 'center', padding: '40px 20px', color: '#374151' } },
                 React.createElement(Icon, { name: "upload", size: 40 }),
                 React.createElement("div", { style: { marginTop: 12, fontSize: 14, color: '#6b7280' } }, "Carg\u00E1 la lista de precios del proveedor"))) : (React.createElement("div", { style: { maxHeight: 400, overflowY: 'auto' } },
-                productos.slice200.map((p, i) => (React.createElement("div", { key: i, style: {
+                productos.slice(0, 200).map((p, i) => (React.createElement("div", { key: i, style: {
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                         padding: '8px 0', borderBottom: i < productos.length - 1 ? '1px solid #1e2535' : 'none',
                         gap: 10,
