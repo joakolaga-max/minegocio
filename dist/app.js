@@ -542,11 +542,11 @@ function parseCSV(text) {
     const sep = lines[0].includes(';') ? ';' : ',';
     const rows = lines.map(l => l.split(sep).map(c => c.trim().replace(/^"|"$/g, '')));
     // Skip header if first row has no number in position 2
-    const start = isNaN(parseArgentino(rows[0]?.[2] || '')) && rows.length > 1 ? 1 : 0;
+    const start = isNaN((parseFloat(String(rows[0]?.[2] || '').trim().replace(/\.(?=\d{3})/g,'').replace(',','.'))||0)) && rows.length > 1 ? 1 : 0;
     return rows.slice(start).map(cols => ({
         codigo: (cols[0] || '').toUpperCase(),
         descripcion: cols[1] || '',
-        precio: parseArgentino(cols[2] || '0'),
+        precio: (() => { const s = String(cols[2] || '0').trim().replace(/\.(?=\d{3})/g, '').replace(',', '.'); return parseFloat(s) || 0; })(),
     })).filter(p => p.codigo && p.descripcion);
 }
 function parseXLSX(buffer) {
@@ -566,7 +566,7 @@ function parseXLSX(buffer) {
             continue;
         if (cod.toUpperCase() === 'CODIGO' || cod.toUpperCase() === 'COD')
             continue;
-        const precio = parseArgentino(priceRaw);
+        const precio = (parseFloat(String(priceRaw).trim().replace(/\.(?=\d{3})/g,'').replace(',','.'))||0);
         productos.push({
             codigo: cod.toUpperCase(),
             descripcion: desc,
@@ -613,7 +613,8 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
                             continue;
                         if (cod.toUpperCase() === 'CODIGO' || cod.toUpperCase() === 'COD')
                             continue;
-                        const precio = parseArgentino(String(cols[2] ?? '0'));
+                        const priceStr = String(cols[2] ?? '0').trim().replace(/\.(?=\d{3})/g, '').replace(',', '.');
+                        const precio = parseFloat(priceStr) || 0;
                         productos.push({ codigo: cod.toUpperCase(), descripcion: desc, precio });
                     }
                 }
