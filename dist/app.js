@@ -624,21 +624,16 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
         });
     };
     return (React.createElement("div", null,
-        React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 6, marginBottom: 12 } }, (data.proveedores || []).map((p, i) => (React.createElement("button", { key: i, onClick: () => { setActiveTab(i); setBusqueda(''); }, style: {
-                flexShrink: 0, padding: '7px 12px', borderRadius: 20, border: '1px solid',
+        React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 } }, (data.proveedores || []).map((p, i) => (React.createElement("button", { key: i, onClick: () => { setActiveTab(i); setBusqueda(''); }, style: {
+                padding: '7px 14px', borderRadius: 20, border: '1px solid',
                 borderColor: activeTab === i ? '#6366f1' : '#1e2535',
                 background: activeTab === i ? 'rgba(99,102,241,0.15)' : '#161b27',
                 cursor: 'pointer', fontFamily: 'inherit',
-                display: 'flex', alignItems: 'center', gap: 6,
             } },
-            React.createElement("span", { style: { fontSize: 13, fontWeight: activeTab === i ? 700 : 500, color: activeTab === i ? '#818cf8' : '#94a3b8', whiteSpace: 'nowrap' } }, p.nombre || `Proveedor ${i + 1}`),
-            React.createElement("span", { style: { fontSize: 11, color: p.productos.length > 0 ? '#22c55e' : '#4b5563', fontWeight: 600, background: 'rgba(0,0,0,0.3)', borderRadius: 10, padding: '1px 6px' } }, p.productos.length > 0 ? p.productos.length : '—'))))),
+            React.createElement("span", { style: { fontSize: 13, fontWeight: activeTab === i ? 700 : 500, color: activeTab === i ? '#818cf8' : '#94a3b8' } }, p.nombre || `Proveedor ${i + 1}`))))),
         React.createElement("div", { className: "card" },
-            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 } },
-                React.createElement("input", { className: "input-field", value: prov.nombre, onChange: e => updateNombre(e.target.value), style: { flex: 1, fontWeight: 600 }, placeholder: "Nombre del proveedor" }),
-                React.createElement("span", { style: { fontSize: 12, color: '#4b5563', flexShrink: 0 } },
-                    prov.productos.length,
-                    " productos")),
+            React.createElement("div", { style: { marginBottom: 16 } },
+                React.createElement("input", { className: "input-field", value: prov.nombre, onChange: e => updateNombre(e.target.value), style: { fontWeight: 600 }, placeholder: "Nombre del proveedor" })),
             React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 14 } },
                 React.createElement("label", { style: {
                         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
