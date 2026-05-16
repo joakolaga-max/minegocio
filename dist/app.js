@@ -396,13 +396,13 @@ function TabCalculadora({ data, setData, showToast }) {
     const [scanning, setScanning] = React.useState(false);
     const [showSuggestions, setShowSuggestions] = React.useState(false);
     const sugerencias = busqueda.length > 0
-        ? data.misProductos.filter(p => p.codigoRef.toUpperCase().includes(busqueda.toUpperCase()) ||
+        ? (data.misProductos || []).filter(p => p.codigoRef.toUpperCase().includes(busqueda.toUpperCase()) ||
             (p.codigoProv || '').toUpperCase().includes(busqueda.toUpperCase()) ||
-            (p.descripcion || '').toUpperCase().includes(busqueda.toUpperCase())).slice8
+            (p.descripcion || '').toUpperCase().includes(busqueda.toUpperCase())).slice(0, 8)
         : [];
     const total = items.reduce((s, i) => s + i.precioVenta * i.cantidad, 0);
     const agregarProducto = React.useCallback((codigoRef) => {
-        const prod = data.misProductos.find(p => p.codigoRef === codigoRef.toUpperCase() || p.codigoProv === codigoRef.toUpperCase());
+        const prod = (data.misProductos || []).find(p => p.codigoRef === codigoRef.toUpperCase() || p.codigoProv === codigoRef.toUpperCase());
         if (!prod) {
             showToast('Código no encontrado', 'error');
             return;
@@ -706,7 +706,7 @@ function TabMisPrecios({ data, setData, showToast }) {
             showToast('Código no encontrado en proveedores', 'error');
             return;
         }
-        if (editIdx === null && data.misProductos.find(p => p.codigoRef === codigoRef.trim().toUpperCase())) {
+        if (editIdx === null && (data.misProductos || []).find(p => p.codigoRef === codigoRef.trim().toUpperCase())) {
             showToast('El código REF ya existe', 'error');
             return;
         }
@@ -763,7 +763,7 @@ function TabMisPrecios({ data, setData, showToast }) {
             return;
         }
         const wsData = [['Ref', 'Cod Proveedor', 'Descripcion', 'Precio Compra', 'Precio Venta', 'Margen %']];
-        data.misProductos.forEach(p => {
+        (data.misProductos || []).forEach(p => {
             const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
             const m = typeof p.margen === 'number' ? p.margen : (data.margenes[p.margen] || 50);
             wsData.push([p.codigoRef, p.codigoProv, p.descripcion,
@@ -777,7 +777,7 @@ function TabMisPrecios({ data, setData, showToast }) {
         showToast('Excel exportado', 'success');
     };
     const filtrados = busqueda
-        ? data.misProductos.filter(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
+        ? (data.misProductos || []).filter(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()))
         : data.misProductos;
@@ -858,18 +858,18 @@ function TabMisPrecios({ data, setData, showToast }) {
                 React.createElement("div", null,
                     React.createElement("div", { className: "section-title", style: { marginBottom: 0 } }, "Mis Precios"),
                     React.createElement("div", { style: { fontSize: 12, color: '#6b7280', marginTop: 2 } },
-                        data.misProductos.length,
+                        (data.misProductos || []).length,
                         " productos")),
-                data.misProductos.length > 0 && (React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', fontSize: 13 }, onClick: exportar },
+                (data.misProductos || []).length > 0 && (React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', fontSize: 13 }, onClick: exportar },
                     React.createElement(Icon, { name: "download", size: 14 }),
                     " Excel"))),
-            data.misProductos.length > 0 && (React.createElement("div", { style: { position: 'relative', marginBottom: 12 } },
+            (data.misProductos || []).length > 0 && (React.createElement("div", { style: { position: 'relative', marginBottom: 12 } },
                 React.createElement("div", { style: { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' } },
                     React.createElement(Icon, { name: "search", size: 16 })),
                 React.createElement("input", { className: "input-field", style: { paddingLeft: 38 }, placeholder: "Buscar por REF, cod proveedor o descripci\u00F3n...", value: busqueda, onChange: e => setBusqueda(e.target.value) }))),
             filtrados.length === 0 ? (React.createElement("div", { style: { textAlign: 'center', padding: '40px 20px', color: '#374151' } },
                 React.createElement(Icon, { name: "tag", size: 40 }),
-                React.createElement("div", { style: { marginTop: 12, fontSize: 14, color: '#6b7280' } }, data.misProductos.length === 0 ? 'Todavía no agregaste productos' : 'Sin resultados'))) : (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } }, filtrados.map((p, i) => {
+                React.createElement("div", { style: { marginTop: 12, fontSize: 14, color: '#6b7280' } }, (data.misProductos || []).length === 0 ? 'Todavía no agregaste productos' : 'Sin resultados'))) : (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } }, filtrados.map((p, i) => {
                 const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
                 const foto = data.fotos[p.codigoRef];
                 const margenLabel = typeof p.margen === 'number'
@@ -893,9 +893,9 @@ function TabMisPrecios({ data, setData, showToast }) {
                                     fmt(pv),
                                     p.divisor && p.divisor > 1 ? ` (${fmt(pv / p.divisor)} c/u)` : ''))),
                         React.createElement("div", { style: { display: 'flex', gap: 6 }, onClick: e => e.stopPropagation() },
-                            React.createElement("button", { onClick: () => eliminar(data.misProductos.indexOf(p)), style: { background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
+                            React.createElement("button", { onClick: () => eliminar((data.misProductos || []).indexOf(p)), style: { background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
                                 React.createElement(Icon, { name: "trash", size: 14 })),
-                            React.createElement("button", { onClick: () => editar(data.misProductos.indexOf(p)), style: { background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
+                            React.createElement("button", { onClick: () => editar((data.misProductos || []).indexOf(p)), style: { background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
                                 React.createElement(Icon, { name: "settings", size: 14 })),
                             React.createElement("button", { onClick: () => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion }), style: { background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
                                 React.createElement(Icon, { name: "camera", size: 14 }))))));
@@ -1082,7 +1082,7 @@ function TabVentas({ data, setData, showToast }) {
                     React.createElement("div", { style: { fontSize: 28, fontWeight: 700, color: '#22c55e' } }, fmt(totalHoy()))),
                 React.createElement("div", { style: { textAlign: 'right' } },
                     React.createElement("div", { style: { fontSize: 13, color: '#6b7280' } }, "Total registros"),
-                    React.createElement("div", { style: { fontSize: 22, fontWeight: 700, color: '#f1f5f9' } }, data.ventas?.length || 0)))),
+                    React.createElement("div", { style: { fontSize: 22, fontWeight: 700, color: '#f1f5f9' } }, (data.ventas || []).length)))),
         React.createElement("div", { className: "card" },
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 } },
                 React.createElement("div", { className: "section-title", style: { marginBottom: 0 } }, "Historial de ventas"),
@@ -1151,7 +1151,7 @@ function TabPedidos({ data, setData, showToast }) {
         const q = busqAgregar.toLowerCase();
         return (data.misProductos || []).filter(p => (p.codigoRef || '').toLowerCase().includes(q) ||
             (p.codigoProv || '').toLowerCase().includes(q) ||
-            (p.descripcion || '').toLowerCase().includes(q)).slice30;
+            (p.descripcion || '').toLowerCase().includes(q)).slice(0, 30);
     })() : [];
     const quitar = (ref) => setData(d => ({ ...d, pedidos: (d.pedidos || []).filter(x => (x.codigoRef || x.codigoProv) !== ref) }));
     const cambiarCant = (ref, delta) => setData(d => ({
@@ -1327,7 +1327,7 @@ function TabPedidos({ data, setData, showToast }) {
                         React.createElement("span", { style: { fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: orden.estado === 'recibido' ? 'rgba(34,197,94,0.15)' : 'rgba(251,191,36,0.15)', color: orden.estado === 'recibido' ? '#22c55e' : '#fbbf24' } }, orden.estado === 'recibido' ? '✓ Recibido' : 'Enviado'),
                         orden.estado === 'enviado' && (React.createElement("button", { onClick: () => setOrdenActiva(orden), style: { background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12 } }, "Recibir")))),
                 React.createElement("div", { style: { padding: '8px 16px 12px' } },
-                    orden.items.slice3.map((item, j) => (React.createElement("div", { key: j, style: { display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#94a3b8', padding: '2px 0' } },
+                    orden.items.slice(0, 3).map((item, j) => (React.createElement("div", { key: j, style: { display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#94a3b8', padding: '2px 0' } },
                         React.createElement("span", null,
                             item.cantRecibida != null ? `${item.cantRecibida}/` : '',
                             item.cantidad,
