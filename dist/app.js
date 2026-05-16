@@ -124,9 +124,18 @@ function Scanner({ onResult, onClose }) {
         // Try native BarcodeDetector first
         if ('BarcodeDetector' in window) {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { exact: 'environment' } }
-                });
+                // Try rear camera first, fall back to any camera
+                let stream;
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { exact: 'environment' } }
+                    });
+                }
+                catch {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'environment' }
+                    });
+                }
                 video.srcObject = stream;
                 await video.play();
                 const detector = new window.BarcodeDetector({
@@ -169,7 +178,7 @@ function Scanner({ onResult, onClose }) {
             const hints = new Map();
             hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
             const reader = new window.ZXing.BrowserMultiFormatReader(hints, 200);
-            reader.decodeFromConstraints({ video: { facingMode: { exact: 'environment' } } }, video, (result, err) => {
+            reader.decodeFromConstraints({ video: { facingMode: 'environment' } }, video, (result, err) => {
                 if (result) {
                     onResult(result.getText());
                 }
@@ -548,7 +557,7 @@ function TabProveedores({ data, setData, showToast }) {
     const [busqueda, setBusqueda] = React.useState('');
     const fileRef = React.useRef(null);
     const [loading, setLoading] = React.useState(false);
-    const prov = (data.proveedores || [])[activeTab] || { nombre: "", productos: [] };
+    const prov = (data.proveedores || [])[activeTab] || { id: activeTab, nombre: "", productos: [] };
     const productos = busqueda
         ? prov.productos.filter(p => p.codigo.toLowerCase().includes(busqueda.toLowerCase()) ||
             p.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
