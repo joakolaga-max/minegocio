@@ -105,12 +105,13 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
             </div>
             <input
               className="input-field"
-              style={{ paddingLeft: 38 }}
+              style={{ paddingLeft: 38, background: '#1e2230', color: '#f1f5f9' }}
               placeholder="Buscar por REF, cod proveedor o descripción..."
               value={busqueda}
               onChange={e => { setBusqueda(e.target.value.toUpperCase()); setShowSuggestions(true); }}
               onKeyDown={e => { if (e.key === 'Enter') agregarProducto(busqueda); if (e.key === 'Escape') setShowSuggestions(false); }}
               onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
             />
           </div>
           <button className="btn-ghost" onClick={() => setScanning(true)} style={{ padding: '10px 14px' }}>
@@ -148,7 +149,7 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
                       <span style={{ fontSize: 12, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 }}>{p.codigoRef}</span>
                       {p.codigoProv && <span style={{ fontSize: 11, color: '#4b5563' }}>{p.codigoProv}</span>}
                     </div>
-                    <div style={{ fontSize: 13, color: '#cbd5e1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>
+                    <div style={{ fontSize: 15, color: '#f1f5f9', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>
                   </div>
                   <div style={{ fontSize: 13, color: '#22c55e', fontWeight: 700, flexShrink: 0 }}>
                     {fmtPesoInt(pv / div)}{div > 1 ? ' c/u' : ''}
@@ -172,7 +173,7 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
             {items.map((item, i) => (
               <div key={i} style={{ background: '#111827', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, color: '#f1f5f9', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.descripcion}</div>
+                  <div style={{ fontSize: 16, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.descripcion}</div>
                   <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{fmtPeso(item.precioVenta)} c/u</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

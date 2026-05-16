@@ -18,8 +18,8 @@ export function LoginScreen({ onLogin }: Props) {
     if (!email.trim() || !password) { setError('Completá email y contraseña'); return; }
     setError(''); setLoading(true);
     try {
-      if (action === 'login') await w.loginUser(email.trim(), password);
-      else await w.registerUser(email.trim(), password);
+      if (action === 'login') await w.login(email.trim(), password);
+      else await w.register(email.trim(), password);
       onLogin();
     } catch (e: any) {
       const msgs: Record<string, string> = {
