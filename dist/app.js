@@ -166,10 +166,18 @@ function Scanner({ onResult, onClose }) {
             }
             catch { }
         }
-        // Fallback to ZXing
+        // Fallback to ZXing via cdnjs (allowed domain)
         if (!window.ZXing) {
             const script = document.createElement('script');
-            script.src = 'https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js';
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/zxing-js/0.20.0/zxing.min.js';
+            script.onerror = () => {
+                // Try alternative
+                const s2 = document.createElement('script');
+                s2.src = 'https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js';
+                s2.onload = () => startScan();
+                s2.onerror = () => console.warn('ZXing not available');
+                document.head.appendChild(s2);
+            };
             script.onload = () => startScan();
             document.head.appendChild(script);
             return;
@@ -182,11 +190,14 @@ function Scanner({ onResult, onClose }) {
                 if (result) {
                     onResult(result.getText());
                 }
-            });
-            cleanupRef.current = () => reader.reset();
+            }).catch((e) => console.warn('Scanner:', e));
+            cleanupRef.current = () => { try {
+                reader.reset();
+            }
+            catch (e) { } };
         }
         catch (e) {
-            console.error('Scanner error:', e);
+            console.warn('Scanner error:', e);
         }
     }, [onResult]);
     React.useEffect(() => {
@@ -616,13 +627,6 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
         });
         showToast('Lista limpiada', 'info');
     };
-    const updateNombre = (nombre) => {
-        setData(d => {
-            const provs = [...d.proveedores];
-            provs[activeTab] = { ...provs[activeTab], nombre };
-            return { ...d, proveedores: provs };
-        });
-    };
     return (React.createElement("div", null,
         React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 } }, (data.proveedores || []).map((p, i) => (React.createElement("button", { key: i, onClick: () => { setActiveTab(i); setBusqueda(''); }, style: {
                 padding: '7px 14px', borderRadius: 20, border: '1px solid',
@@ -632,17 +636,14 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
             } },
             React.createElement("span", { style: { fontSize: 13, fontWeight: activeTab === i ? 700 : 500, color: activeTab === i ? '#818cf8' : '#94a3b8' } }, p.nombre || `Proveedor ${i + 1}`))))),
         React.createElement("div", { className: "card" },
-            React.createElement("div", { style: { marginBottom: 16 } },
-                React.createElement("input", { className: "input-field", value: prov.nombre, onChange: e => updateNombre(e.target.value), style: { fontWeight: 600 }, placeholder: "Nombre del proveedor" })),
+            React.createElement("div", { style: { marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#111827', borderRadius: 12 } },
+                React.createElement("span", { style: { fontSize: 16, fontWeight: 700, color: '#f1f5f9' } }, prov.nombre || `Proveedor ${activeTab + 1}`),
+                React.createElement("span", { style: { fontSize: 13, color: prov.productos.length > 0 ? '#22c55e' : '#4b5563', fontWeight: 600 } }, prov.productos.length > 0 ? `${prov.productos.length} productos` : 'Sin cargar')),
             React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 14 } },
-                React.createElement("label", { style: {
-                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                        background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff',
-                        borderRadius: 12, padding: '11px 16px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 14,
-                    } },
+                React.createElement("input", { ref: fileRef, type: "file", accept: ".csv,.txt,.xlsx,.xls", style: { display: 'none' }, onChange: handleFile }),
+                React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: 'center' }, onClick: () => fileRef.current?.click(), disabled: loading },
                     React.createElement(Icon, { name: "upload", size: 16 }),
-                    loading ? 'Cargando...' : 'Cargar lista',
-                    React.createElement("input", { ref: fileRef, type: "file", accept: ".csv,.txt,.xlsx,.xls", style: { display: 'none' }, onChange: handleFile })),
+                    loading ? 'Cargando...' : 'Cargar lista'),
                 prov.productos.length > 0 && (React.createElement("button", { className: "btn-danger", onClick: limpiar, style: { padding: '11px 14px' } },
                     React.createElement(Icon, { name: "trash", size: 16 })))),
             React.createElement("div", { style: { fontSize: 11, color: '#4b5563', marginBottom: 14, padding: '8px 12px', background: '#111827', borderRadius: 8 } }, "Formato: C\u00F3digo | Descripci\u00F3n | Precio \u2014 CSV o Excel"),

@@ -99,13 +99,7 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
     showToast('Lista limpiada', 'info');
   };
 
-  const updateNombre = (nombre: string) => {
-    setData(d => {
-      const provs = [...d.proveedores];
-      provs[activeTab] = { ...provs[activeTab], nombre };
-      return { ...d, proveedores: provs };
-    });
-  };
+
 
   return (
     <div>
@@ -129,27 +123,31 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
       {/* Active proveedor card */}
       <div className="card">
         {/* Header */}
-        <div style={{ marginBottom: 16 }}>
-          <input
-            className="input-field"
-            value={prov.nombre}
-            onChange={e => updateNombre(e.target.value)}
-            style={{ fontWeight: 600 }}
-            placeholder="Nombre del proveedor"
-          />
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#111827', borderRadius: 12 }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: '#f1f5f9' }}>{prov.nombre || `Proveedor ${activeTab + 1}`}</span>
+          <span style={{ fontSize: 13, color: prov.productos.length > 0 ? '#22c55e' : '#4b5563', fontWeight: 600 }}>
+            {prov.productos.length > 0 ? `${prov.productos.length} productos` : 'Sin cargar'}
+          </span>
         </div>
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-          <label style={{
-            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff',
-            borderRadius: 12, padding: '11px 16px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 14,
-          }}>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv,.txt,.xlsx,.xls"
+            style={{ display: 'none' }}
+            onChange={handleFile}
+          />
+          <button
+            className="btn-primary"
+            style={{ flex: 1, justifyContent: 'center' }}
+            onClick={() => fileRef.current?.click()}
+            disabled={loading}
+          >
             <Icon name="upload" size={16} />
             {loading ? 'Cargando...' : 'Cargar lista'}
-            <input ref={fileRef} type="file" accept=".csv,.txt,.xlsx,.xls" style={{ display: 'none' }} onChange={handleFile} />
-          </label>
+          </button>
           {prov.productos.length > 0 && (
             <button className="btn-danger" onClick={limpiar} style={{ padding: '11px 14px' }}>
               <Icon name="trash" size={16} />

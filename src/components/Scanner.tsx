@@ -57,10 +57,18 @@ export function Scanner({ onResult, onClose }: Props) {
       } catch {}
     }
 
-    // Fallback to ZXing
+    // Fallback to ZXing via cdnjs (allowed domain)
     if (!window.ZXing) {
       const script = document.createElement('script');
-      script.src = 'https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js';
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/zxing-js/0.20.0/zxing.min.js';
+      script.onerror = () => {
+        // Try alternative
+        const s2 = document.createElement('script');
+        s2.src = 'https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js';
+        s2.onload = () => startScan();
+        s2.onerror = () => console.warn('ZXing not available');
+        document.head.appendChild(s2);
+      };
       script.onload = () => startScan();
       document.head.appendChild(script);
       return;
@@ -78,10 +86,10 @@ export function Scanner({ onResult, onClose }: Props) {
             onResult(result.getText());
           }
         }
-      );
-      cleanupRef.current = () => reader.reset();
+      ).catch((e: any) => console.warn('Scanner:', e));
+      cleanupRef.current = () => { try { reader.reset(); } catch(e) {} };
     } catch (e) {
-      console.error('Scanner error:', e);
+      console.warn('Scanner error:', e);
     }
   }, [onResult]);
 
