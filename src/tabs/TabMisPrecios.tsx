@@ -24,6 +24,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
   const [divisor, setDivisor] = useState(1);
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const [scanBarcode, setScanBarcode] = useState(false);
+  const [codigoBarras, setCodigoBarras] = useState('');
   const [photoModal, setPhotoModal] = useState<{ codigoRef: string; descripcion: string } | null>(null);
 
   const margenFinal = margenCustom ? (parseFloat(margenCustomVal) || 50) : margenSel;
@@ -64,6 +65,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
       margen: margenFinal,
       proveedor: encontrado.proveedor,
       divisor: divisor > 1 ? divisor : 1,
+      codigoBarras: codigoBarras.trim() || undefined,
     };
 
     setData(d => {
@@ -75,7 +77,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
 
     showToast(editIdx !== null ? 'Producto actualizado' : 'Producto agregado', 'success');
     setCodigoRef(''); setCodigoProv(''); setMargenSel('p1');
-    setMargenCustom(false); setMargenCustomVal(''); setDivisor(1); setEditIdx(null);
+    setMargenCustom(false); setMargenCustomVal(''); setDivisor(1); setCodigoBarras(''); setEditIdx(null);
   };
 
   const editar = (i: number) => {
@@ -188,17 +190,16 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
               <Icon name="camera" size={18} />
             </button>
           </div>
-          {codigoProv && (() => {
+        {codigoProv && (() => {
             const found = buscarEnProveedores(codigoProv);
             return found ? (
-              <div style={{ fontSize: 12, color: '#22c55e', marginTop: 4 }}>
+              <div style={{ fontSize: 12, color: '#22c55e', marginBottom: 8 }}>
                 ✓ {found.descripcion} — ${found.precio.toFixed(2)}
               </div>
             ) : (
-              <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>No encontrado en proveedores</div>
+              <div style={{ fontSize: 12, color: '#ef4444', marginBottom: 8 }}>No encontrado en proveedores</div>
             );
           })()}
-        </div>
 
         {/* Descripcion - REF field, SECOND */}
         <div style={{ marginBottom: 10 }}>
@@ -363,7 +364,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
 
       {/* Scanner */}
       {scanBarcode && (
-        <Scanner onResult={code => { setScanBarcode(false); setCodigoProv(code.toUpperCase()); }} onClose={() => setScanBarcode(false)} />
+        <Scanner onResult={scanned => { setScanBarcode(false); setCodigoBarras(scanned); }} onClose={() => setScanBarcode(false)} />
       )}
 
       {/* Photo modal */}
