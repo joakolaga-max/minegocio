@@ -994,6 +994,7 @@ function TabStock({ data, setData, showToast }) {
     const [busqueda, setBusqueda] = React.useState('');
     const [scanning, setScanning] = React.useState(false);
     const [editRef, setEditRef] = React.useState(null);
+    const [photoZoom, setPhotoZoom] = React.useState(null);
     const productos = (data.misProductos || []).map(p => {
         const s = (data.stock || {})[p.codigoRef] || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
         const actual = (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0);
@@ -1063,7 +1064,9 @@ function TabStock({ data, setData, showToast }) {
                 const isEdit = editRef === p.codigoRef;
                 return (React.createElement("div", { key: p.codigoRef, style: { background: '#1e2230', borderRadius: 12, border: `1px solid ${bajo ? 'rgba(239,68,68,0.4)' : '#1e2535'}`, overflow: 'hidden' } },
                     React.createElement("div", { style: { padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }, onClick: () => setEditRef(isEdit ? null : p.codigoRef) },
-                        foto && React.createElement("img", { src: foto, alt: "", style: { width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 } }),
+                        foto
+                            ? React.createElement("img", { src: foto, alt: "", onClick: e => { e.stopPropagation(); setPhotoZoom(foto); }, style: { width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0, cursor: 'zoom-in' } })
+                            : React.createElement("div", { style: { width: 48, height: 48, borderRadius: 8, background: '#111827', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', fontSize: 20 } }, "\uD83D\uDCE6"),
                         React.createElement("div", { style: { flex: 1, minWidth: 0 } },
                             React.createElement("div", { style: { display: 'flex', gap: 6, alignItems: 'center' } },
                                 React.createElement("span", { style: { fontSize: 12, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 } }, p.codigoRef),
@@ -1081,6 +1084,8 @@ function TabStock({ data, setData, showToast }) {
                             React.createElement("input", { type: "number", min: 0, value: p.stock[field] || 0, onChange: e => updateStock(p.codigoRef, field, parseInt(e.target.value) || 0), style: { width: '100%', height: 36, borderRadius: 8, background: '#1e2230', border: '1px solid #374151', color: '#f1f5f9', textAlign: 'center', fontSize: 14, fontWeight: 700, fontFamily: 'inherit' } }))))),
                         React.createElement("button", { onClick: () => agregarAPedido(p), style: { width: '100%', padding: '8px', borderRadius: 8, background: inPedido ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)', border: `1px solid ${inPedido ? '#22c55e' : '#6366f1'}`, color: inPedido ? '#22c55e' : '#818cf8', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 13 } }, inPedido ? '✓ En pedidos' : '+ Pedir')))));
             })))),
+        photoZoom && (React.createElement("div", { onClick: () => setPhotoZoom(null), style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 } },
+            React.createElement("img", { src: photoZoom, alt: "", style: { maxWidth: '100%', maxHeight: '85vh', borderRadius: 16, objectFit: 'contain' } }))),
         scanning && (React.createElement(Scanner, { onResult: code => { setScanning(false); setBusqueda(code.toUpperCase()); }, onClose: () => setScanning(false) }))));
 }
 
@@ -1424,44 +1429,84 @@ function TabPedidos({ data, setData, showToast }) {
 
 // ── src/tabs/TabConfig.tsx ──
 function TabConfig({ data, setData, showToast }) {
-    const [margenes, setMargenes] = React.useState({ ...data.margenes });
-    const guardar = () => {
-        setData(d => ({ ...d, margenes }));
-        showToast('Configuración guardada', 'success');
-    };
-    const m = data.margenes;
+    const [m1, setM1] = React.useState(String(data.margenes.p1));
+    const [m2, setM2] = React.useState(String(data.margenes.p2));
+    const [m3, setM3] = React.useState(String(data.margenes.p3));
+    const [m4, setM4] = React.useState(String(data.margenes.p4));
+    const [nombres, setNombres] = React.useState((data.proveedores || []).map(p => p.nombre));
     const mult = (pct) => pct >= 100 ? '∞' : (100 / (100 - pct)).toFixed(2) + 'x';
-    return (React.createElement("div", null,
-        React.createElement("div", { className: "card" },
-            React.createElement("div", { className: "section-title" }, "Configuraci\u00F3n de m\u00E1rgenes"),
-            React.createElement("div", { style: { fontSize: 13, color: '#6b7280', marginBottom: 16 } }, "Estos porcentajes se usan para calcular el precio de venta."),
-            ['p1', 'p2', 'p3', 'p4'].map((key, i) => (React.createElement("div", { key: key, style: { marginBottom: 16 } },
-                React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 } },
-                    React.createElement("label", { style: { fontSize: 13, fontWeight: 600, color: '#f1f5f9' } },
-                        "% ",
-                        i + 1),
-                    React.createElement("span", { style: { fontSize: 12, color: '#818cf8' } },
-                        margenes[key],
-                        "% \u2192 multiplicador ",
-                        mult(margenes[key]))),
-                React.createElement("input", { type: "range", min: 1, max: 90, value: margenes[key], onChange: e => setMargenes(m => ({ ...m, [key]: parseInt(e.target.value) })), style: { width: '100%', accentColor: '#6366f1' } }),
+    const pct = (s) => Math.min(99, Math.max(1, parseFloat(s) || 0));
+    const guardarMargenes = () => {
+        setData(d => ({
+            ...d,
+            margenes: { p1: pct(m1), p2: pct(m2), p3: pct(m3), p4: pct(m4) }
+        }));
+        showToast('Márgenes guardados', 'success');
+    };
+    const guardarProveedores = () => {
+        setData(d => ({
+            ...d,
+            proveedores: (d.proveedores || []).map((p, i) => ({
+                ...p,
+                nombre: nombres[i] || p.nombre
+            }))
+        }));
+        showToast('Proveedores guardados', 'success');
+    };
+    const updateNombre = (i, val) => {
+        const n = [...nombres];
+        n[i] = val;
+        setNombres(n);
+    };
+    const MargenRow = ({ label, value, onChange }) => {
+        const num = pct(value);
+        return (React.createElement("div", { style: { background: '#111827', borderRadius: 12, padding: '14px 16px', marginBottom: 10 } },
+            React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 } },
+                React.createElement("span", { style: { fontSize: 14, fontWeight: 700, color: '#f1f5f9' } }, label),
+                React.createElement("span", { style: { fontSize: 13, color: '#818cf8' } },
+                    num,
+                    "% \u2192 ",
+                    mult(num))),
+            React.createElement("input", { type: "number", min: 1, max: 99, value: value, onChange: e => onChange(e.target.value), onBlur: e => onChange(String(Math.min(99, Math.max(1, parseFloat(e.target.value) || 1)))), style: {
+                    width: '100%', background: '#1e2230', border: '1px solid #374151',
+                    borderRadius: 10, padding: '12px 14px', color: '#f1f5f9',
+                    fontSize: 18, fontWeight: 700, fontFamily: 'inherit', outline: 'none',
+                    textAlign: 'center',
+                }, placeholder: "50" }),
+            React.createElement("div", { style: { marginTop: 10 } },
+                React.createElement("input", { type: "range", min: 1, max: 99, value: pct(value), onChange: e => onChange(e.target.value), style: { width: '100%', accentColor: '#6366f1' } }),
                 React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#4b5563', marginTop: 2 } },
                     React.createElement("span", null, "1%"),
-                    React.createElement("span", null, "90%"))))),
-            React.createElement("button", { className: "btn-primary", style: { width: '100%', justifyContent: 'center', marginTop: 8 }, onClick: guardar },
-                React.createElement(Icon, { name: "check", size: 16 }),
-                " Guardar cambios")),
+                    React.createElement("span", null, "99%")))));
+    };
+    return (React.createElement("div", null,
         React.createElement("div", { className: "card" },
-            React.createElement("div", { className: "section-title" }, "Resumen actual"),
-            React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } }, ['p1', 'p2', 'p3', 'p4'].map((key, i) => (React.createElement("div", { key: key, style: { display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#111827', borderRadius: 10 } },
-                React.createElement("span", { style: { fontSize: 13, color: '#94a3b8' } },
-                    "% ",
-                    i + 1),
-                React.createElement("span", { style: { fontSize: 13, fontWeight: 700, color: '#818cf8' } },
-                    m[key],
-                    "% = ",
-                    mult(m[key])))))),
-            React.createElement("div", { style: { fontSize: 12, color: '#4b5563', marginTop: 12, padding: '10px 14px', background: '#111827', borderRadius: 10 } }, "Ejemplo: costo $1.000 con 50% \u2192 venta $2.000 (2x)"))));
+            React.createElement("div", { className: "section-title" }, "M\u00E1rgenes de ganancia"),
+            React.createElement("div", { style: { fontSize: 13, color: '#6b7280', marginBottom: 14 } }, "Escrib\u00ED el porcentaje o us\u00E1 el deslizador"),
+            React.createElement(MargenRow, { label: "% 1", value: m1, onChange: setM1 }),
+            React.createElement(MargenRow, { label: "% 2", value: m2, onChange: setM2 }),
+            React.createElement(MargenRow, { label: "% 3", value: m3, onChange: setM3 }),
+            React.createElement(MargenRow, { label: "% 4", value: m4, onChange: setM4 }),
+            React.createElement("button", { className: "btn-primary", style: { width: '100%', justifyContent: 'center', marginTop: 4 }, onClick: guardarMargenes },
+                React.createElement(Icon, { name: "check", size: 16 }),
+                " Guardar m\u00E1rgenes")),
+        React.createElement("div", { className: "card" },
+            React.createElement("div", { className: "section-title" }, "Nombres de proveedores"),
+            React.createElement("div", { style: { fontSize: 13, color: '#6b7280', marginBottom: 14 } }, "Edit\u00E1 el nombre de cada proveedor"),
+            (data.proveedores || []).map((p, i) => (React.createElement("div", { key: i, style: { marginBottom: 10 } },
+                React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 } },
+                    "Proveedor ",
+                    i + 1,
+                    p.productos.length > 0 && (React.createElement("span", { style: { marginLeft: 8, color: '#22c55e', fontSize: 11 } },
+                        "(",
+                        p.productos.length,
+                        " productos)"))),
+                React.createElement("input", { className: "input-field", value: nombres[i] ?? p.nombre, onChange: e => updateNombre(i, e.target.value), placeholder: `Proveedor ${i + 1}` })))),
+            React.createElement("button", { className: "btn-primary", style: { width: '100%', justifyContent: 'center', marginTop: 8 }, onClick: guardarProveedores },
+                React.createElement(Icon, { name: "check", size: 16 }),
+                " Guardar nombres")),
+        React.createElement("div", { className: "card", style: { background: '#111827' } },
+            React.createElement("div", { style: { fontSize: 13, color: '#6b7280' } }, "Ejemplo con 50%: costo $1.000 \u2192 venta $2.000 (2x multiplicador)"))));
 }
 
 
