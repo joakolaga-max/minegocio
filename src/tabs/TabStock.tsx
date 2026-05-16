@@ -13,6 +13,7 @@ export function TabStock({ data, setData, showToast }: Props) {
   const [busqueda, setBusqueda] = useState('');
   const [scanning, setScanning] = useState(false);
   const [editRef, setEditRef] = useState<string | null>(null);
+  const [photoZoom, setPhotoZoom] = useState<string | null>(null);
 
   const productos = (data.misProductos || []).map(p => {
     const s = (data.stock || {})[p.codigoRef] || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
@@ -102,7 +103,11 @@ export function TabStock({ data, setData, showToast }: Props) {
                   {/* Header */}
                   <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}
                     onClick={() => setEditRef(isEdit ? null : p.codigoRef)}>
-                    {foto && <img src={foto} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />}
+                    {foto
+                      ? <img src={foto} alt="" onClick={e => { e.stopPropagation(); setPhotoZoom(foto); }}
+                          style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0, cursor: 'zoom-in' }} />
+                      : <div style={{ width: 48, height: 48, borderRadius: 8, background: '#111827', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', fontSize: 20 }}>📦</div>
+                    }
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                         <span style={{ fontSize: 12, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 }}>{p.codigoRef}</span>
@@ -143,6 +148,13 @@ export function TabStock({ data, setData, showToast }: Props) {
           </div>
         )}
       </div>
+
+      {/* Photo zoom modal */}
+      {photoZoom && (
+        <div onClick={() => setPhotoZoom(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <img src={photoZoom} alt="" style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: 16, objectFit: 'contain' }} />
+        </div>
+      )}
 
       {scanning && (
         <Scanner

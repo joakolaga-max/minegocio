@@ -19,9 +19,17 @@ export function Scanner({ onResult, onClose }: Props) {
     // Try native BarcodeDetector first
     if ('BarcodeDetector' in window) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: 'environment' } }
-        });
+        // Try rear camera first, fall back to any camera
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { exact: 'environment' } }
+          });
+        } catch {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' }
+          });
+        }
         video.srcObject = stream;
         await video.play();
         const detector = new (window as any).BarcodeDetector({
@@ -63,7 +71,7 @@ export function Scanner({ onResult, onClose }: Props) {
       hints.set(window.ZXing.DecodeHintType.TRY_HARDER, true);
       const reader = new window.ZXing.BrowserMultiFormatReader(hints, 200);
       reader.decodeFromConstraints(
-        { video: { facingMode: { exact: 'environment' } } },
+        { video: { facingMode: 'environment' } },
         video,
         (result: any, err: any) => {
           if (result) {

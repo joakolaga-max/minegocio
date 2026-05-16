@@ -50,7 +50,10 @@ export function TabPedidos({ data, setData, showToast }: Props) {
     ).slice(0, 30);
   })() : [];
 
-  const quitar = (ref: string) => setData(d => ({ ...d, pedidos: (d.pedidos || []).filter(x => (x.codigoRef || x.codigoProv) !== ref) }));
+  const quitar = (ref: string) => {
+    if (!window.confirm('Quitar este producto del pedido?')) return;
+    setData(d => ({ ...d, pedidos: (d.pedidos || []).filter(x => (x.codigoRef || x.codigoProv) !== ref) }));
+  };
   const cambiarCant = (ref: string, delta: number) => setData(d => ({
     ...d, pedidos: (d.pedidos || []).map(x => (x.codigoRef || x.codigoProv) === ref ? { ...x, cantidad: Math.max(1, (x.cantidad || 1) + delta) } : x)
   }));

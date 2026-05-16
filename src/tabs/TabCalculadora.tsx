@@ -25,7 +25,7 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const sugerencias = busqueda.length > 0
-    ? data.misProductos.filter(p =>
+    ? (data.misProductos || []).filter(p =>
         p.codigoRef.toUpperCase().includes(busqueda.toUpperCase()) ||
         (p.codigoProv || '').toUpperCase().includes(busqueda.toUpperCase()) ||
         (p.descripcion || '').toUpperCase().includes(busqueda.toUpperCase())
@@ -35,7 +35,7 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
   const total = items.reduce((s, i) => s + i.precioVenta * i.cantidad, 0);
 
   const agregarProducto = useCallback((codigoRef: string) => {
-    const prod = data.misProductos.find(p =>
+    const prod = (data.misProductos || []).find(p =>
       p.codigoRef === codigoRef.toUpperCase() || p.codigoProv === codigoRef.toUpperCase()
     );
     if (!prod) {

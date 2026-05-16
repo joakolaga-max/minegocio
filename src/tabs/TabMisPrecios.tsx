@@ -8,11 +8,13 @@ interface Props {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
+  pendingCodProv?: string;
+  onClearPending?: () => void;
 }
 
 const MARGEN_LABELS: Record<string, string> = { p1: '% 1', p2: '% 2', p3: '% 3', p4: '% 4' };
 
-export function TabMisPrecios({ data, setData, showToast }: Props) {
+export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPending }: Props) {
   const [busqueda, setBusqueda] = useState('');
   const [codigoRef, setCodigoRef] = useState('');
   const [codigoProv, setCodigoProv] = useState('');
@@ -25,6 +27,16 @@ export function TabMisPrecios({ data, setData, showToast }: Props) {
   const [photoModal, setPhotoModal] = useState<{ codigoRef: string; descripcion: string } | null>(null);
 
   const margenFinal = margenCustom ? (parseFloat(margenCustomVal) || 50) : margenSel;
+
+  // Auto-fill codigoProv when navigating from Proveedores
+  React.useEffect(() => {
+    if (pendingCodProv) {
+      setCodigoProv(pendingCodProv.toUpperCase());
+      onClearPending?.();
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [pendingCodProv]);
 
   const buscarEnProveedores = useCallback((codigo: string) => {
     for (const prov of data.proveedores) {
@@ -40,7 +52,7 @@ export function TabMisPrecios({ data, setData, showToast }: Props) {
     }
     const encontrado = buscarEnProveedores(codigoProv.trim());
     if (!encontrado) { showToast('Código no encontrado en proveedores', 'error'); return; }
-    if (editIdx === null && data.misProductos.find(p => p.codigoRef === codigoRef.trim().toUpperCase())) {
+    if (editIdx === null && (data.misProductos || []).find(p => p.codigoRef === codigoRef.trim().toUpperCase())) {
       showToast('El código REF ya existe', 'error'); return;
     }
 
@@ -88,7 +100,7 @@ export function TabMisPrecios({ data, setData, showToast }: Props) {
     const w = window as any;
     if (!w.XLSX) { showToast('XLSX no disponible', 'error'); return; }
     const wsData = [['Ref', 'Cod Proveedor', 'Descripcion', 'Precio Compra', 'Precio Venta', 'Margen %']];
-    data.misProductos.forEach(p => {
+    (data.misProductos || []).forEach(p => {
       const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
       const m = typeof p.margen === 'number' ? p.margen : (data.margenes[p.margen as string] || 50);
       wsData.push([p.codigoRef, p.codigoProv, p.descripcion,
@@ -102,8 +114,47 @@ export function TabMisPrecios({ data, setData, showToast }: Props) {
     showToast('Excel exportado', 'success');
   };
 
+  const importarExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const w = window as any;
+    if (!w.XLSX) { showToast('XLSX no disponible', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const wb = w.XLSX.read(new Uint8Array(ev.target!.result as ArrayBuffer), { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows: any[][] = w.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        // Skip header row (Ref, Cod Proveedor, Descripcion, Precio Compra, Precio Venta, Margen %)
+        const start = String(rows[0]?.[0] || '').toLowerCase().includes('ref') ? 1 : 0;
+        const nuevos: any[] = [];
+        rows.slice(start).forEach((cols: any[]) => {
+          const ref = String(cols[0] || '').trim().toUpperCase();
+          const codProv = String(cols[1] || '').trim().toUpperCase();
+          const desc = String(cols[2] || '').trim();
+          const costo = parseFloat(String(cols[3] || '0').replace(',', '.')) || 0;
+          const margenVal = parseFloat(String(cols[5] || '50').replace(',', '.')) || 50;
+          if (!ref || !codProv) return;
+          nuevos.push({ codigoRef: ref, codigoProv: codProv, descripcion: desc, precioCosto: costo, margen: margenVal, proveedor: '', divisor: 1 });
+        });
+        if (nuevos.length === 0) { showToast('No se encontraron productos', 'error'); return; }
+        if (!window.confirm(`Importar ${nuevos.length} productos? Esto reemplazará los existentes con el mismo REF.`)) return;
+        setData(d => {
+          const existingRefs = new Set(nuevos.map((p: any) => p.codigoRef));
+          const filtered = (d.misProductos || []).filter((p: any) => !existingRefs.has(p.codigoRef));
+          return { ...d, misProductos: [...filtered, ...nuevos] };
+        });
+        showToast(`${nuevos.length} productos importados`, 'success');
+      } catch(err) {
+        showToast('Error al leer el archivo', 'error');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = '';
+  };
+
   const filtrados = busqueda
-    ? data.misProductos.filter(p =>
+    ? (data.misProductos || []).filter(p =>
         p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()))
@@ -233,16 +284,16 @@ export function TabMisPrecios({ data, setData, showToast }: Props) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <div>
             <div className="section-title" style={{ marginBottom: 0 }}>Mis Precios</div>
-            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{data.misProductos.length} productos</div>
+            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{(data.misProductos || []).length} productos</div>
           </div>
-          {data.misProductos.length > 0 && (
+          {(data.misProductos || []).length > 0 && (
             <button className="btn-ghost" style={{ padding: '8px 12px', fontSize: 13 }} onClick={exportar}>
               <Icon name="download" size={14} /> Excel
             </button>
           )}
         </div>
 
-        {data.misProductos.length > 0 && (
+        {(data.misProductos || []).length > 0 && (
           <div style={{ position: 'relative', marginBottom: 12 }}>
             <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }}>
               <Icon name="search" size={16} />
@@ -257,7 +308,7 @@ export function TabMisPrecios({ data, setData, showToast }: Props) {
           <div style={{ textAlign: 'center', padding: '40px 20px', color: '#374151' }}>
             <Icon name="tag" size={40} />
             <div style={{ marginTop: 12, fontSize: 14, color: '#6b7280' }}>
-              {data.misProductos.length === 0 ? 'Todavía no agregaste productos' : 'Sin resultados'}
+              {(data.misProductos || []).length === 0 ? 'Todavía no agregaste productos' : 'Sin resultados'}
             </div>
           </div>
         ) : (
@@ -289,11 +340,11 @@ export function TabMisPrecios({ data, setData, showToast }: Props) {
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
-                      <button onClick={() => eliminar(data.misProductos.indexOf(p))}
+                      <button onClick={() => eliminar((data.misProductos || []).indexOf(p))}
                         style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}>
                         <Icon name="trash" size={14} />
                       </button>
-                      <button onClick={() => editar(data.misProductos.indexOf(p))}
+                      <button onClick={() => editar((data.misProductos || []).indexOf(p))}
                         style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}>
                         <Icon name="settings" size={14} />
                       </button>

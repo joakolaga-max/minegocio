@@ -7,6 +7,7 @@ interface Props {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
+  onNavigate?: (tab: string, codigoProv?: string) => void;
 }
 
 function parseCSV(text: string): Producto[] {
@@ -41,13 +42,13 @@ function parseXLSX(buffer: ArrayBuffer): Producto[] {
   })).filter(p => p.codigo && p.descripcion);
 }
 
-export function TabProveedores({ data, setData, showToast }: Props) {
+export function TabProveedores({ data, setData, showToast, onNavigate }: Props) {
   const [activeTab, setActiveTab] = useState(0);
   const [busqueda, setBusqueda] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
 
-  const prov = data.proveedores[activeTab];
+  const prov = (data.proveedores || [])[activeTab] || { id: activeTab, nombre: "", productos: [] };
   const productos = busqueda
     ? prov.productos.filter(p =>
         p.codigo.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -108,18 +109,19 @@ export function TabProveedores({ data, setData, showToast }: Props) {
 
   return (
     <div>
-      {/* Proveedor tabs */}
-      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 12 }}>
-        {data.proveedores.map((p, i) => (
+      {/* Proveedor tabs - wrap, solo nombre */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+        {(data.proveedores || []).map((p, i) => (
           <button key={i} onClick={() => { setActiveTab(i); setBusqueda(''); }}
             style={{
-              flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: '1px solid',
-              borderColor: activeTab === i ? '#6366f1' : '#374151',
-              background: activeTab === i ? 'rgba(99,102,241,0.15)' : 'transparent',
-              color: activeTab === i ? '#818cf8' : '#6b7280',
-              cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: activeTab === i ? 600 : 400,
+              padding: '7px 14px', borderRadius: 20, border: '1px solid',
+              borderColor: activeTab === i ? '#6366f1' : '#1e2535',
+              background: activeTab === i ? 'rgba(99,102,241,0.15)' : '#161b27',
+              cursor: 'pointer', fontFamily: 'inherit',
             }}>
-            {i + 1}
+            <span style={{ fontSize: 13, fontWeight: activeTab === i ? 700 : 500, color: activeTab === i ? '#818cf8' : '#94a3b8' }}>
+              {p.nombre || `Proveedor ${i + 1}`}
+            </span>
           </button>
         ))}
       </div>
@@ -127,17 +129,14 @@ export function TabProveedores({ data, setData, showToast }: Props) {
       {/* Active proveedor card */}
       <div className="card">
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{ marginBottom: 16 }}>
           <input
             className="input-field"
             value={prov.nombre}
             onChange={e => updateNombre(e.target.value)}
-            style={{ flex: 1, fontWeight: 600 }}
+            style={{ fontWeight: 600 }}
             placeholder="Nombre del proveedor"
           />
-          <span style={{ fontSize: 12, color: '#4b5563', flexShrink: 0 }}>
-            {prov.productos.length} productos
-          </span>
         </div>
 
         {/* Actions */}
@@ -186,11 +185,15 @@ export function TabProveedores({ data, setData, showToast }: Props) {
         ) : (
           <div style={{ maxHeight: 400, overflowY: 'auto' }}>
             {productos.slice(0, 200).map((p, i) => (
-              <div key={i} style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '8px 0', borderBottom: i < productos.length - 1 ? '1px solid #1e2535' : 'none',
-                gap: 10,
-              }}>
+              <div key={i}
+                onClick={() => onNavigate && onNavigate('precios', p.codigo)}
+                style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '10px 0', borderBottom: i < productos.length - 1 ? '1px solid #1e2535' : 'none',
+                  gap: 10, cursor: onNavigate ? 'pointer' : 'default',
+                }}
+                onMouseEnter={e => { if (onNavigate) (e.currentTarget as HTMLDivElement).style.background = 'rgba(99,102,241,0.05)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ fontSize: 11, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700, marginRight: 8 }}>
                     {p.codigo}

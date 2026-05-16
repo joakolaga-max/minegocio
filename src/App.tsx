@@ -26,6 +26,7 @@ export default function App() {
   const { data, setData, loaded, syncing } = useAppData(user);
   const [tab, setTab] = useState<TabId>(() => (localStorage.getItem('mn_lastTab') as TabId) || 'calc');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pendingCodProv, setPendingCodProv] = useState<string | undefined>();
   const [toast, setToast] = useState<ToastType | null>(null);
 
   useEffect(() => {
@@ -37,6 +38,11 @@ export default function App() {
   const showToast = useCallback((msg: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ msg, type });
   }, []);
+
+  const onNavigate = (tabId: string, codigoProv?: string) => {
+    switchTab(tabId as TabId);
+    if (codigoProv) setPendingCodProv(codigoProv);
+  };
 
   const switchTab = (id: TabId) => {
     setTab(id); setMenuOpen(false);
@@ -84,8 +90,8 @@ export default function App() {
         ) : (
           <>
             {tab === 'calc' && <TabCalculadora {...tabProps} />}
-            {tab === 'proveedores' && <TabProveedores {...tabProps} />}
-            {tab === 'precios' && <TabMisPrecios {...tabProps} />}
+            {tab === 'proveedores' && <TabProveedores {...tabProps} onNavigate={onNavigate} />}
+            {tab === 'precios' && <TabMisPrecios {...tabProps} pendingCodProv={pendingCodProv} onClearPending={() => setPendingCodProv(undefined)} />}
             {tab === 'stock' && <TabStock {...tabProps} />}
             {tab === 'ventas' && <TabVentas {...tabProps} />}
             {tab === 'pedidos' && <TabPedidos {...tabProps} />}

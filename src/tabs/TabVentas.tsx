@@ -61,7 +61,7 @@ export function TabVentas({ data, setData, showToast }: Props) {
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 13, color: '#6b7280' }}>Total registros</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: '#f1f5f9' }}>{data.ventas?.length || 0}</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: '#f1f5f9' }}>{(data.ventas || []).length}</div>
           </div>
         </div>
       </div>
