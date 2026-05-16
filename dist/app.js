@@ -455,9 +455,9 @@ function TabCalculadora({ data, setData, showToast }) {
                 React.createElement("div", { style: { position: 'relative', flex: 1 } },
                     React.createElement("div", { style: { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' } },
                         React.createElement(Icon, { name: "search", size: 16 })),
-                    React.createElement("input", { className: "input-field", style: { paddingLeft: 38 }, placeholder: "Buscar por REF, cod proveedor o descripci\u00F3n...", value: busqueda, onChange: e => { setBusqueda(e.target.value.toUpperCase()); setShowSuggestions(true); }, onKeyDown: e => { if (e.key === 'Enter')
+                    React.createElement("input", { className: "input-field", style: { paddingLeft: 38, background: '#1e2230', color: '#f1f5f9' }, placeholder: "Buscar por REF, cod proveedor o descripci\u00F3n...", value: busqueda, onChange: e => { setBusqueda(e.target.value.toUpperCase()); setShowSuggestions(true); }, onKeyDown: e => { if (e.key === 'Enter')
                             agregarProducto(busqueda); if (e.key === 'Escape')
-                            setShowSuggestions(false); }, onFocus: () => setShowSuggestions(true) })),
+                            setShowSuggestions(false); }, onFocus: () => setShowSuggestions(true), onBlur: () => setTimeout(() => setShowSuggestions(false), 150) })),
                 React.createElement("button", { className: "btn-ghost", onClick: () => setScanning(true), style: { padding: '10px 14px' } },
                     React.createElement(Icon, { name: "camera", size: 20 }))),
             showSuggestions && sugerencias.length > 0 && (React.createElement("div", { style: {
@@ -866,7 +866,7 @@ function TabMisPrecios({ data, setData, showToast }) {
                 const margenLabel = typeof p.margen === 'number'
                     ? `${p.margen}% ✎`
                     : `${MARGEN_LABELS[p.margen] || p.margen} (${data.margenes[p.margen]}%)`;
-                return (React.createElement("div", { key: i, onClick: () => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion }), style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', padding: '12px 14px', cursor: 'pointer' } },
+                return (React.createElement("div", { key: i, style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', padding: '12px 14px' } },
                     React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },
                         foto && React.createElement("img", { src: foto, alt: "", style: { width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 } }),
                         React.createElement("div", { style: { flex: 1, minWidth: 0 } },
@@ -884,10 +884,12 @@ function TabMisPrecios({ data, setData, showToast }) {
                                     fmt(pv),
                                     p.divisor && p.divisor > 1 ? ` (${fmt(pv / p.divisor)} c/u)` : ''))),
                         React.createElement("div", { style: { display: 'flex', gap: 6 }, onClick: e => e.stopPropagation() },
+                            React.createElement("button", { onClick: () => eliminar(data.misProductos.indexOf(p)), style: { background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
+                                React.createElement(Icon, { name: "trash", size: 14 })),
                             React.createElement("button", { onClick: () => editar(data.misProductos.indexOf(p)), style: { background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
                                 React.createElement(Icon, { name: "settings", size: 14 })),
-                            React.createElement("button", { onClick: () => eliminar(data.misProductos.indexOf(p)), style: { background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
-                                React.createElement(Icon, { name: "trash", size: 14 }))))));
+                            React.createElement("button", { onClick: () => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion }), style: { background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
+                                React.createElement(Icon, { name: "camera", size: 14 }))))));
             })))),
         scanBarcode && (React.createElement(Scanner, { onResult: code => { setScanBarcode(false); setCodigoProv(code.toUpperCase()); }, onClose: () => setScanBarcode(false) })),
         photoModal && (React.createElement("div", { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }, onClick: () => setPhotoModal(null) },
