@@ -1330,6 +1330,7 @@ function TabPedidos({ data, setData, showToast }) {
         const q = busqAgregar.toLowerCase();
         return (data.misProductos || []).filter(p => (p.codigoRef || '').toLowerCase().includes(q) ||
             (p.codigoProv || '').toLowerCase().includes(q) ||
+            (p.codigoBarras || '').toLowerCase().includes(q) ||
             (p.descripcion || '').toLowerCase().includes(q)).slice(0, 30);
     })() : [];
     const quitar = (ref) => {
@@ -1437,6 +1438,7 @@ function TabPedidos({ data, setData, showToast }) {
                     " Confirmar y actualizar stock"))));
     };
     const filteredProvs = Object.keys(porProveedor).filter(prov => !busqueda || porProveedor[prov].some(p => (p.codigoRef || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+        (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase())));
     return (React.createElement("div", null,
         React.createElement("div", { className: "card" },
@@ -1584,15 +1586,15 @@ function TabConfig({ data, setData, showToast }) {
     };
     const MargenRow = ({ label, value, onChange }) => {
         const num = pct(value);
-        return (React.createElement("div", { style: { background: '#111827', borderRadius: 12, padding: '12px 14px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 } },
-            React.createElement("span", { style: { fontSize: 14, fontWeight: 700, color: '#f1f5f9', minWidth: 30 } }, label),
+        return (React.createElement("div", { style: { background: '#111827', borderRadius: 12, padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 } },
+            React.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: '#6b7280' } }, label),
             React.createElement("input", { type: "number", min: 1, max: 99, value: value, onChange: e => onChange(e.target.value), onBlur: e => onChange(String(Math.min(99, Math.max(1, parseFloat(e.target.value) || 1)))), style: {
-                    width: 80, background: '#1e2230', border: '1px solid #374151',
-                    borderRadius: 10, padding: '10px 8px', color: '#f1f5f9',
-                    fontSize: 18, fontWeight: 700, fontFamily: 'inherit', outline: 'none',
-                    textAlign: 'center', flexShrink: 0,
+                    width: '100%', background: '#1e2230', border: '1px solid #374151',
+                    borderRadius: 10, padding: '10px 6px', color: '#f1f5f9',
+                    fontSize: 22, fontWeight: 700, fontFamily: 'inherit', outline: 'none',
+                    textAlign: 'center',
                 }, placeholder: "50" }),
-            React.createElement("span", { style: { fontSize: 12, color: '#818cf8' } },
+            React.createElement("span", { style: { fontSize: 11, color: '#818cf8' } },
                 num,
                 "% \u2192 ",
                 mult(num))));
@@ -1601,10 +1603,11 @@ function TabConfig({ data, setData, showToast }) {
         React.createElement("div", { className: "card" },
             React.createElement("div", { className: "section-title" }, "M\u00E1rgenes de ganancia"),
             React.createElement("div", { style: { fontSize: 13, color: '#6b7280', marginBottom: 14 } }, "Escrib\u00ED el porcentaje o us\u00E1 el deslizador"),
-            React.createElement(MargenRow, { label: "% 1", value: m1, onChange: setM1 }),
-            React.createElement(MargenRow, { label: "% 2", value: m2, onChange: setM2 }),
-            React.createElement(MargenRow, { label: "% 3", value: m3, onChange: setM3 }),
-            React.createElement(MargenRow, { label: "% 4", value: m4, onChange: setM4 }),
+            React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
+                React.createElement(MargenRow, { label: "% 1", value: m1, onChange: setM1 }),
+                React.createElement(MargenRow, { label: "% 2", value: m2, onChange: setM2 }),
+                React.createElement(MargenRow, { label: "% 3", value: m3, onChange: setM3 }),
+                React.createElement(MargenRow, { label: "% 4", value: m4, onChange: setM4 })),
             React.createElement("button", { className: "btn-primary", style: { width: '100%', justifyContent: 'center', marginTop: 4 }, onClick: guardarMargenes },
                 React.createElement(Icon, { name: "check", size: 16 }),
                 " Guardar m\u00E1rgenes")),

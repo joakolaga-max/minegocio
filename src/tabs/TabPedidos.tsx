@@ -46,6 +46,7 @@ export function TabPedidos({ data, setData, showToast }: Props) {
     return (data.misProductos || []).filter(p =>
       (p.codigoRef || '').toLowerCase().includes(q) ||
       (p.codigoProv || '').toLowerCase().includes(q) ||
+      ((p as any).codigoBarras || '').toLowerCase().includes(q) ||
       (p.descripcion || '').toLowerCase().includes(q)
     ).slice(0, 30);
   })() : [];
@@ -176,6 +177,7 @@ export function TabPedidos({ data, setData, showToast }: Props) {
   const filteredProvs = Object.keys(porProveedor).filter(prov =>
     !busqueda || porProveedor[prov].some(p =>
       (p.codigoRef || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+      (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
       (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase())));
 
   return (
