@@ -191,7 +191,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
             <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 }}>Cód. de barras</label>
             <div style={{ display: 'flex', gap: 6 }}>
               <input className="input-field" style={{ flex: 1, fontSize: 13 }} value={codigoBarras}
-                onChange={e => setCodigoBarras(e.target.value)} placeholder="Opcional" />
+                onChange={e => setCodigoBarras(e.target.value)} placeholder="Para buscar en calculadora" />
               <button className="btn-ghost" style={{ padding: '10px 10px', flexShrink: 0 }} onClick={() => setScanBarcode(true)}>
                 <Icon name="camera" size={16} />
               </button>
@@ -265,15 +265,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
             </div>
           )}
 
-          {/* Divisor normal cuando no está en Otro% */}
-          {!margenCustom && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
-              <div style={{ fontSize: 12, color: '#6b7280' }}>Dividir por:</div>
-              <input type="number" min={1} className="input-field" style={{ width: 80, textAlign: 'center', fontWeight: 700 }}
-                value={divisor} onChange={e => setDivisor(Math.max(1, parseInt(e.target.value) || 1))} />
-              {divisor > 1 && <span style={{ fontSize: 12, color: '#22c55e' }}>÷ {divisor} = c/u</span>}
-            </div>
-          )}
+
         </div>
 
         {/* Price preview */}

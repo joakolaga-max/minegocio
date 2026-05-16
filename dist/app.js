@@ -409,11 +409,14 @@ function TabCalculadora({ data, setData, showToast }) {
     const sugerencias = busqueda.length > 0
         ? (data.misProductos || []).filter(p => p.codigoRef.toUpperCase().includes(busqueda.toUpperCase()) ||
             (p.codigoProv || '').toUpperCase().includes(busqueda.toUpperCase()) ||
+            (p.codigoBarras || '').toUpperCase().includes(busqueda.toUpperCase()) ||
             (p.descripcion || '').toUpperCase().includes(busqueda.toUpperCase())).slice(0, 8)
         : [];
     const total = items.reduce((s, i) => s + i.precioVenta * i.cantidad, 0);
     const agregarProducto = React.useCallback((codigoRef) => {
-        const prod = (data.misProductos || []).find(p => p.codigoRef === codigoRef.toUpperCase() || p.codigoProv === codigoRef.toUpperCase());
+        const prod = (data.misProductos || []).find(p => p.codigoRef === codigoRef.toUpperCase() ||
+            p.codigoProv === codigoRef.toUpperCase() ||
+            (p.codigoBarras || '').toUpperCase() === codigoRef.toUpperCase());
         if (!prod) {
             showToast('Código no encontrado', 'error');
             return;
@@ -903,7 +906,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                 React.createElement("div", { style: { flex: 1 } },
                     React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 } }, "C\u00F3d. de barras"),
                     React.createElement("div", { style: { display: 'flex', gap: 6 } },
-                        React.createElement("input", { className: "input-field", style: { flex: 1, fontSize: 13 }, value: codigoBarras, onChange: e => setCodigoBarras(e.target.value), placeholder: "Opcional" }),
+                        React.createElement("input", { className: "input-field", style: { flex: 1, fontSize: 13 }, value: codigoBarras, onChange: e => setCodigoBarras(e.target.value), placeholder: "Para buscar en calculadora" }),
                         React.createElement("button", { className: "btn-ghost", style: { padding: '10px 10px', flexShrink: 0 }, onClick: () => setScanBarcode(true) },
                             React.createElement(Icon, { name: "camera", size: 16 }))))),
             codigoProv && (() => {
@@ -950,14 +953,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                         divisor > 1 && React.createElement("div", { style: { fontSize: 11, color: '#22c55e', marginTop: 3 } },
                             "\u00F7 ",
                             divisor,
-                            " = c/u")))),
-                !margenCustom && (React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 } },
-                    React.createElement("div", { style: { fontSize: 12, color: '#6b7280' } }, "Dividir por:"),
-                    React.createElement("input", { type: "number", min: 1, className: "input-field", style: { width: 80, textAlign: 'center', fontWeight: 700 }, value: divisor, onChange: e => setDivisor(Math.max(1, parseInt(e.target.value) || 1)) }),
-                    divisor > 1 && React.createElement("span", { style: { fontSize: 12, color: '#22c55e' } },
-                        "\u00F7 ",
-                        divisor,
-                        " = c/u")))),
+                            " = c/u"))))),
             codigoProv && (() => {
                 const found = buscarEnProveedores(codigoProv);
                 if (!found)

@@ -28,6 +28,7 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
     ? (data.misProductos || []).filter(p =>
         p.codigoRef.toUpperCase().includes(busqueda.toUpperCase()) ||
         (p.codigoProv || '').toUpperCase().includes(busqueda.toUpperCase()) ||
+        ((p as any).codigoBarras || '').toUpperCase().includes(busqueda.toUpperCase()) ||
         (p.descripcion || '').toUpperCase().includes(busqueda.toUpperCase())
       ).slice(0, 8)
     : [];
@@ -36,7 +37,9 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
 
   const agregarProducto = useCallback((codigoRef: string) => {
     const prod = (data.misProductos || []).find(p =>
-      p.codigoRef === codigoRef.toUpperCase() || p.codigoProv === codigoRef.toUpperCase()
+      p.codigoRef === codigoRef.toUpperCase() ||
+      p.codigoProv === codigoRef.toUpperCase() ||
+      ((p as any).codigoBarras || '').toUpperCase() === codigoRef.toUpperCase()
     );
     if (!prod) {
       showToast('Código no encontrado', 'error');
