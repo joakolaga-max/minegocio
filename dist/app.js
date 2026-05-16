@@ -740,6 +740,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
     const [scanBarcode, setScanBarcode] = React.useState(false);
     const [codigoBarras, setCodigoBarras] = React.useState('');
     const [photoModal, setPhotoModal] = React.useState(null);
+    const [expandedRef, setExpandedRef] = React.useState(null);
     const margenFinal = margenCustom ? (parseFloat(margenCustomVal) || 50) : margenSel;
     // Auto-fill codigoProv when navigating from Proveedores
     React.useEffect(() => {
@@ -939,21 +940,21 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                             color: margenCustom ? '#818cf8' : '#6b7280',
                             cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13,
                         } }, "Otro %")),
-                margenCustom && (React.createElement("div", { style: { display: 'flex', gap: 10, marginTop: 10, alignItems: 'flex-end' } },
+                margenCustom && (React.createElement("div", { style: { display: 'flex', gap: 8, marginTop: 8 } },
                     React.createElement("div", { style: { flex: 1 } },
                         React.createElement("label", { style: { fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 } }, "% manual"),
-                        React.createElement("input", { type: "number", className: "input-field", style: { textAlign: 'center', fontWeight: 700 }, value: margenCustomVal, onChange: e => setMargenCustomVal(e.target.value), placeholder: "Ej: 45", min: 0, max: 99 }),
+                        React.createElement("input", { type: "number", className: "input-field", style: { textAlign: 'center', fontWeight: 700, padding: '10px' }, value: margenCustomVal, onChange: e => setMargenCustomVal(e.target.value), placeholder: "Ej: 45", min: 0, max: 99 }),
                         margenCustomVal && (React.createElement("div", { style: { fontSize: 11, color: '#22c55e', marginTop: 3 } },
                             "\u2192 ",
                             (100 / (1 - parseFloat(margenCustomVal) / 100)).toFixed(2),
                             "x"))),
                     React.createElement("div", { style: { flex: 1 } },
                         React.createElement("label", { style: { fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 } }, "Dividir por"),
-                        React.createElement("input", { type: "number", min: 1, className: "input-field", style: { textAlign: 'center', fontWeight: 700 }, value: divisor, onChange: e => setDivisor(Math.max(1, parseInt(e.target.value) || 1)) }),
+                        React.createElement("input", { type: "number", min: 1, className: "input-field", style: { textAlign: 'center', fontWeight: 700, padding: '10px' }, value: divisor, onChange: e => setDivisor(Math.max(1, parseInt(e.target.value) || 1)) }),
                         divisor > 1 && React.createElement("div", { style: { fontSize: 11, color: '#22c55e', marginTop: 3 } },
                             "\u00F7 ",
                             divisor,
-                            " = c/u"))))),
+                            " c/u"))))),
             codigoProv && (() => {
                 const found = buscarEnProveedores(codigoProv);
                 if (!found)
@@ -1043,30 +1044,35 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                 const margenLabel = typeof p.margen === 'number'
                     ? `${p.margen}%`
                     : `${data.margenes[p.margen]}%`;
-                return (React.createElement("div", { key: i, style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', padding: '12px 14px' } },
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },
+                const isExpanded = expandedRef === p.codigoRef;
+                const codBarras = p.codigoBarras;
+                return (React.createElement("div", { key: i, style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', overflow: 'hidden' } },
+                    React.createElement("div", { onClick: () => setExpandedRef(isExpanded ? null : p.codigoRef), style: { padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 } },
                         foto && React.createElement("img", { src: foto, alt: "", style: { width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 } }),
                         React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                            React.createElement("div", { style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' } },
-                                React.createElement("span", { style: { fontSize: 12, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 } }, p.codigoRef),
-                                React.createElement("span", { style: { fontSize: 11, color: '#4b5563' } }, p.codigoProv),
+                            codBarras && (React.createElement("div", { style: { fontSize: 11, color: '#6b7280', fontFamily: 'monospace', marginBottom: 2 } }, codBarras)),
+                            React.createElement("div", { style: { fontSize: 15, color: '#f1f5f9', fontWeight: 600, wordBreak: 'break-word' } }, p.descripcion),
+                            React.createElement("div", { style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 3 } },
+                                React.createElement("span", { style: { fontSize: 11, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 } }, p.codigoRef),
+                                p.codigoProv && React.createElement("span", { style: { fontSize: 11, color: '#4b5563' } }, p.codigoProv),
                                 React.createElement("span", { className: "badge", style: { background: 'rgba(99,102,241,0.15)', color: '#818cf8', fontSize: 10 } }, margenLabel)),
-                            React.createElement("div", { style: { fontSize: 16, color: '#f1f5f9', fontWeight: 600, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, p.descripcion),
                             React.createElement("div", { style: { fontSize: 12, color: '#6b7280', marginTop: 2 } },
                                 "Costo: ",
                                 fmt(p.precioCosto),
-                                " \u2192",
-                                ' ',
+                                " \u2192 ",
                                 React.createElement("span", { style: { color: '#22c55e', fontWeight: 700 } },
                                     fmt(pv),
-                                    p.divisor && p.divisor > 1 ? ` (${fmt(pv / p.divisor)} c/u)` : ''))),
-                        React.createElement("div", { style: { display: 'flex', gap: 6 }, onClick: e => e.stopPropagation() },
-                            React.createElement("button", { onClick: () => eliminar((data.misProductos || []).indexOf(p)), style: { background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
-                                React.createElement(Icon, { name: "trash", size: 14 })),
-                            React.createElement("button", { onClick: () => editar((data.misProductos || []).indexOf(p)), style: { background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
-                                React.createElement(Icon, { name: "settings", size: 14 })),
-                            React.createElement("button", { onClick: () => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion }), style: { background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
-                                React.createElement(Icon, { name: "camera", size: 14 }))))));
+                                    p.divisor && p.divisor > 1 ? ` (${fmt(pv / p.divisor)} c/u)` : '')))),
+                    isExpanded && (React.createElement("div", { style: { borderTop: '1px solid #111827', padding: '10px 14px', display: 'flex', gap: 8, background: '#161b27' } },
+                        React.createElement("button", { onClick: () => { editar((data.misProductos || []).indexOf(p)); setExpandedRef(null); }, style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 } },
+                            React.createElement(Icon, { name: "settings", size: 14 }),
+                            " Editar"),
+                        React.createElement("button", { onClick: () => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion }), style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 } },
+                            React.createElement(Icon, { name: "camera", size: 14 }),
+                            " Foto"),
+                        React.createElement("button", { onClick: () => { eliminar((data.misProductos || []).indexOf(p)); setExpandedRef(null); }, style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 } },
+                            React.createElement(Icon, { name: "trash", size: 14 }),
+                            " Eliminar")))));
             })))),
         scanBarcode && (React.createElement(Scanner, { onResult: scanned => { setScanBarcode(false); setCodigoBarras(scanned); }, onClose: () => setScanBarcode(false) })),
         photoModal && (React.createElement("div", { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }, onClick: () => setPhotoModal(null) },
@@ -1578,24 +1584,18 @@ function TabConfig({ data, setData, showToast }) {
     };
     const MargenRow = ({ label, value, onChange }) => {
         const num = pct(value);
-        return (React.createElement("div", { style: { background: '#111827', borderRadius: 12, padding: '14px 16px', marginBottom: 10 } },
-            React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 } },
-                React.createElement("span", { style: { fontSize: 14, fontWeight: 700, color: '#f1f5f9' } }, label),
-                React.createElement("span", { style: { fontSize: 13, color: '#818cf8' } },
-                    num,
-                    "% \u2192 ",
-                    mult(num))),
+        return (React.createElement("div", { style: { background: '#111827', borderRadius: 12, padding: '12px 14px', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 12 } },
+            React.createElement("span", { style: { fontSize: 14, fontWeight: 700, color: '#f1f5f9', minWidth: 30 } }, label),
             React.createElement("input", { type: "number", min: 1, max: 99, value: value, onChange: e => onChange(e.target.value), onBlur: e => onChange(String(Math.min(99, Math.max(1, parseFloat(e.target.value) || 1)))), style: {
-                    width: '100%', background: '#1e2230', border: '1px solid #374151',
-                    borderRadius: 10, padding: '12px 14px', color: '#f1f5f9',
+                    width: 80, background: '#1e2230', border: '1px solid #374151',
+                    borderRadius: 10, padding: '10px 8px', color: '#f1f5f9',
                     fontSize: 18, fontWeight: 700, fontFamily: 'inherit', outline: 'none',
-                    textAlign: 'center',
+                    textAlign: 'center', flexShrink: 0,
                 }, placeholder: "50" }),
-            React.createElement("div", { style: { marginTop: 10 } },
-                React.createElement("input", { type: "range", min: 1, max: 99, value: pct(value), onChange: e => onChange(e.target.value), style: { width: '100%', accentColor: '#6366f1' } }),
-                React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#4b5563', marginTop: 2 } },
-                    React.createElement("span", null, "1%"),
-                    React.createElement("span", null, "99%")))));
+            React.createElement("span", { style: { fontSize: 12, color: '#818cf8' } },
+                num,
+                "% \u2192 ",
+                mult(num))));
     };
     return (React.createElement("div", null,
         React.createElement("div", { className: "card" },

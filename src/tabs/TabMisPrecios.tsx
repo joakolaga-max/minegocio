@@ -26,6 +26,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
   const [scanBarcode, setScanBarcode] = useState(false);
   const [codigoBarras, setCodigoBarras] = useState('');
   const [photoModal, setPhotoModal] = useState<{ codigoRef: string; descripcion: string } | null>(null);
+  const [expandedRef, setExpandedRef] = useState<string | null>(null);
 
   const margenFinal = margenCustom ? (parseFloat(margenCustomVal) || 50) : margenSel;
 
@@ -242,25 +243,23 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
             </button>
           </div>
 
-          {/* Cuando pulsa Otro%: margen manual + divisor en la misma fila */}
+          {/* Otro%: margen + divisor lado a lado */}
           {margenCustom && (
-            <div style={{ display: 'flex', gap: 10, marginTop: 10, alignItems: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
               <div style={{ flex: 1 }}>
                 <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 }}>% manual</label>
-                <input type="number" className="input-field" style={{ textAlign: 'center', fontWeight: 700 }}
+                <input type="number" className="input-field" style={{ textAlign: 'center', fontWeight: 700, padding: '10px' }}
                   value={margenCustomVal} onChange={e => setMargenCustomVal(e.target.value)}
                   placeholder="Ej: 45" min={0} max={99} />
                 {margenCustomVal && (
-                  <div style={{ fontSize: 11, color: '#22c55e', marginTop: 3 }}>
-                    → {(100 / (1 - parseFloat(margenCustomVal) / 100)).toFixed(2)}x
-                  </div>
+                  <div style={{ fontSize: 11, color: '#22c55e', marginTop: 3 }}>→ {(100/(1-parseFloat(margenCustomVal)/100)).toFixed(2)}x</div>
                 )}
               </div>
               <div style={{ flex: 1 }}>
                 <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 }}>Dividir por</label>
-                <input type="number" min={1} className="input-field" style={{ textAlign: 'center', fontWeight: 700 }}
+                <input type="number" min={1} className="input-field" style={{ textAlign: 'center', fontWeight: 700, padding: '10px' }}
                   value={divisor} onChange={e => setDivisor(Math.max(1, parseInt(e.target.value) || 1))} />
-                {divisor > 1 && <div style={{ fontSize: 11, color: '#22c55e', marginTop: 3 }}>÷ {divisor} = c/u</div>}
+                {divisor > 1 && <div style={{ fontSize: 11, color: '#22c55e', marginTop: 3 }}>÷ {divisor} c/u</div>}
               </div>
             </div>
           )}
@@ -376,41 +375,51 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
               const margenLabel = typeof p.margen === 'number'
                 ? `${p.margen}%`
                 : `${data.margenes[p.margen as keyof typeof data.margenes]}%`;
+              const isExpanded = expandedRef === p.codigoRef;
+              const codBarras = (p as any).codigoBarras;
 
               return (
-                <div key={i}
-                  style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', padding: '12px 14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div key={i} style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', overflow: 'hidden' }}>
+                  {/* Tap to expand */}
+                  <div onClick={() => setExpandedRef(isExpanded ? null : p.codigoRef)}
+                    style={{ padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
                     {foto && <img src={foto} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 12, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 }}>{p.codigoRef}</span>
-                        <span style={{ fontSize: 11, color: '#4b5563' }}>{p.codigoProv}</span>
+                      {/* Código de barras arriba */}
+                      {codBarras && (
+                        <div style={{ fontSize: 11, color: '#6b7280', fontFamily: 'monospace', marginBottom: 2 }}>{codBarras}</div>
+                      )}
+                      {/* Descripcion completa */}
+                      <div style={{ fontSize: 15, color: '#f1f5f9', fontWeight: 600, wordBreak: 'break-word' }}>{p.descripcion}</div>
+                      {/* Codes + margen */}
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 3 }}>
+                        <span style={{ fontSize: 11, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 }}>{p.codigoRef}</span>
+                        {p.codigoProv && <span style={{ fontSize: 11, color: '#4b5563' }}>{p.codigoProv}</span>}
                         <span className="badge" style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', fontSize: 10 }}>{margenLabel}</span>
                       </div>
-                      <div style={{ fontSize: 16, color: '#f1f5f9', fontWeight: 600, marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>
                       <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
-                        Costo: {fmt(p.precioCosto)} →{' '}
-                        <span style={{ color: '#22c55e', fontWeight: 700 }}>
-                          {fmt(pv)}{p.divisor && p.divisor > 1 ? ` (${fmt(pv / p.divisor)} c/u)` : ''}
-                        </span>
+                        Costo: {fmt(p.precioCosto)} → <span style={{ color: '#22c55e', fontWeight: 700 }}>{fmt(pv)}{p.divisor && p.divisor > 1 ? ` (${fmt(pv / p.divisor)} c/u)` : ''}</span>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 6 }} onClick={e => e.stopPropagation()}>
-                      <button onClick={() => eliminar((data.misProductos || []).indexOf(p))}
-                        style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}>
-                        <Icon name="trash" size={14} />
-                      </button>
-                      <button onClick={() => editar((data.misProductos || []).indexOf(p))}
-                        style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}>
-                        <Icon name="settings" size={14} />
+                  </div>
+
+                  {/* Actions panel - only when expanded */}
+                  {isExpanded && (
+                    <div style={{ borderTop: '1px solid #111827', padding: '10px 14px', display: 'flex', gap: 8, background: '#161b27' }}>
+                      <button onClick={() => { editar((data.misProductos || []).indexOf(p)); setExpandedRef(null); }}
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 }}>
+                        <Icon name="settings" size={14} /> Editar
                       </button>
                       <button onClick={() => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion })}
-                        style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}>
-                        <Icon name="camera" size={14} />
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 }}>
+                        <Icon name="camera" size={14} /> Foto
+                      </button>
+                      <button onClick={() => { eliminar((data.misProductos || []).indexOf(p)); setExpandedRef(null); }}
+                        style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 }}>
+                        <Icon name="trash" size={14} /> Eliminar
                       </button>
                     </div>
-                  </div>
+                  )}
                 </div>
               );
             })}
