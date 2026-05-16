@@ -624,13 +624,15 @@ function TabProveedores({ data, setData, showToast }) {
         });
     };
     return (React.createElement("div", null,
-        React.createElement("div", { style: { display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 8, marginBottom: 12 } }, (data.proveedores || []).map((p, i) => (React.createElement("button", { key: i, onClick: () => { setActiveTab(i); setBusqueda(''); }, style: {
-                flexShrink: 0, padding: '6px 14px', borderRadius: 20, border: '1px solid',
-                borderColor: activeTab === i ? '#6366f1' : '#374151',
-                background: activeTab === i ? 'rgba(99,102,241,0.15)' : 'transparent',
-                color: activeTab === i ? '#818cf8' : '#6b7280',
-                cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: activeTab === i ? 600 : 400,
-            } }, i + 1)))),
+        React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 } }, (data.proveedores || []).map((p, i) => (React.createElement("button", { key: i, onClick: () => { setActiveTab(i); setBusqueda(''); }, style: {
+                width: '100%', padding: '12px 16px', borderRadius: 12, border: '1px solid',
+                borderColor: activeTab === i ? '#6366f1' : '#1e2535',
+                background: activeTab === i ? 'rgba(99,102,241,0.12)' : '#161b27',
+                cursor: 'pointer', fontFamily: 'inherit',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            } },
+            React.createElement("span", { style: { fontSize: 14, fontWeight: activeTab === i ? 700 : 500, color: activeTab === i ? '#818cf8' : '#94a3b8' } }, p.nombre || `Proveedor ${i + 1}`),
+            React.createElement("span", { style: { fontSize: 12, color: p.productos.length > 0 ? '#22c55e' : '#4b5563', fontWeight: 600 } }, p.productos.length > 0 ? `${p.productos.length} productos` : 'Sin cargar'))))),
         React.createElement("div", { className: "card" },
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 } },
                 React.createElement("input", { className: "input-field", value: prov.nombre, onChange: e => updateNombre(e.target.value), style: { flex: 1, fontWeight: 600 }, placeholder: "Nombre del proveedor" }),
@@ -775,6 +777,54 @@ function TabMisPrecios({ data, setData, showToast }) {
         w.XLSX.utils.book_append_sheet(wb, ws, 'Mis Precios');
         w.XLSX.writeFile(wb, 'mis_precios.xlsx');
         showToast('Excel exportado', 'success');
+    };
+    const importarExcel = (e) => {
+        const file = e.target.files?.[0];
+        if (!file)
+            return;
+        const w = window;
+        if (!w.XLSX) {
+            showToast('XLSX no disponible', 'error');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = ev => {
+            try {
+                const wb = w.XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const rows = w.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+                // Skip header row (Ref, Cod Proveedor, Descripcion, Precio Compra, Precio Venta, Margen %)
+                const start = String(rows[0]?.[0] || '').toLowerCase().includes('ref') ? 1 : 0;
+                const nuevos = [];
+                rows.slice(start).forEach((cols) => {
+                    const ref = String(cols[0] || '').trim().toUpperCase();
+                    const codProv = String(cols[1] || '').trim().toUpperCase();
+                    const desc = String(cols[2] || '').trim();
+                    const costo = parseFloat(String(cols[3] || '0').replace(',', '.')) || 0;
+                    const margenVal = parseFloat(String(cols[5] || '50').replace(',', '.')) || 50;
+                    if (!ref || !codProv)
+                        return;
+                    nuevos.push({ codigoRef: ref, codigoProv: codProv, descripcion: desc, precioCosto: costo, margen: margenVal, proveedor: '', divisor: 1 });
+                });
+                if (nuevos.length === 0) {
+                    showToast('No se encontraron productos', 'error');
+                    return;
+                }
+                if (!window.confirm(`Importar ${nuevos.length} productos? Esto reemplazará los existentes con el mismo REF.`))
+                    return;
+                setData(d => {
+                    const existingRefs = new Set(nuevos.map((p) => p.codigoRef));
+                    const filtered = (d.misProductos || []).filter((p) => !existingRefs.has(p.codigoRef));
+                    return { ...d, misProductos: [...filtered, ...nuevos] };
+                });
+                showToast(`${nuevos.length} productos importados`, 'success');
+            }
+            catch (err) {
+                showToast('Error al leer el archivo', 'error');
+            }
+        };
+        reader.readAsArrayBuffer(file);
+        e.target.value = '';
     };
     const filtrados = busqueda
         ? (data.misProductos || []).filter(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -1153,7 +1203,11 @@ function TabPedidos({ data, setData, showToast }) {
             (p.codigoProv || '').toLowerCase().includes(q) ||
             (p.descripcion || '').toLowerCase().includes(q)).slice(0, 30);
     })() : [];
-    const quitar = (ref) => setData(d => ({ ...d, pedidos: (d.pedidos || []).filter(x => (x.codigoRef || x.codigoProv) !== ref) }));
+    const quitar = (ref) => {
+        if (!window.confirm('Quitar este producto del pedido?'))
+            return;
+        setData(d => ({ ...d, pedidos: (d.pedidos || []).filter(x => (x.codigoRef || x.codigoProv) !== ref) }));
+    };
     const cambiarCant = (ref, delta) => setData(d => ({
         ...d, pedidos: (d.pedidos || []).map(x => (x.codigoRef || x.codigoProv) === ref ? { ...x, cantidad: Math.max(1, (x.cantidad || 1) + delta) } : x)
     }));
