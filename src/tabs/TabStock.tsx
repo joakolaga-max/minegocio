@@ -22,6 +22,7 @@ export function TabStock({ data, setData, showToast }: Props) {
   }).filter(p => !busqueda ||
     p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
     (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+    (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
     (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase())
   );
 

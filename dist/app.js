@@ -892,6 +892,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
     const filtrados = busqueda
         ? (data.misProductos || []).filter(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+            (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()))
         : data.misProductos;
     const fmt = (n) => '$' + Math.round(n).toLocaleString('es-AR');
@@ -1126,6 +1127,7 @@ function TabStock({ data, setData, showToast }) {
     }).filter(p => !busqueda ||
         p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+        (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()));
     const bajoMinimo = productos.filter(p => p.stock.minimo > 0 && p.actual < p.stock.minimo);
     const updateStock = (ref, field, val) => {
