@@ -1284,7 +1284,6 @@ function TabStock({ data, setData, showToast }) {
         p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-        (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()));
     const bajoMinimo = productos.filter(p => p.stock.minimo > 0 && p.actual < p.stock.minimo);
     const updateStock = (ref, field, val) => {

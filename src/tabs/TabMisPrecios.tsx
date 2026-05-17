@@ -161,8 +161,9 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
     ? (data.misProductos || []).filter(p =>
         p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+        ((p as any).codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()))
-    : data.misProductos;
+    : (data.misProductos || []);
 
   const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-AR');
 
