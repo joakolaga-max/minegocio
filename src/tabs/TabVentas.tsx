@@ -53,6 +53,7 @@ export function TabVentas({ data, setData, showToast }: Props) {
   const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-AR');
 
   return (
+    <>
     <div>
       {/* Summary card */}
       <div className="card" style={{ marginBottom: 12 }}>
@@ -128,8 +129,6 @@ export function TabVentas({ data, setData, showToast }: Props) {
         )}
       </div>
     </div>
-  );
-}
 
       {presupuestoVenta && (
         <Presupuesto
@@ -138,5 +137,6 @@ export function TabVentas({ data, setData, showToast }: Props) {
           onClose={() => setPresupuestoVenta(null)}
         />
       )}
+    </>
   );
 }
