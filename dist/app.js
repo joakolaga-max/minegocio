@@ -312,6 +312,7 @@ function LoginScreen({ onLogin }) {
 function Presupuesto({ items, total, onClose, onGuardar }) {
     const [nombreEmpresa, setNombreEmpresa] = React.useState(() => localStorage.getItem('mn_empresa') || '');
     const [telefono, setTelefono] = React.useState(() => localStorage.getItem('mn_telefono') || '');
+    const [direccion, setDireccion] = React.useState(() => localStorage.getItem('mn_direccion') || '');
     const [cliente, setCliente] = React.useState('');
     const [nota, setNota] = React.useState('');
     const [descuento, setDescuento] = React.useState(0);
@@ -360,6 +361,7 @@ function Presupuesto({ items, total, onClose, onGuardar }) {
     <div>
       <div class="empresa">${nombreEmpresa || 'Mi Negocio'}</div>
       ${telefono ? `<div class="tel">📞 ${telefono}</div>` : ''}
+      ${direccion ? `<div class="tel">📍 ${direccion}</div>` : ''}
     </div>
     <div>
       <div class="titulo">PRESUPUESTO</div>
@@ -419,13 +421,15 @@ function Presupuesto({ items, total, onClose, onGuardar }) {
                 React.createElement("div", { style: { fontWeight: 700, fontSize: 16, color: '#f1f5f9' } }, "Presupuesto"),
                 React.createElement("button", { onClick: onClose, style: { background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer' } },
                     React.createElement(Icon, { name: "x", size: 20 }))),
-            React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 10 } },
-                React.createElement("div", { style: { flex: 2 } },
-                    React.createElement("label", { style: { fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 } }, "Nombre del negocio"),
-                    React.createElement("input", { className: "input-field", value: nombreEmpresa, onChange: e => setNombreEmpresa(e.target.value), placeholder: "Mi Negocio" })),
-                React.createElement("div", { style: { flex: 1 } },
-                    React.createElement("label", { style: { fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 } }, "Tel\u00E9fono"),
-                    React.createElement("input", { className: "input-field", value: telefono, onChange: e => setTelefono(e.target.value), placeholder: "3814..." }))),
+            (nombreEmpresa || telefono || direccion) && (React.createElement("div", { style: { background: '#111827', borderRadius: 10, padding: '8px 12px', marginBottom: 10, fontSize: 12, color: '#6b7280' } },
+                nombreEmpresa && React.createElement("div", { style: { fontWeight: 700, color: '#818cf8' } }, nombreEmpresa),
+                telefono && React.createElement("div", null,
+                    "\uD83D\uDCDE ",
+                    telefono),
+                direccion && React.createElement("div", null,
+                    "\uD83D\uDCCD ",
+                    direccion),
+                React.createElement("div", { style: { marginTop: 4, fontSize: 11, color: '#4b5563' } }, "Edit\u00E1 estos datos en Configuraci\u00F3n"))),
             React.createElement("div", { style: { marginBottom: 10 } },
                 React.createElement("label", { style: { fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 } }, "Cliente (opcional)"),
                 React.createElement("input", { className: "input-field", value: cliente, onChange: e => setCliente(e.target.value), placeholder: "Nombre del cliente" })),
@@ -1802,79 +1806,94 @@ function TabPresupuestos({ data, setData, showToast, onCargarEnCalculadora }) {
 
 // ── src/tabs/TabConfig.tsx ──
 function TabConfig({ data, setData, showToast }) {
+    const [openSection, setOpenSection] = React.useState('margenes');
+    // Márgenes
     const [m1, setM1] = React.useState(String(data.margenes.p1));
     const [m2, setM2] = React.useState(String(data.margenes.p2));
     const [m3, setM3] = React.useState(String(data.margenes.p3));
     const [m4, setM4] = React.useState(String(data.margenes.p4));
+    // Proveedores
     const [nombres, setNombres] = React.useState((data.proveedores || []).map(p => p.nombre));
+    // Presupuesto
+    const [empresa, setEmpresa] = React.useState(() => localStorage.getItem('mn_empresa') || '');
+    const [telefono, setTelefono] = React.useState(() => localStorage.getItem('mn_telefono') || '');
+    const [direccion, setDireccion] = React.useState(() => localStorage.getItem('mn_direccion') || '');
+    const [logoUrl, setLogoUrl] = React.useState(() => localStorage.getItem('mn_logo') || '');
     const mult = (pct) => pct >= 100 ? '∞' : (100 / (100 - pct)).toFixed(2) + 'x';
-    const pct = (s) => Math.min(99, Math.max(1, parseFloat(s) || 0));
+    const pct = (s) => Math.min(99, Math.max(1, parseFloat(s) || 1));
     const guardarMargenes = () => {
-        setData(d => ({
-            ...d,
-            margenes: { p1: pct(m1), p2: pct(m2), p3: pct(m3), p4: pct(m4) }
-        }));
+        setData(d => ({ ...d, margenes: { p1: pct(m1), p2: pct(m2), p3: pct(m3), p4: pct(m4) } }));
         showToast('Márgenes guardados', 'success');
     };
     const guardarProveedores = () => {
         setData(d => ({
             ...d,
-            proveedores: (d.proveedores || []).map((p, i) => ({
-                ...p,
-                nombre: nombres[i] || p.nombre
-            }))
+            proveedores: (d.proveedores || []).map((p, i) => ({ ...p, nombre: nombres[i] || p.nombre }))
         }));
         showToast('Proveedores guardados', 'success');
     };
-    const updateNombre = (i, val) => {
-        const n = [...nombres];
-        n[i] = val;
-        setNombres(n);
+    const guardarPresupuesto = () => {
+        localStorage.setItem('mn_empresa', empresa);
+        localStorage.setItem('mn_telefono', telefono);
+        localStorage.setItem('mn_direccion', direccion);
+        if (logoUrl)
+            localStorage.setItem('mn_logo', logoUrl);
+        showToast('Datos de presupuesto guardados', 'success');
     };
-    const MargenRow = ({ label, value, onChange }) => {
-        const num = pct(value);
-        return (React.createElement("div", { style: { background: '#111827', borderRadius: 12, padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 } },
-            React.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: '#6b7280' } }, label),
-            React.createElement("input", { type: "number", min: 1, max: 99, value: value, onChange: e => onChange(e.target.value), onBlur: e => onChange(String(Math.min(99, Math.max(1, parseFloat(e.target.value) || 1)))), style: {
-                    width: '100%', background: '#1e2230', border: '1px solid #374151',
-                    borderRadius: 10, padding: '10px 6px', color: '#f1f5f9',
-                    fontSize: 22, fontWeight: 700, fontFamily: 'inherit', outline: 'none',
-                    textAlign: 'center',
-                }, placeholder: "50" }),
-            React.createElement("span", { style: { fontSize: 11, color: '#818cf8' } },
-                num,
-                "% \u2192 ",
-                mult(num))));
-    };
+    const SectionHeader = ({ id, label, icon }) => (React.createElement("button", { onClick: () => setOpenSection(openSection === id ? null : id), style: {
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 16px', background: openSection === id ? 'rgba(99,102,241,0.1)' : '#111827',
+            border: 'none', borderRadius: openSection === id ? '12px 12px 0 0' : 12,
+            cursor: 'pointer', fontFamily: 'inherit', marginBottom: openSection === id ? 0 : 8,
+            borderBottom: openSection === id ? '1px solid #1e2535' : 'none',
+        } },
+        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },
+            React.createElement(Icon, { name: icon, size: 18 }),
+            React.createElement("span", { style: { fontSize: 15, fontWeight: 700, color: openSection === id ? '#818cf8' : '#f1f5f9' } }, label)),
+        React.createElement("span", { style: { color: '#6b7280', fontSize: 18 } }, openSection === id ? '▲' : '▼')));
     return (React.createElement("div", null,
-        React.createElement("div", { className: "card" },
-            React.createElement("div", { className: "section-title" }, "M\u00E1rgenes de ganancia"),
-            React.createElement("div", { style: { fontSize: 13, color: '#6b7280', marginBottom: 14 } }, "Escrib\u00ED el porcentaje o us\u00E1 el deslizador"),
-            React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
-                React.createElement(MargenRow, { label: "% 1", value: m1, onChange: setM1 }),
-                React.createElement(MargenRow, { label: "% 2", value: m2, onChange: setM2 }),
-                React.createElement(MargenRow, { label: "% 3", value: m3, onChange: setM3 }),
-                React.createElement(MargenRow, { label: "% 4", value: m4, onChange: setM4 })),
-            React.createElement("button", { className: "btn-primary", style: { width: '100%', justifyContent: 'center', marginTop: 4 }, onClick: guardarMargenes },
+        React.createElement(SectionHeader, { id: "margenes", label: "M\u00E1rgenes de ganancia", icon: "tag" }),
+        openSection === 'margenes' && (React.createElement("div", { style: { background: '#161b27', borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 } },
+            React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 } }, [['% 1', m1, setM1], ['% 2', m2, setM2], ['% 3', m3, setM3], ['% 4', m4, setM4]].map(([label, val, set]) => (React.createElement("div", { key: label, style: { background: '#111827', borderRadius: 12, padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 } },
+                React.createElement("span", { style: { fontSize: 12, fontWeight: 700, color: '#6b7280' } }, label),
+                React.createElement("input", { type: "number", min: 1, max: 99, value: val, onChange: e => set(e.target.value), onBlur: e => set(String(Math.min(99, Math.max(1, parseFloat(e.target.value) || 1)))), style: { width: '100%', background: '#1e2230', border: '1px solid #374151', borderRadius: 10, padding: '10px 6px', color: '#f1f5f9', fontSize: 22, fontWeight: 700, fontFamily: 'inherit', outline: 'none', textAlign: 'center' } }),
+                React.createElement("span", { style: { fontSize: 11, color: '#818cf8' } },
+                    pct(val),
+                    "% \u2192 ",
+                    mult(pct(val))))))),
+            React.createElement("button", { className: "btn-primary", style: { width: '100%', justifyContent: 'center' }, onClick: guardarMargenes },
                 React.createElement(Icon, { name: "check", size: 16 }),
-                " Guardar m\u00E1rgenes")),
-        React.createElement("div", { className: "card" },
-            React.createElement("div", { className: "section-title" }, "Nombres de proveedores"),
-            React.createElement("div", { style: { fontSize: 13, color: '#6b7280', marginBottom: 14 } }, "Edit\u00E1 el nombre de cada proveedor"),
+                " Guardar m\u00E1rgenes"))),
+        React.createElement(SectionHeader, { id: "proveedores", label: "Nombres de proveedores", icon: "store" }),
+        openSection === 'proveedores' && (React.createElement("div", { style: { background: '#161b27', borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 } },
             (data.proveedores || []).map((p, i) => (React.createElement("div", { key: i, style: { marginBottom: 10 } },
-                React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 } },
+                React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 } },
                     "Proveedor ",
                     i + 1,
-                    p.productos.length > 0 && (React.createElement("span", { style: { marginLeft: 8, color: '#22c55e', fontSize: 11 } },
+                    p.productos.length > 0 && React.createElement("span", { style: { marginLeft: 8, color: '#22c55e', fontSize: 11 } },
                         "(",
                         p.productos.length,
-                        " productos)"))),
-                React.createElement("input", { className: "input-field", value: nombres[i] ?? p.nombre, onChange: e => updateNombre(i, e.target.value), placeholder: `Proveedor ${i + 1}` })))),
-            React.createElement("button", { className: "btn-primary", style: { width: '100%', justifyContent: 'center', marginTop: 8 }, onClick: guardarProveedores },
+                        " productos)")),
+                React.createElement("input", { className: "input-field", value: nombres[i] ?? p.nombre, onChange: e => { const n = [...nombres]; n[i] = e.target.value; setNombres(n); }, placeholder: `Proveedor ${i + 1}` })))),
+            React.createElement("button", { className: "btn-primary", style: { width: '100%', justifyContent: 'center', marginTop: 4 }, onClick: guardarProveedores },
                 React.createElement(Icon, { name: "check", size: 16 }),
-                " Guardar nombres")),
-        React.createElement("div", { className: "card", style: { background: '#111827' } },
-            React.createElement("div", { style: { fontSize: 13, color: '#6b7280' } }, "Ejemplo con 50%: costo $1.000 \u2192 venta $2.000 (2x multiplicador)"))));
+                " Guardar nombres"))),
+        React.createElement(SectionHeader, { id: "presupuesto", label: "Datos del presupuesto", icon: "download" }),
+        openSection === 'presupuesto' && (React.createElement("div", { style: { background: '#161b27', borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 } },
+            React.createElement("div", { style: { marginBottom: 10 } },
+                React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 } }, "Nombre del negocio"),
+                React.createElement("input", { className: "input-field", value: empresa, onChange: e => setEmpresa(e.target.value), placeholder: "Mi Negocio" })),
+            React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 10 } },
+                React.createElement("div", { style: { flex: 1 } },
+                    React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 } }, "Tel\u00E9fono"),
+                    React.createElement("input", { className: "input-field", value: telefono, onChange: e => setTelefono(e.target.value), placeholder: "381 4..." }))),
+            React.createElement("div", { style: { marginBottom: 14 } },
+                React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 } }, "Direcci\u00F3n"),
+                React.createElement("input", { className: "input-field", value: direccion, onChange: e => setDireccion(e.target.value), placeholder: "Calle 123, Ciudad" })),
+            React.createElement("div", { style: { background: '#111827', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: '#6b7280' } }, "Estos datos aparecen en todos los presupuestos que generes."),
+            React.createElement("button", { className: "btn-primary", style: { width: '100%', justifyContent: 'center' }, onClick: guardarPresupuesto },
+                React.createElement(Icon, { name: "check", size: 16 }),
+                " Guardar datos")))));
 }
 
 

@@ -17,6 +17,7 @@ interface Props {
 export function Presupuesto({ items, total, onClose, onGuardar }: Props) {
   const [nombreEmpresa, setNombreEmpresa] = useState(() => localStorage.getItem('mn_empresa') || '');
   const [telefono, setTelefono] = useState(() => localStorage.getItem('mn_telefono') || '');
+  const [direccion, setDireccion] = useState(() => localStorage.getItem('mn_direccion') || '');
   const [cliente, setCliente] = useState('');
   const [nota, setNota] = useState('');
   const [descuento, setDescuento] = useState(0);
@@ -68,6 +69,7 @@ export function Presupuesto({ items, total, onClose, onGuardar }: Props) {
     <div>
       <div class="empresa">${nombreEmpresa || 'Mi Negocio'}</div>
       ${telefono ? `<div class="tel">📞 ${telefono}</div>` : ''}
+      ${direccion ? `<div class="tel">📍 ${direccion}</div>` : ''}
     </div>
     <div>
       <div class="titulo">PRESUPUESTO</div>
@@ -137,17 +139,15 @@ export function Presupuesto({ items, total, onClose, onGuardar }: Props) {
           </button>
         </div>
 
-        {/* Empresa (se guarda) */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-          <div style={{ flex: 2 }}>
-            <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 }}>Nombre del negocio</label>
-            <input className="input-field" value={nombreEmpresa} onChange={e => setNombreEmpresa(e.target.value)} placeholder="Mi Negocio" />
+        {/* Datos del negocio - compact */}
+        {(nombreEmpresa || telefono || direccion) && (
+          <div style={{ background: '#111827', borderRadius: 10, padding: '8px 12px', marginBottom: 10, fontSize: 12, color: '#6b7280' }}>
+            {nombreEmpresa && <div style={{ fontWeight: 700, color: '#818cf8' }}>{nombreEmpresa}</div>}
+            {telefono && <div>📞 {telefono}</div>}
+            {direccion && <div>📍 {direccion}</div>}
+            <div style={{ marginTop: 4, fontSize: 11, color: '#4b5563' }}>Editá estos datos en Configuración</div>
           </div>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 }}>Teléfono</label>
-            <input className="input-field" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="3814..." />
-          </div>
-        </div>
+        )}
 
         {/* Cliente */}
         <div style={{ marginBottom: 10 }}>
