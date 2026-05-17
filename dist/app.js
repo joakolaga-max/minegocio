@@ -308,6 +308,152 @@ function LoginScreen({ onLogin }) {
 }
 
 
+// ── src/components/Presupuesto.tsx ──
+function Presupuesto({ items, total, onClose }) {
+    const [nombreEmpresa, setNombreEmpresa] = React.useState(() => localStorage.getItem('mn_empresa') || '');
+    const [telefono, setTelefono] = React.useState(() => localStorage.getItem('mn_telefono') || '');
+    const [cliente, setCliente] = React.useState('');
+    const [nota, setNota] = React.useState('');
+    const [descuento, setDescuento] = React.useState(0);
+    const fmt = (n) => '$' + Math.round(n).toLocaleString('es-AR');
+    const totalConDesc = total * (1 - descuento / 100);
+    const fecha = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const guardarConfig = () => {
+        localStorage.setItem('mn_empresa', nombreEmpresa);
+        localStorage.setItem('mn_telefono', telefono);
+    };
+    const imprimir = () => {
+        guardarConfig();
+        const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Presupuesto</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; padding: 20px; color: #111; font-size: 14px; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #333; }
+    .empresa { font-size: 22px; font-weight: 700; }
+    .tel { font-size: 13px; color: #555; margin-top: 4px; }
+    .titulo { font-size: 20px; font-weight: 700; text-align: right; }
+    .fecha { font-size: 12px; color: #555; text-align: right; margin-top: 4px; }
+    .cliente-row { margin-bottom: 20px; font-size: 14px; }
+    .cliente-row span { font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    th { background: #222; color: #fff; padding: 8px 10px; text-align: left; font-size: 13px; }
+    th:last-child, td:last-child { text-align: right; }
+    th:nth-child(2), td:nth-child(2) { text-align: center; }
+    td { padding: 8px 10px; border-bottom: 1px solid #ddd; font-size: 13px; }
+    tr:nth-child(even) td { background: #f9f9f9; }
+    .totals { margin-left: auto; width: 240px; }
+    .total-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 14px; }
+    .total-final { font-size: 18px; font-weight: 700; border-top: 2px solid #222; padding-top: 8px; margin-top: 4px; }
+    .nota { margin-top: 20px; padding: 12px; background: #f5f5f5; border-radius: 6px; font-size: 13px; }
+    .footer { margin-top: 32px; text-align: center; font-size: 11px; color: #999; border-top: 1px solid #ddd; padding-top: 12px; }
+    @media print { body { padding: 10px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="empresa">${nombreEmpresa || 'Mi Negocio'}</div>
+      ${telefono ? `<div class="tel">📞 ${telefono}</div>` : ''}
+    </div>
+    <div>
+      <div class="titulo">PRESUPUESTO</div>
+      <div class="fecha">Fecha: ${fecha}</div>
+    </div>
+  </div>
+  ${cliente ? `<div class="cliente-row"><span>Cliente:</span> ${cliente}</div>` : ''}
+  <table>
+    <thead>
+      <tr>
+        <th>Descripción</th>
+        <th>Cant.</th>
+        <th>Precio unit.</th>
+        <th>Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${items.map(i => `
+      <tr>
+        <td>${i.descripcion}</td>
+        <td style="text-align:center">${i.cantidad}</td>
+        <td style="text-align:right">${fmt(i.precioVenta)}</td>
+        <td style="text-align:right">${fmt(i.precioVenta * i.cantidad)}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+  <div class="totals">
+    <div class="total-row"><span>Subtotal:</span><span>${fmt(total)}</span></div>
+    ${descuento > 0 ? `<div class="total-row"><span>Descuento (${descuento}%):</span><span>-${fmt(total * descuento / 100)}</span></div>` : ''}
+    <div class="total-row total-final"><span>TOTAL:</span><span>${fmt(totalConDesc)}</span></div>
+  </div>
+  ${nota ? `<div class="nota"><strong>Nota:</strong> ${nota}</div>` : ''}
+  <div class="footer">Presupuesto válido por 48 horas · ${nombreEmpresa || 'Mi Negocio'}</div>
+</body>
+</html>`;
+        const win = window.open('', '_blank');
+        if (!win)
+            return;
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        setTimeout(() => win.print(), 500);
+    };
+    const compartirWhatsApp = () => {
+        guardarConfig();
+        const msg = `*PRESUPUESTO${nombreEmpresa ? ' - ' + nombreEmpresa : ''}*\n` +
+            `Fecha: ${fecha}\n${cliente ? `Cliente: ${cliente}\n` : ''}\n` +
+            items.map(i => `• ${i.descripcion} x${i.cantidad} → ${fmt(i.precioVenta * i.cantidad)}`).join('\n') +
+            `\n\n*TOTAL: ${fmt(totalConDesc)}*` +
+            (descuento > 0 ? ` _(${descuento}% desc. aplicado)_` : '') +
+            (nota ? `\n\n_${nota}_` : '');
+        window.open('https://wa.me/?text=' + encodeURIComponent(msg));
+    };
+    return (React.createElement("div", { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }, onClick: onClose },
+        React.createElement("div", { style: { background: '#1e2230', borderRadius: '20px 20px 0 0', padding: 20, width: '100%', maxWidth: 600, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflowY: 'auto' }, onClick: e => e.stopPropagation() },
+            React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 } },
+                React.createElement("div", { style: { fontWeight: 700, fontSize: 16, color: '#f1f5f9' } }, "Presupuesto"),
+                React.createElement("button", { onClick: onClose, style: { background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer' } },
+                    React.createElement(Icon, { name: "x", size: 20 }))),
+            React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 10 } },
+                React.createElement("div", { style: { flex: 2 } },
+                    React.createElement("label", { style: { fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 } }, "Nombre del negocio"),
+                    React.createElement("input", { className: "input-field", value: nombreEmpresa, onChange: e => setNombreEmpresa(e.target.value), placeholder: "Mi Negocio" })),
+                React.createElement("div", { style: { flex: 1 } },
+                    React.createElement("label", { style: { fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 } }, "Tel\u00E9fono"),
+                    React.createElement("input", { className: "input-field", value: telefono, onChange: e => setTelefono(e.target.value), placeholder: "3814..." }))),
+            React.createElement("div", { style: { marginBottom: 10 } },
+                React.createElement("label", { style: { fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 } }, "Cliente (opcional)"),
+                React.createElement("input", { className: "input-field", value: cliente, onChange: e => setCliente(e.target.value), placeholder: "Nombre del cliente" })),
+            React.createElement("div", { style: { background: '#111827', borderRadius: 10, padding: '10px 12px', marginBottom: 10 } }, items.map((item, i) => (React.createElement("div", { key: i, style: { display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: i < items.length - 1 ? '1px solid #1e2535' : 'none' } },
+                React.createElement("span", { style: { color: '#94a3b8' } },
+                    item.cantidad,
+                    "x ",
+                    item.descripcion),
+                React.createElement("span", { style: { color: '#22c55e', fontWeight: 600 } }, fmt(item.precioVenta * item.cantidad)))))),
+            React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 } },
+                React.createElement("label", { style: { fontSize: 12, color: '#6b7280', flexShrink: 0 } }, "Descuento %"),
+                React.createElement("input", { type: "number", min: 0, max: 99, className: "input-field", style: { width: 80, textAlign: 'center' }, value: descuento || '', onChange: e => setDescuento(Math.max(0, Math.min(99, parseInt(e.target.value) || 0))), placeholder: "0" }),
+                React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: '#22c55e', marginLeft: 'auto' } },
+                    "TOTAL: ",
+                    fmt(totalConDesc))),
+            React.createElement("div", { style: { marginBottom: 16 } },
+                React.createElement("label", { style: { fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 } }, "Nota (opcional)"),
+                React.createElement("input", { className: "input-field", value: nota, onChange: e => setNota(e.target.value), placeholder: "Condiciones, validez, etc." })),
+            React.createElement("div", { style: { display: 'flex', gap: 8 } },
+                React.createElement("button", { onClick: compartirWhatsApp, style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(37,211,102,0.15)', border: '1px solid #25d366', color: '#25d366', borderRadius: 12, padding: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 14 } },
+                    React.createElement(Icon, { name: "whatsapp", size: 16 }),
+                    " WA"),
+                React.createElement("button", { onClick: imprimir, style: { flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 12, padding: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 14 } },
+                    React.createElement(Icon, { name: "download", size: 16 }),
+                    " Imprimir / Guardar PDF")))));
+}
+
+
 // ── src/hooks/useAppData.ts ──
 const DEFAULT_MARGENES = { p1: 50, p2: 40, p3: 30, p4: 20 };
 const DEFAULT_DATA = {
@@ -405,6 +551,7 @@ function TabCalculadora({ data, setData, showToast }) {
     const [items, setItems] = React.useState([]);
     const [busqueda, setBusqueda] = React.useState('');
     const [scanning, setScanning] = React.useState(false);
+    const [showPresupuesto, setShowPresupuesto] = React.useState(false);
     const [showSuggestions, setShowSuggestions] = React.useState(false);
     const sugerencias = busqueda.length > 0
         ? (data.misProductos || []).filter(p => p.codigoRef.toUpperCase().includes(busqueda.toUpperCase()) ||
@@ -527,11 +674,16 @@ function TabCalculadora({ data, setData, showToast }) {
                 React.createElement("div", { style: { fontSize: 13, color: '#86efac', fontWeight: 600 } }, "Total"),
                 React.createElement("div", { style: { fontSize: 24, fontWeight: 700, color: '#22c55e' } }, fmtPeso(total))),
             React.createElement("div", { style: { display: 'flex', gap: 8 } },
-                React.createElement("button", { className: "btn-ghost", style: { flex: 1, justifyContent: 'center' }, onClick: () => { if (window.confirm('Limpiar calculadora?'))
-                        setItems([]); } }, "Limpiar"),
-                React.createElement("button", { className: "btn-primary", style: { flex: 2, justifyContent: 'center' }, onClick: confirmarVenta },
+                React.createElement("button", { className: "btn-ghost", style: { padding: '12px 14px' }, onClick: () => { if (window.confirm('Limpiar calculadora?'))
+                        setItems([]); } },
+                    React.createElement(Icon, { name: "trash", size: 16 })),
+                React.createElement("button", { className: "btn-ghost", style: { flex: 1, justifyContent: 'center' }, onClick: () => setShowPresupuesto(true) },
+                    React.createElement(Icon, { name: "download", size: 16 }),
+                    " Presupuesto"),
+                React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: 'center' }, onClick: confirmarVenta },
                     React.createElement(Icon, { name: "check", size: 16 }),
-                    " Confirmar venta")))),
+                    " Venta")))),
+        showPresupuesto && (React.createElement(Presupuesto, { items: items, total: total, onClose: () => setShowPresupuesto(false) })),
         scanning && (React.createElement(Scanner, { onResult: code => { setScanning(false); agregarProducto(code); }, onClose: () => setScanning(false) }))));
 }
 
@@ -738,6 +890,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
     const [divisor, setDivisor] = React.useState(1);
     const [editIdx, setEditIdx] = React.useState(null);
     const [scanBarcode, setScanBarcode] = React.useState(false);
+    const [scanSearch, setScanSearch] = React.useState(false);
     const [codigoBarras, setCodigoBarras] = React.useState('');
     const [photoModal, setPhotoModal] = React.useState(null);
     const [expandedRef, setExpandedRef] = React.useState(null);
@@ -892,7 +1045,6 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
     const filtrados = busqueda
         ? (data.misProductos || []).filter(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-            (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()))
         : data.misProductos;
     const fmt = (n) => '$' + Math.round(n).toLocaleString('es-AR');
@@ -1033,10 +1185,13 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                 (data.misProductos || []).length > 0 && (React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', fontSize: 13 }, onClick: exportar },
                     React.createElement(Icon, { name: "download", size: 14 }),
                     " Excel"))),
-            (data.misProductos || []).length > 0 && (React.createElement("div", { style: { position: 'relative', marginBottom: 12 } },
-                React.createElement("div", { style: { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' } },
-                    React.createElement(Icon, { name: "search", size: 16 })),
-                React.createElement("input", { className: "input-field", style: { paddingLeft: 38 }, placeholder: "Buscar por REF, cod proveedor o descripci\u00F3n...", value: busqueda, onChange: e => setBusqueda(e.target.value) }))),
+            (data.misProductos || []).length > 0 && (React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 12 } },
+                React.createElement("div", { style: { position: 'relative', flex: 1 } },
+                    React.createElement("div", { style: { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' } },
+                        React.createElement(Icon, { name: "search", size: 16 })),
+                    React.createElement("input", { className: "input-field", style: { paddingLeft: 38 }, placeholder: "Buscar por REF, cod, barras o descripci\u00F3n...", value: busqueda, onChange: e => setBusqueda(e.target.value) })),
+                React.createElement("button", { className: "btn-ghost", style: { padding: '10px 14px', flexShrink: 0 }, onClick: () => setScanSearch(true) },
+                    React.createElement(Icon, { name: "camera", size: 18 })))),
             filtrados.length === 0 ? (React.createElement("div", { style: { textAlign: 'center', padding: '40px 20px', color: '#374151' } },
                 React.createElement(Icon, { name: "tag", size: 40 }),
                 React.createElement("div", { style: { marginTop: 12, fontSize: 14, color: '#6b7280' } }, (data.misProductos || []).length === 0 ? 'Todavía no agregaste productos' : 'Sin resultados'))) : (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } }, filtrados.map((p, i) => {
@@ -1075,6 +1230,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                             React.createElement(Icon, { name: "trash", size: 14 }),
                             " Eliminar")))));
             })))),
+        scanSearch && (React.createElement(Scanner, { onResult: scanned => { setScanSearch(false); setBusqueda(scanned); }, onClose: () => setScanSearch(false) })),
         scanBarcode && (React.createElement(Scanner, { onResult: scanned => { setScanBarcode(false); setCodigoBarras(scanned); }, onClose: () => setScanBarcode(false) })),
         photoModal && (React.createElement("div", { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }, onClick: () => setPhotoModal(null) },
             React.createElement("div", { style: { background: '#1e2230', borderRadius: 20, padding: 24, width: '100%', maxWidth: 420 }, onClick: e => e.stopPropagation() },
@@ -1219,6 +1375,7 @@ function TabStock({ data, setData, showToast }) {
 // ── src/tabs/TabVentas.tsx ──
 function TabVentas({ data, setData, showToast }) {
     const [expandedId, setExpandedId] = React.useState(null);
+    const [presupuestoVenta, setPresupuestoVenta] = React.useState(null);
     const ventas = [...(data.ventas || [])].reverse();
     const totalHoy = () => {
         const hoy = new Date().toLocaleDateString('es-AR');
@@ -1287,6 +1444,8 @@ function TabVentas({ data, setData, showToast }) {
                             v.items.length,
                             " producto(s)"),
                         React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: '#22c55e', marginTop: 2 } }, fmt(v.total))),
+                    React.createElement("button", { onClick: e => { e.stopPropagation(); setPresupuestoVenta(v); }, style: { background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', marginRight: 6 } },
+                        React.createElement(Icon, { name: "download", size: 13 })),
                     React.createElement("button", { onClick: e => { e.stopPropagation(); borrarVenta(v.id); }, style: { background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
                         React.createElement(Icon, { name: "trash", size: 13 }))),
                 expandedId === v.id && (React.createElement("div", { style: { borderTop: '1px solid #111827', padding: '8px 14px 12px' } }, v.items.map((item, i) => (React.createElement("div", { key: i, style: { display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: i < v.items.length - 1 ? '1px solid #1e2535' : 'none' } },
@@ -1296,6 +1455,10 @@ function TabVentas({ data, setData, showToast }) {
                         item.descripcion),
                     React.createElement("span", { style: { color: '#22c55e', fontWeight: 600 } }, fmt(item.precioVenta * item.cantidad)))))))))))))));
 }
+{
+    presupuestoVenta && (React.createElement(Presupuesto, { items: presupuestoVenta.items, total: presupuestoVenta.total, onClose: () => setPresupuestoVenta(null) }));
+}
+;
 
 
 // ── src/tabs/TabPedidos.tsx ──

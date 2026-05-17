@@ -3,6 +3,7 @@ import { AppData, VentaItem } from '../types';
 import { calcPrecioVenta, fmtPeso, fmtPesoInt, todayStr, nowStr, genId } from '../lib/utils';
 import { Icon } from '../components/Icon';
 import { Scanner } from '../components/Scanner';
+import { Presupuesto } from '../components/Presupuesto';
 
 interface Props {
   data: AppData;
@@ -22,6 +23,7 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [scanning, setScanning] = useState(false);
+  const [showPresupuesto, setShowPresupuesto] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const sugerencias = busqueda.length > 0
@@ -205,15 +207,27 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
             <div style={{ fontSize: 24, fontWeight: 700, color: '#22c55e' }}>{fmtPeso(total)}</div>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn-ghost" style={{ flex: 1, justifyContent: 'center' }}
+            <button className="btn-ghost" style={{ padding: '12px 14px' }}
               onClick={() => { if (window.confirm('Limpiar calculadora?')) setItems([]); }}>
-              Limpiar
+              <Icon name="trash" size={16} />
             </button>
-            <button className="btn-primary" style={{ flex: 2, justifyContent: 'center' }} onClick={confirmarVenta}>
-              <Icon name="check" size={16} /> Confirmar venta
+            <button className="btn-ghost" style={{ flex: 1, justifyContent: 'center' }}
+              onClick={() => setShowPresupuesto(true)}>
+              <Icon name="download" size={16} /> Presupuesto
+            </button>
+            <button className="btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={confirmarVenta}>
+              <Icon name="check" size={16} /> Venta
             </button>
           </div>
         </>
+      )}
+
+      {showPresupuesto && (
+        <Presupuesto
+          items={items}
+          total={total}
+          onClose={() => setShowPresupuesto(false)}
+        />
       )}
 
       {scanning && (

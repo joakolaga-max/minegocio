@@ -24,6 +24,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
   const [divisor, setDivisor] = useState(1);
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const [scanBarcode, setScanBarcode] = useState(false);
+  const [scanSearch, setScanSearch] = useState(false);
   const [codigoBarras, setCodigoBarras] = useState('');
   const [photoModal, setPhotoModal] = useState<{ codigoRef: string; descripcion: string } | null>(null);
   const [expandedRef, setExpandedRef] = useState<string | null>(null);
@@ -350,13 +351,19 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
         </div>
 
         {(data.misProductos || []).length > 0 && (
-          <div style={{ position: 'relative', marginBottom: 12 }}>
-            <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }}>
-              <Icon name="search" size={16} />
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <div style={{ position: 'relative', flex: 1 }}>
+              <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }}>
+                <Icon name="search" size={16} />
+              </div>
+              <input className="input-field" style={{ paddingLeft: 38 }}
+                placeholder="Buscar por REF, cod, barras o descripción..."
+                value={busqueda} onChange={e => setBusqueda(e.target.value)} />
             </div>
-            <input className="input-field" style={{ paddingLeft: 38 }}
-              placeholder="Buscar por REF, cod proveedor o descripción..."
-              value={busqueda} onChange={e => setBusqueda(e.target.value)} />
+            <button className="btn-ghost" style={{ padding: '10px 14px', flexShrink: 0 }}
+              onClick={() => setScanSearch(true)}>
+              <Icon name="camera" size={18} />
+            </button>
           </div>
         )}
 
@@ -428,6 +435,9 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
       </div>
 
       {/* Scanner */}
+      {scanSearch && (
+        <Scanner onResult={scanned => { setScanSearch(false); setBusqueda(scanned); }} onClose={() => setScanSearch(false)} />
+      )}
       {scanBarcode && (
         <Scanner onResult={scanned => { setScanBarcode(false); setCodigoBarras(scanned); }} onClose={() => setScanBarcode(false)} />
       )}
