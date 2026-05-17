@@ -308,6 +308,15 @@ export function TabPedidos({ data, setData, showToast }: Props) {
                     {orden.estado === 'enviado' && (
                       <button onClick={() => setOrdenActiva(orden)} style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12 }}>Recibir</button>
                     )}
+                    <button
+                      onClick={() => {
+                        if (!window.confirm(`Eliminar pedido de ${orden.proveedor}?`)) return;
+                        setData(d => ({ ...d, pedidosHistorial: (d.pedidosHistorial || []).filter((o: any) => o.id !== orden.id) } as any));
+                        showToast('Pedido eliminado', 'info');
+                      }}
+                      style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                      <Icon name="trash" size={13} />
+                    </button>
                   </div>
                 </div>
                 <div style={{ padding: '8px 16px 12px' }}>

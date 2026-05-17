@@ -1703,7 +1703,14 @@ function TabPedidos({ data, setData, showToast }) {
                         React.createElement("div", { style: { fontSize: 11, color: '#6b7280', marginTop: 2 } }, orden.estado === 'recibido' ? `Recibido: ${orden.fechaRecibido}` : `Enviado: ${orden.fechaEnviado} ${orden.horaEnviado}`)),
                     React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8 } },
                         React.createElement("span", { style: { fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20, background: orden.estado === 'recibido' ? 'rgba(34,197,94,0.15)' : 'rgba(251,191,36,0.15)', color: orden.estado === 'recibido' ? '#22c55e' : '#fbbf24' } }, orden.estado === 'recibido' ? '✓ Recibido' : 'Enviado'),
-                        orden.estado === 'enviado' && (React.createElement("button", { onClick: () => setOrdenActiva(orden), style: { background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12 } }, "Recibir")))),
+                        orden.estado === 'enviado' && (React.createElement("button", { onClick: () => setOrdenActiva(orden), style: { background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 12 } }, "Recibir")),
+                        React.createElement("button", { onClick: () => {
+                                if (!window.confirm(`Eliminar pedido de ${orden.proveedor}?`))
+                                    return;
+                                setData(d => ({ ...d, pedidosHistorial: (d.pedidosHistorial || []).filter((o) => o.id !== orden.id) }));
+                                showToast('Pedido eliminado', 'info');
+                            }, style: { background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center' } },
+                            React.createElement(Icon, { name: "trash", size: 13 })))),
                 React.createElement("div", { style: { padding: '8px 16px 12px' } },
                     orden.items.slice(0, 3).map((item, j) => (React.createElement("div", { key: j, style: { display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#94a3b8', padding: '2px 0' } },
                         React.createElement("span", null,
