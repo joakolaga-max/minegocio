@@ -388,27 +388,31 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
 
               return (
                 <div key={i} style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', overflow: 'hidden' }}>
-                  {/* Tap to expand */}
-                  <div onClick={() => setExpandedRef(isExpanded ? null : p.codigoRef)}
-                    style={{ padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {/* Card content - no onClick to avoid swipe issues */}
+                  <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                     {foto && <img src={foto} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      {/* Código de barras arriba */}
+                      {/* Código de barras arriba - pequeño */}
                       {codBarras && (
-                        <div style={{ fontSize: 11, color: '#6b7280', fontFamily: 'monospace', marginBottom: 2 }}>{codBarras}</div>
+                        <div style={{ fontSize: 10, color: '#4b5563', fontFamily: 'monospace', marginBottom: 1 }}>{codBarras}</div>
                       )}
-                      {/* Descripcion completa */}
+                      {/* Descripcion grande */}
                       <div style={{ fontSize: 15, color: '#f1f5f9', fontWeight: 600, wordBreak: 'break-word' }}>{p.descripcion}</div>
-                      {/* Codes + margen */}
+                      {/* REF grande, cod proveedor chico */}
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 3 }}>
-                        <span style={{ fontSize: 11, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 }}>{p.codigoRef}</span>
-                        {p.codigoProv && <span style={{ fontSize: 11, color: '#4b5563' }}>{p.codigoProv}</span>}
+                        <span style={{ fontSize: 14, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800 }}>{p.codigoRef}</span>
+                        {p.codigoProv && <span style={{ fontSize: 10, color: '#4b5563' }}>{p.codigoProv}</span>}
                         <span className="badge" style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', fontSize: 10 }}>{margenLabel}</span>
                       </div>
                       <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
                         Costo: {fmt(p.precioCosto)} → <span style={{ color: '#22c55e', fontWeight: 700 }}>{fmt(pv)}{p.divisor && p.divisor > 1 ? ` (${fmt(pv / p.divisor)} c/u)` : ''}</span>
                       </div>
                     </div>
+                    {/* Expand button - explicit tap target */}
+                    <button onClick={() => setExpandedRef(isExpanded ? null : p.codigoRef)}
+                      style={{ background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', padding: '4px 8px', flexShrink: 0, fontSize: 18 }}>
+                      {isExpanded ? '▲' : '▼'}
+                    </button>
                   </div>
 
                   {/* Actions panel - only when expanded */}

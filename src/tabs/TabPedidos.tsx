@@ -265,8 +265,8 @@ export function TabPedidos({ data, setData, showToast }: Props) {
                                 onChange={e => { const ref = p.codigoRef || p.codigoProv; setData(d => ({ ...d, pedidos: (d.pedidos || []).map(x => (x.codigoRef || x.codigoProv) === ref ? { ...x, cantidad: Math.max(1, parseInt(e.target.value) || 1) } : x) })); }}
                                 style={{ width: 44, height: 28, borderRadius: 6, background: '#1e2230', border: '1px solid #374151', color: '#f1f5f9', textAlign: 'center', fontSize: 13, fontWeight: 700, fontFamily: 'inherit' }} />
                               <button onClick={() => cambiarCant(p.codigoRef || p.codigoProv, 1)} style={{ width: 28, height: 28, borderRadius: 6, background: '#6366f1', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
-                              <button onClick={() => quitar(p.codigoRef || p.codigoProv)} style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 6, padding: '5px 7px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                                <Icon name="trash" size={13} />
+                              <button onClick={() => quitar(p.codigoRef || p.codigoProv)} style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit', fontSize: 12, fontWeight: 600 }}>
+                                <Icon name="trash" size={13} /> Quitar
                               </button>
                             </div>
                           </div>
