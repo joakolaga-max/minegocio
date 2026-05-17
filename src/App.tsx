@@ -10,6 +10,7 @@ import { TabStock } from './tabs/TabStock';
 import { TabVentas } from './tabs/TabVentas';
 import { TabPedidos } from './tabs/TabPedidos';
 import { TabConfig } from './tabs/TabConfig';
+import { TabPresupuestos } from './tabs/TabPresupuestos';
 import { Toast as ToastType, TabId } from './types';
 
 const NAV: { id: TabId; label: string; icon: string }[] = [
@@ -18,6 +19,7 @@ const NAV: { id: TabId; label: string; icon: string }[] = [
   { id: 'stock', label: 'Stock', icon: 'box' },
   { id: 'ventas', label: 'Ventas', icon: 'download' },
   { id: 'pedidos', label: 'Pedidos', icon: 'store' },
+  { id: 'presupuestos', label: 'Presupuestos', icon: 'download' },
   { id: 'config', label: 'Configuración', icon: 'settings' },
 ];
 
@@ -27,6 +29,7 @@ export default function App() {
   const [tab, setTab] = useState<TabId>(() => (localStorage.getItem('mn_lastTab') as TabId) || 'calc');
   const [menuOpen, setMenuOpen] = useState(false);
   const [pendingCodProv, setPendingCodProv] = useState<string | undefined>();
+  const [pendingCalcItems, setPendingCalcItems] = useState<any[] | undefined>();
   const [toast, setToast] = useState<ToastType | null>(null);
 
   useEffect(() => {
@@ -89,12 +92,13 @@ export default function App() {
           </div>
         ) : (
           <>
-            {tab === 'calc' && <TabCalculadora {...tabProps} />}
+            {tab === 'calc' && <TabCalculadora {...tabProps} pendingItems={pendingCalcItems} onClearPending={() => setPendingCalcItems(undefined)} />}
             {tab === 'proveedores' && <TabProveedores {...tabProps} onNavigate={onNavigate} />}
             {tab === 'precios' && <TabMisPrecios {...tabProps} pendingCodProv={pendingCodProv} onClearPending={() => setPendingCodProv(undefined)} />}
             {tab === 'stock' && <TabStock {...tabProps} />}
             {tab === 'ventas' && <TabVentas {...tabProps} />}
             {tab === 'pedidos' && <TabPedidos {...tabProps} />}
+            {tab === 'presupuestos' && <TabPresupuestos {...tabProps} onCargarEnCalculadora={(items) => { setPendingCalcItems(items); switchTab('calc'); }} />}
             {tab === 'config' && <TabConfig {...tabProps} />}
           </>
         )}

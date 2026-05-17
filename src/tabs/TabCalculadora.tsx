@@ -9,6 +9,8 @@ interface Props {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
+  pendingItems?: { descripcion: string; cantidad: number; precioVenta: number; codigoRef?: string }[];
+  onClearPending?: () => void;
 }
 
 interface CartItem {
@@ -19,11 +21,19 @@ interface CartItem {
   divisor: number;
 }
 
-export function TabCalculadora({ data, setData, showToast }: Props) {
+export function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending }: Props) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [scanning, setScanning] = useState(false);
   const [showPresupuesto, setShowPresupuesto] = useState(false);
+
+  // Load items from saved presupuesto
+  React.useEffect(() => {
+    if (pendingItems && pendingItems.length > 0) {
+      setItems(pendingItems.map(i => ({ ...i, divisor: 1 })));
+      onClearPending?.();
+    }
+  }, [pendingItems]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const sugerencias = busqueda.length > 0
@@ -227,6 +237,19 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
           items={items}
           total={total}
           onClose={() => setShowPresupuesto(false)}
+          onGuardar={(cliente) => {
+            const pres = {
+              id: Date.now().toString(36),
+              fecha: new Date().toLocaleDateString('es-AR'),
+              hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+              cliente,
+              items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta })),
+              total: total,
+            };
+            setData(d => ({ ...d, presupuestos: [...((d as any).presupuestos || []), pres] } as any));
+            showToast('Presupuesto guardado', 'success');
+            setShowPresupuesto(false);
+          }}
         />
       )}
 

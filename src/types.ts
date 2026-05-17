@@ -81,7 +81,7 @@ export interface AppData {
   pedidosHistorial: Orden[];
 }
 
-export type TabId = 'calc' | 'proveedores' | 'precios' | 'stock' | 'ventas' | 'pedidos' | 'config';
+export type TabId = 'calc' | 'proveedores' | 'precios' | 'stock' | 'ventas' | 'pedidos' | 'presupuestos' | 'config';
 
 export interface Toast {
   msg: string;

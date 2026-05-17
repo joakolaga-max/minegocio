@@ -309,7 +309,7 @@ function LoginScreen({ onLogin }) {
 
 
 // ── src/components/Presupuesto.tsx ──
-function Presupuesto({ items, total, onClose }) {
+function Presupuesto({ items, total, onClose, onGuardar }) {
     const [nombreEmpresa, setNombreEmpresa] = React.useState(() => localStorage.getItem('mn_empresa') || '');
     const [telefono, setTelefono] = React.useState(() => localStorage.getItem('mn_telefono') || '');
     const [cliente, setCliente] = React.useState('');
@@ -444,7 +444,10 @@ function Presupuesto({ items, total, onClose }) {
             React.createElement("div", { style: { marginBottom: 16 } },
                 React.createElement("label", { style: { fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 } }, "Nota (opcional)"),
                 React.createElement("input", { className: "input-field", value: nota, onChange: e => setNota(e.target.value), placeholder: "Condiciones, validez, etc." })),
-            React.createElement("div", { style: { display: 'flex', gap: 8 } },
+            React.createElement("div", { style: { display: 'flex', gap: 8, flexWrap: 'wrap' } },
+                onGuardar && (React.createElement("button", { onClick: () => { guardarConfig(); onGuardar(cliente); }, style: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(34,197,94,0.15)', border: '1px solid #22c55e', color: '#22c55e', borderRadius: 12, padding: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 14, marginBottom: 0 } },
+                    React.createElement(Icon, { name: "check", size: 16 }),
+                    " Guardar presupuesto")),
                 React.createElement("button", { onClick: compartirWhatsApp, style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(37,211,102,0.15)', border: '1px solid #25d366', color: '#25d366', borderRadius: 12, padding: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 14 } },
                     React.createElement(Icon, { name: "whatsapp", size: 16 }),
                     " WA"),
@@ -547,11 +550,18 @@ function useAppData(user) {
 
 
 // ── src/tabs/TabCalculadora.tsx ──
-function TabCalculadora({ data, setData, showToast }) {
+function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending }) {
     const [items, setItems] = React.useState([]);
     const [busqueda, setBusqueda] = React.useState('');
     const [scanning, setScanning] = React.useState(false);
     const [showPresupuesto, setShowPresupuesto] = React.useState(false);
+    // Load items from saved presupuesto
+    React.useEffect(() => {
+        if (pendingItems && pendingItems.length > 0) {
+            setItems(pendingItems.map(i => ({ ...i, divisor: 1 })));
+            onClearPending?.();
+        }
+    }, [pendingItems]);
     const [showSuggestions, setShowSuggestions] = React.useState(false);
     const sugerencias = busqueda.length > 0
         ? (data.misProductos || []).filter(p => p.codigoRef.toUpperCase().includes(busqueda.toUpperCase()) ||
@@ -683,7 +693,19 @@ function TabCalculadora({ data, setData, showToast }) {
                 React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: 'center' }, onClick: confirmarVenta },
                     React.createElement(Icon, { name: "check", size: 16 }),
                     " Venta")))),
-        showPresupuesto && (React.createElement(Presupuesto, { items: items, total: total, onClose: () => setShowPresupuesto(false) })),
+        showPresupuesto && (React.createElement(Presupuesto, { items: items, total: total, onClose: () => setShowPresupuesto(false), onGuardar: (cliente) => {
+                const pres = {
+                    id: Date.now().toString(36),
+                    fecha: new Date().toLocaleDateString('es-AR'),
+                    hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+                    cliente,
+                    items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta })),
+                    total: total,
+                };
+                setData(d => ({ ...d, presupuestos: [...(d.presupuestos || []), pres] }));
+                showToast('Presupuesto guardado', 'success');
+                setShowPresupuesto(false);
+            } })),
         scanning && (React.createElement(Scanner, { onResult: code => { setScanning(false); agregarProducto(code); }, onClose: () => setScanning(false) }))));
 }
 
@@ -1045,8 +1067,10 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
     const filtrados = busqueda
         ? (data.misProductos || []).filter(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-            (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()))
-        : data.misProductos;
+            (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+            ((p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+            p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()))
+        : (data.misProductos || []);
     const fmt = (n) => '$' + Math.round(n).toLocaleString('es-AR');
     return (React.createElement("div", null,
         React.createElement("div", { className: "card" },
@@ -1716,6 +1740,66 @@ function TabPedidos({ data, setData, showToast }) {
 }
 
 
+// ── src/tabs/TabPresupuestos.tsx ──
+const fmt = (n) => '$' + Math.round(n).toLocaleString('es-AR');
+function TabPresupuestos({ data, setData, showToast, onCargarEnCalculadora }) {
+    const presupuestos = data.presupuestos || [];
+    const [verPresupuesto, setVerPresupuesto] = React.useState(null);
+    const [expandedId, setExpandedId] = React.useState(null);
+    const eliminar = (id) => {
+        if (!window.confirm('Eliminar este presupuesto?'))
+            return;
+        setData(d => ({ ...d, presupuestos: (d.presupuestos || []).filter((p) => p.id !== id) }));
+        showToast('Presupuesto eliminado', 'info');
+    };
+    const cargarEnCalc = (p) => {
+        onCargarEnCalculadora(p.items);
+        showToast('Cargado en Calculadora', 'success');
+    };
+    if (presupuestos.length === 0) {
+        return (React.createElement("div", { className: "card", style: { textAlign: 'center', padding: '60px 20px' } },
+            React.createElement(Icon, { name: "download", size: 48 }),
+            React.createElement("div", { style: { marginTop: 16, fontSize: 16, fontWeight: 600, color: '#f1f5f9' } }, "Sin presupuestos guardados"),
+            React.createElement("div", { style: { fontSize: 13, color: '#6b7280', marginTop: 8 } }, "Los presupuestos se guardan desde la Calculadora")));
+    }
+    return (React.createElement("div", null,
+        React.createElement("div", { className: "card" },
+            React.createElement("div", { className: "section-title" }, "Presupuestos guardados"),
+            React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } }, [...presupuestos].reverse().map(p => {
+                const isExpanded = expandedId === p.id;
+                return (React.createElement("div", { key: p.id, style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', overflow: 'hidden' } },
+                    React.createElement("div", { style: { padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }, onClick: () => setExpandedId(isExpanded ? null : p.id) },
+                        React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                            React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: '#f1f5f9' } }, p.cliente || 'Sin nombre'),
+                            React.createElement("div", { style: { fontSize: 12, color: '#6b7280', marginTop: 2 } },
+                                p.fecha,
+                                " \u00B7 ",
+                                p.hora,
+                                " \u00B7 ",
+                                p.items.length,
+                                " producto(s)"),
+                            React.createElement("div", { style: { fontSize: 13, color: '#22c55e', fontWeight: 700, marginTop: 2 } }, fmt(p.total)))),
+                    isExpanded && (React.createElement("div", { style: { borderTop: '1px solid #111827', background: '#161b27' } },
+                        React.createElement("div", { style: { padding: '10px 14px' } }, p.items.map((item, i) => (React.createElement("div", { key: i, style: { display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '3px 0', color: '#94a3b8' } },
+                            React.createElement("span", null,
+                                item.cantidad,
+                                "x ",
+                                item.descripcion),
+                            React.createElement("span", { style: { color: '#22c55e' } }, fmt(item.precioVenta * item.cantidad)))))),
+                        React.createElement("div", { style: { display: 'flex', gap: 8, padding: '10px 14px', borderTop: '1px solid #111827' } },
+                            React.createElement("button", { onClick: () => cargarEnCalc(p), style: { flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13 } },
+                                React.createElement(Icon, { name: "store", size: 14 }),
+                                " Cargar en Calculadora"),
+                            React.createElement("button", { onClick: () => setVerPresupuesto(p), style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 13 } },
+                                React.createElement(Icon, { name: "download", size: 14 }),
+                                " Ver"),
+                            React.createElement("button", { onClick: () => eliminar(p.id), style: { display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 10, padding: '10px 12px', cursor: 'pointer' } },
+                                React.createElement(Icon, { name: "trash", size: 14 })))))));
+            }))),
+        verPresupuesto && (React.createElement(Presupuesto, { items: verPresupuesto.items, total: verPresupuesto.total, onClose: () => setVerPresupuesto(null) }))));
+}
+
+
 // ── src/tabs/TabConfig.tsx ──
 function TabConfig({ data, setData, showToast }) {
     const [m1, setM1] = React.useState(String(data.margenes.p1));
@@ -1801,6 +1885,7 @@ const NAV = [
     { id: 'stock', label: 'Stock', icon: 'box' },
     { id: 'ventas', label: 'Ventas', icon: 'download' },
     { id: 'pedidos', label: 'Pedidos', icon: 'store' },
+    { id: 'presupuestos', label: 'Presupuestos', icon: 'download' },
     { id: 'config', label: 'Configuración', icon: 'settings' },
 ];
 function App() {
@@ -1809,6 +1894,7 @@ function App() {
     const [tab, setTab] = React.useState(() => localStorage.getItem('mn_lastTab') || 'calc');
     const [menuOpen, setMenuOpen] = React.useState(false);
     const [pendingCodProv, setPendingCodProv] = React.useState();
+    const [pendingCalcItems, setPendingCalcItems] = React.useState();
     const [toast, setToast] = React.useState(null);
     React.useEffect(() => {
         const onAuth = () => setUser(window.__user || null);
@@ -1857,12 +1943,13 @@ function App() {
         React.createElement("div", { style: { padding: '76px 12px 80px', maxWidth: 640, margin: '0 auto' } }, !loaded ? (React.createElement("div", { style: { textAlign: 'center', padding: '80px 20px', color: '#6b7280' } },
             React.createElement("div", { style: { fontSize: 40, marginBottom: 16 } }, "\u26A1"),
             React.createElement("div", null, "Cargando datos..."))) : (React.createElement(React.Fragment, null,
-            tab === 'calc' && React.createElement(TabCalculadora, { ...tabProps }),
+            tab === 'calc' && React.createElement(TabCalculadora, { ...tabProps, pendingItems: pendingCalcItems, onClearPending: () => setPendingCalcItems(undefined) }),
             tab === 'proveedores' && React.createElement(TabProveedores, { ...tabProps, onNavigate: onNavigate }),
             tab === 'precios' && React.createElement(TabMisPrecios, { ...tabProps, pendingCodProv: pendingCodProv, onClearPending: () => setPendingCodProv(undefined) }),
             tab === 'stock' && React.createElement(TabStock, { ...tabProps }),
             tab === 'ventas' && React.createElement(TabVentas, { ...tabProps }),
             tab === 'pedidos' && React.createElement(TabPedidos, { ...tabProps }),
+            tab === 'presupuestos' && React.createElement(TabPresupuestos, { ...tabProps, onCargarEnCalculadora: (items) => { setPendingCalcItems(items); switchTab('calc'); } }),
             tab === 'config' && React.createElement(TabConfig, { ...tabProps })))),
         React.createElement("div", { style: { position: 'fixed', bottom: 0, left: 0, right: 0, background: 'rgba(13,17,23,0.98)', borderTop: '1px solid #1e2535', display: 'flex', justifyContent: 'space-around', padding: '8px 0 12px' } },
             React.createElement("button", { onClick: () => switchTab('calc'), style: { background: 'none', border: 'none', cursor: 'pointer', color: tab === 'calc' ? '#818cf8' : '#4b5563', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, fontSize: 10, fontFamily: 'inherit' } },

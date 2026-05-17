@@ -11,9 +11,10 @@ interface Props {
   items: Item[];
   total: number;
   onClose: () => void;
+  onGuardar?: (cliente: string) => void;
 }
 
-export function Presupuesto({ items, total, onClose }: Props) {
+export function Presupuesto({ items, total, onClose, onGuardar }: Props) {
   const [nombreEmpresa, setNombreEmpresa] = useState(() => localStorage.getItem('mn_empresa') || '');
   const [telefono, setTelefono] = useState(() => localStorage.getItem('mn_telefono') || '');
   const [cliente, setCliente] = useState('');
@@ -182,7 +183,13 @@ export function Presupuesto({ items, total, onClose }: Props) {
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {onGuardar && (
+            <button onClick={() => { guardarConfig(); onGuardar(cliente); }}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(34,197,94,0.15)', border: '1px solid #22c55e', color: '#22c55e', borderRadius: 12, padding: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 14, marginBottom: 0 }}>
+              <Icon name="check" size={16} /> Guardar presupuesto
+            </button>
+          )}
           <button onClick={compartirWhatsApp}
             style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(37,211,102,0.15)', border: '1px solid #25d366', color: '#25d366', borderRadius: 12, padding: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 14 }}>
             <Icon name="whatsapp" size={16} /> WA
