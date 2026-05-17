@@ -1242,14 +1242,14 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                     : `${data.margenes[p.margen]}%`;
                 const isExpanded = expandedRef === p.codigoRef;
                 const codBarras = p.codigoBarras;
-                return (React.createElement("div", { key: i, style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', overflow: 'hidden' } },
+                return (React.createElement("div", { key: i, style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535' } },
                     React.createElement("div", { style: { padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 } },
                         foto && React.createElement("img", { src: foto, alt: "", style: { width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 } }),
                         React.createElement("div", { style: { flex: 1, minWidth: 0 } },
                             codBarras && (React.createElement("div", { style: { fontSize: 10, color: '#4b5563', fontFamily: 'monospace', marginBottom: 1 } }, codBarras)),
-                            React.createElement("div", { style: { fontSize: 15, color: '#f1f5f9', fontWeight: 600, wordBreak: 'break-word' } }, p.descripcion),
+                            React.createElement("div", { style: { fontSize: 13, color: '#cbd5e1', fontWeight: 500, wordBreak: 'break-word' } }, p.descripcion),
                             React.createElement("div", { style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 3 } },
-                                React.createElement("span", { style: { fontSize: 14, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800 } }, p.codigoRef),
+                                React.createElement("span", { style: { fontSize: 17, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800, display: 'block', marginBottom: 2 } }, p.codigoRef),
                                 p.codigoProv && React.createElement("span", { style: { fontSize: 10, color: '#4b5563' } }, p.codigoProv),
                                 React.createElement("span", { className: "badge", style: { background: 'rgba(99,102,241,0.15)', color: '#818cf8', fontSize: 10 } }, margenLabel)),
                             React.createElement("div", { style: { fontSize: 12, color: '#6b7280', marginTop: 2 } },
@@ -1260,7 +1260,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                                     fmt(pv),
                                     p.divisor && p.divisor > 1 ? ` (${fmt(pv / p.divisor)} c/u)` : ''))),
                         React.createElement("button", { onClick: () => setExpandedRef(isExpanded ? null : p.codigoRef), style: { background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', padding: '4px 8px', flexShrink: 0, fontSize: 18 } }, isExpanded ? '▲' : '▼')),
-                    isExpanded && (React.createElement("div", { style: { borderTop: '1px solid #111827', padding: '10px 14px', display: 'flex', gap: 8, background: '#161b27' } },
+                    isExpanded && (React.createElement("div", { style: { margin: '0 12px 12px', borderRadius: 10, padding: '10px', display: 'flex', gap: 8, background: '#111827' } },
                         React.createElement("button", { onClick: () => { editar((data.misProductos || []).indexOf(p)); setExpandedRef(null); }, style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 } },
                             React.createElement(Icon, { name: "settings", size: 14 }),
                             " Editar"),
