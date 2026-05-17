@@ -388,7 +388,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
             </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, contain: 'layout' as any }}>
             {filtrados.map((p, i) => {
               const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
               const foto = data.fotos[p.codigoRef];
@@ -399,7 +399,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
               const codBarras = (p as any).codigoBarras;
 
               return (
-                <div key={i} style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', overflow: 'hidden' }}>
+                <div key={i} style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', isolation: 'isolate', transform: 'translateZ(0)' }}>
                   {/* Card content - no onClick to avoid swipe issues */}
                   <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                     {foto && <img src={foto} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
@@ -409,10 +409,10 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                         <div style={{ fontSize: 10, color: '#4b5563', fontFamily: 'monospace', marginBottom: 1 }}>{codBarras}</div>
                       )}
                       {/* Descripcion grande */}
-                      <div style={{ fontSize: 15, color: '#f1f5f9', fontWeight: 600, wordBreak: 'break-word' }}>{p.descripcion}</div>
+                      <div style={{ fontSize: 13, color: '#cbd5e1', fontWeight: 500, wordBreak: 'break-word' }}>{p.descripcion}</div>
                       {/* REF grande, cod proveedor chico */}
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 3 }}>
-                        <span style={{ fontSize: 14, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800 }}>{p.codigoRef}</span>
+                        <span style={{ fontSize: 17, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800, display: 'block', marginBottom: 2 }}>{p.codigoRef}</span>
                         {p.codigoProv && <span style={{ fontSize: 10, color: '#4b5563' }}>{p.codigoProv}</span>}
                         <span className="badge" style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8', fontSize: 10 }}>{margenLabel}</span>
                       </div>
@@ -429,7 +429,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
 
                   {/* Actions panel - only when expanded */}
                   {isExpanded && (
-                    <div style={{ borderTop: '1px solid #111827', padding: '10px 14px', display: 'flex', gap: 8, background: '#161b27' }}>
+                    <div style={{ margin: '0 12px 12px', borderRadius: 10, padding: '10px', display: 'flex', gap: 8, background: '#111827' }}>
                       <button onClick={() => { editar((data.misProductos || []).indexOf(p)); setExpandedRef(null); }}
                         style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 }}>
                         <Icon name="settings" size={14} /> Editar

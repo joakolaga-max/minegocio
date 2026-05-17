@@ -1242,7 +1242,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                     : `${data.margenes[p.margen]}%`;
                 const isExpanded = expandedRef === p.codigoRef;
                 const codBarras = p.codigoBarras;
-                return (React.createElement("div", { key: i, style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535' } },
+                return (React.createElement("div", { key: i, style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', isolation: 'isolate', transform: 'translateZ(0)' } },
                     React.createElement("div", { style: { padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 } },
                         foto && React.createElement("img", { src: foto, alt: "", style: { width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 } }),
                         React.createElement("div", { style: { flex: 1, minWidth: 0 } },
