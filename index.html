@@ -60,6 +60,11 @@
       input[type=number] { -moz-appearance: textfield; }
       input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
     </style>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/minegocio/sw.js').catch(() => {});
+    }
+  </script>
 </head>
 <body>
   <div id="root">
@@ -75,7 +80,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import {
       getAuth,
       signInWithEmailAndPassword,
@@ -94,18 +99,30 @@
       appId: "1:301429118303:web:d67ee5239378746d8252ea"
     });
     const db = getFirestore(app);
+    // Enable offline persistence
+    enableIndexedDbPersistence(db).catch(err => {
+      if (err.code === 'failed-precondition') console.warn('Offline persistence: multiple tabs open');
+      else if (err.code === 'unimplemented') console.warn('Offline persistence not supported');
+    });
     const auth = getAuth(app);
 
     // ── Firebase helpers with per-user path ──
     window.__fb = {
       save: async (path, data) => {
         if (!window.__user) return;
+        // Always save to localStorage first (instant, works offline)
         try { localStorage.setItem("mn_" + path, JSON.stringify(data)); } catch(e) {}
-        await setDoc(
-          doc(db, "negocios", window.__user, "data", path),
-          { data: JSON.stringify(data) },
-          { merge: true }
-        );
+        // Then sync to Firebase (works offline too with persistence enabled)
+        try {
+          await setDoc(
+            doc(db, "negocios", window.__user, "data", path),
+            { data: JSON.stringify(data), updatedAt: Date.now() },
+            { merge: true }
+          );
+        } catch(e) {
+          // Firebase offline - data is safe in localStorage, will sync when back online
+          console.log("Offline: saved locally, will sync when online");
+        }
       },
 
       load: async (path) => {

@@ -12,12 +12,15 @@ interface Props {
   total: number;
   onClose: () => void;
   onGuardar?: (cliente: string) => void;
+  empresaData?: string;
+  telefonoData?: string;
+  direccionData?: string;
 }
 
-export function Presupuesto({ items, total, onClose, onGuardar }: Props) {
-  const [nombreEmpresa, setNombreEmpresa] = useState(() => localStorage.getItem('mn_empresa') || '');
-  const [telefono, setTelefono] = useState(() => localStorage.getItem('mn_telefono') || '');
-  const [direccion, setDireccion] = useState(() => localStorage.getItem('mn_direccion') || '');
+export function Presupuesto({ items, total, onClose, onGuardar, empresaData, telefonoData, direccionData }: Props) {
+  const [nombreEmpresa, setNombreEmpresa] = useState(() => empresaData || localStorage.getItem('mn_empresa') || '');
+  const [telefono, setTelefono] = useState(() => telefonoData || localStorage.getItem('mn_telefono') || '');
+  const [direccion, setDireccion] = useState(() => direccionData || localStorage.getItem('mn_direccion') || '');
   const [cliente, setCliente] = useState('');
   const [nota, setNota] = useState('');
   const [descuento, setDescuento] = useState(0);

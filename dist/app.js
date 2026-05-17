@@ -309,10 +309,10 @@ function LoginScreen({ onLogin }) {
 
 
 // ── src/components/Presupuesto.tsx ──
-function Presupuesto({ items, total, onClose, onGuardar }) {
-    const [nombreEmpresa, setNombreEmpresa] = React.useState(() => localStorage.getItem('mn_empresa') || '');
-    const [telefono, setTelefono] = React.useState(() => localStorage.getItem('mn_telefono') || '');
-    const [direccion, setDireccion] = React.useState(() => localStorage.getItem('mn_direccion') || '');
+function Presupuesto({ items, total, onClose, onGuardar, empresaData, telefonoData, direccionData }) {
+    const [nombreEmpresa, setNombreEmpresa] = React.useState(() => empresaData || localStorage.getItem('mn_empresa') || '');
+    const [telefono, setTelefono] = React.useState(() => telefonoData || localStorage.getItem('mn_telefono') || '');
+    const [direccion, setDireccion] = React.useState(() => direccionData || localStorage.getItem('mn_direccion') || '');
     const [cliente, setCliente] = React.useState('');
     const [nota, setNota] = React.useState('');
     const [descuento, setDescuento] = React.useState(0);
@@ -697,7 +697,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                 React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: 'center' }, onClick: confirmarVenta },
                     React.createElement(Icon, { name: "check", size: 16 }),
                     " Venta")))),
-        showPresupuesto && (React.createElement(Presupuesto, { items: items, total: total, onClose: () => setShowPresupuesto(false), onGuardar: (cliente) => {
+        showPresupuesto && (React.createElement(Presupuesto, { items: items, total: total, onClose: () => setShowPresupuesto(false), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion, onGuardar: (cliente) => {
                 const pres = {
                     id: Date.now().toString(36),
                     fecha: new Date().toLocaleDateString('es-AR'),
@@ -966,7 +966,17 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
             const lista = editIdx !== null
                 ? d.misProductos.map((p, i) => i === editIdx ? nuevo : p)
                 : [...d.misProductos, nuevo];
-            return { ...d, misProductos: lista };
+            // Migrate foto if codigoRef changed
+            let fotos = { ...d.fotos };
+            if (editIdx !== null) {
+                const oldRef = d.misProductos[editIdx]?.codigoRef;
+                const newRef = nuevo.codigoRef;
+                if (oldRef && oldRef !== newRef && fotos[oldRef]) {
+                    fotos[newRef] = fotos[oldRef];
+                    delete fotos[oldRef];
+                }
+            }
+            return { ...d, misProductos: lista, fotos };
         });
         showToast(editIdx !== null ? 'Producto actualizado' : 'Producto agregado', 'success');
         setCodigoRef('');
@@ -1006,16 +1016,16 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
             showToast('XLSX no disponible', 'error');
             return;
         }
-        const wsData = [['Ref', 'Cod Proveedor', 'Descripcion', 'Precio Compra', 'Precio Venta', 'Margen %']];
+        const wsData = [['Cod Barras', 'Ref', 'Cod Proveedor', 'Descripcion', 'Precio Compra', 'Precio Venta', 'Margen %']];
         (data.misProductos || []).forEach(p => {
             const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
             const m = typeof p.margen === 'number' ? p.margen : (data.margenes[p.margen] || 50);
-            wsData.push([p.codigoRef, p.codigoProv, p.descripcion,
+            wsData.push([p.codigoBarras || '', p.codigoRef, p.codigoProv, p.descripcion,
                 parseFloat(p.precioCosto.toFixed(2)), parseFloat(pv.toFixed(2)), m]);
         });
         const wb = w.XLSX.utils.book_new();
         const ws = w.XLSX.utils.aoa_to_sheet(wsData);
-        ws['!cols'] = [{ wch: 14 }, { wch: 16 }, { wch: 42 }, { wch: 14 }, { wch: 14 }, { wch: 10 }];
+        ws['!cols'] = [{ wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 42 }, { wch: 14 }, { wch: 14 }, { wch: 10 }];
         w.XLSX.utils.book_append_sheet(wb, ws, 'Mis Precios');
         w.XLSX.writeFile(wb, 'mis_precios.xlsx');
         showToast('Excel exportado', 'success');
@@ -1036,7 +1046,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                 const ws = wb.Sheets[wb.SheetNames[0]];
                 const rows = w.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
                 // Skip header row (Ref, Cod Proveedor, Descripcion, Precio Compra, Precio Venta, Margen %)
-                const start = String(rows[0]?.[0] || '').toLowerCase().includes('ref') ? 1 : 0;
+                const start = (String(rows[0]?.[0] || '').toLowerCase().includes('ref') || String(rows[0]?.[0] || '').toLowerCase().includes('cod') || String(rows[0]?.[1] || '').toLowerCase().includes('ref')) ? 1 : 0;
                 const nuevos = [];
                 rows.slice(start).forEach((cols) => {
                     const ref = String(cols[0] || '').trim().toUpperCase();
@@ -1169,14 +1179,16 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                                     const rows = w.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
                                     const start = String(rows[0]?.[0] || '').toLowerCase().includes('ref') ? 1 : 0;
                                     const nuevos = rows.slice(start).map((cols) => {
-                                        const ref = String(cols[0] || '').trim().toUpperCase();
-                                        const codProv = String(cols[1] || '').trim().toUpperCase();
-                                        const desc = String(cols[2] || '').trim();
-                                        const costo = parseFloat(String(cols[3] || '0').replace(',', '.')) || 0;
-                                        const margenVal = parseFloat(String(cols[5] || '50').replace(',', '.')) || 50;
+                                        // Format: CodBarras | REF | CodProveedor | Descripcion | PrecioCompra | PrecioVenta | Margen%
+                                        const codBarrasCol = String(cols[0] || '').trim();
+                                        const ref = String(cols[1] || '').trim().toUpperCase();
+                                        const codProv = String(cols[2] || '').trim().toUpperCase();
+                                        const desc = String(cols[3] || '').trim();
+                                        const costo = parseFloat(String(cols[4] || '0').replace(',', '.')) || 0;
+                                        const margenVal = parseFloat(String(cols[6] || '50').replace(',', '.')) || 50;
                                         if (!ref || !codProv)
                                             return null;
-                                        return { codigoRef: ref, codigoProv: codProv, descripcion: desc, precioCosto: costo, margen: margenVal, proveedor: '', divisor: 1 };
+                                        return { codigoRef: ref, codigoProv: codProv, descripcion: desc, precioCosto: costo, margen: margenVal, proveedor: '', divisor: 1, codigoBarras: codBarrasCol || undefined };
                                     }).filter(Boolean);
                                     if (nuevos.length === 0) {
                                         showToast('Sin productos válidos', 'error');
@@ -1484,7 +1496,7 @@ function TabVentas({ data, setData, showToast }) {
                             "x ",
                             item.descripcion),
                         React.createElement("span", { style: { color: '#22c55e', fontWeight: 600 } }, fmt(item.precioVenta * item.cantidad)))))))))))))),
-        presupuestoVenta && (React.createElement(Presupuesto, { items: presupuestoVenta.items, total: presupuestoVenta.total, onClose: () => setPresupuestoVenta(null) }))));
+        presupuestoVenta && (React.createElement(Presupuesto, { items: presupuestoVenta.items, total: presupuestoVenta.total, onClose: () => setPresupuestoVenta(null), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion }))));
 }
 
 
@@ -1823,11 +1835,10 @@ function TabConfig({ data, setData, showToast }) {
     const [m4, setM4] = React.useState(String(data.margenes.p4));
     // Proveedores
     const [nombres, setNombres] = React.useState((data.proveedores || []).map(p => p.nombre));
-    // Presupuesto
-    const [empresa, setEmpresa] = React.useState(() => localStorage.getItem('mn_empresa') || '');
-    const [telefono, setTelefono] = React.useState(() => localStorage.getItem('mn_telefono') || '');
-    const [direccion, setDireccion] = React.useState(() => localStorage.getItem('mn_direccion') || '');
-    const [logoUrl, setLogoUrl] = React.useState(() => localStorage.getItem('mn_logo') || '');
+    // Presupuesto - read from data (Firebase synced)
+    const [empresa, setEmpresa] = React.useState(() => data.empresa || localStorage.getItem('mn_empresa') || '');
+    const [telefono, setTelefono] = React.useState(() => data.telefono || localStorage.getItem('mn_telefono') || '');
+    const [direccion, setDireccion] = React.useState(() => data.direccion || localStorage.getItem('mn_direccion') || '');
     const mult = (pct) => pct >= 100 ? '∞' : (100 / (100 - pct)).toFixed(2) + 'x';
     const pct = (s) => Math.min(99, Math.max(1, parseFloat(s) || 1));
     const guardarMargenes = () => {
@@ -1842,12 +1853,13 @@ function TabConfig({ data, setData, showToast }) {
         showToast('Proveedores guardados', 'success');
     };
     const guardarPresupuesto = () => {
+        // Save to Firebase via data
+        setData(d => ({ ...d, empresa, telefono, direccion }));
+        // Also save to localStorage as fallback
         localStorage.setItem('mn_empresa', empresa);
         localStorage.setItem('mn_telefono', telefono);
         localStorage.setItem('mn_direccion', direccion);
-        if (logoUrl)
-            localStorage.setItem('mn_logo', logoUrl);
-        showToast('Datos de presupuesto guardados', 'success');
+        showToast('Datos guardados y sincronizados', 'success');
     };
     const SectionHeader = ({ id, label, icon }) => (React.createElement("button", { onClick: () => setOpenSection(openSection === id ? null : id), style: {
             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -1921,6 +1933,18 @@ function App() {
     const { data, setData, loaded, syncing } = useAppData(user);
     const [tab, setTab] = React.useState(() => localStorage.getItem('mn_lastTab') || 'calc');
     const [menuOpen, setMenuOpen] = React.useState(false);
+    const [isOnline, setIsOnline] = React.useState(() => window.__isOnline !== false);
+    React.useEffect(() => {
+        const handler = () => setIsOnline(window.__isOnline !== false);
+        window.addEventListener('connectivityChange', handler);
+        window.addEventListener('online', handler);
+        window.addEventListener('offline', handler);
+        return () => {
+            window.removeEventListener('connectivityChange', handler);
+            window.removeEventListener('online', handler);
+            window.removeEventListener('offline', handler);
+        };
+    }, []);
     const [pendingCodProv, setPendingCodProv] = React.useState();
     const [pendingCalcItems, setPendingCalcItems] = React.useState();
     const [toast, setToast] = React.useState(null);
@@ -1964,8 +1988,8 @@ function App() {
                     React.createElement("div", { style: { fontSize: 10, color: '#6b7280' } }, "Sistema de Precios"))),
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 12 } },
                 React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 } },
-                    React.createElement("div", { style: { width: 7, height: 7, borderRadius: '50%', background: syncing ? '#fbbf24' : '#22c55e' } }),
-                    React.createElement("span", { style: { color: '#6b7280' } }, syncing ? 'Guardando...' : 'Sincronizado')),
+                    React.createElement("div", { style: { width: 7, height: 7, borderRadius: '50%', background: !isOnline ? '#ef4444' : syncing ? '#fbbf24' : '#22c55e' } }),
+                    React.createElement("span", { style: { color: '#6b7280' } }, !isOnline ? 'Sin conexión' : syncing ? 'Guardando...' : 'Sincronizado')),
                 React.createElement("button", { onClick: () => setMenuOpen(v => !v), style: { background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', padding: 4 } },
                     React.createElement(Icon, { name: "menu", size: 22 })))),
         React.createElement("div", { style: { padding: '76px 12px 80px', maxWidth: 640, margin: '0 auto' } }, !loaded ? (React.createElement("div", { style: { textAlign: 'center', padding: '80px 20px', color: '#6b7280' } },

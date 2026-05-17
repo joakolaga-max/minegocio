@@ -74,7 +74,17 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
       const lista = editIdx !== null
         ? d.misProductos.map((p, i) => i === editIdx ? nuevo : p)
         : [...d.misProductos, nuevo];
-      return { ...d, misProductos: lista };
+      // Migrate foto if codigoRef changed
+      let fotos = { ...d.fotos };
+      if (editIdx !== null) {
+        const oldRef = d.misProductos[editIdx]?.codigoRef;
+        const newRef = nuevo.codigoRef;
+        if (oldRef && oldRef !== newRef && fotos[oldRef]) {
+          fotos[newRef] = fotos[oldRef];
+          delete fotos[oldRef];
+        }
+      }
+      return { ...d, misProductos: lista, fotos };
     });
 
     showToast(editIdx !== null ? 'Producto actualizado' : 'Producto agregado', 'success');
@@ -103,16 +113,16 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
   const exportar = () => {
     const w = window as any;
     if (!w.XLSX) { showToast('XLSX no disponible', 'error'); return; }
-    const wsData = [['Ref', 'Cod Proveedor', 'Descripcion', 'Precio Compra', 'Precio Venta', 'Margen %']];
+    const wsData = [['Cod Barras', 'Ref', 'Cod Proveedor', 'Descripcion', 'Precio Compra', 'Precio Venta', 'Margen %']];
     (data.misProductos || []).forEach(p => {
       const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
       const m = typeof p.margen === 'number' ? p.margen : (data.margenes[p.margen as string] || 50);
-      wsData.push([p.codigoRef, p.codigoProv, p.descripcion,
+      wsData.push([(p as any).codigoBarras || '', p.codigoRef, p.codigoProv, p.descripcion,
         parseFloat(p.precioCosto.toFixed(2)), parseFloat(pv.toFixed(2)), m]);
     });
     const wb = w.XLSX.utils.book_new();
     const ws = w.XLSX.utils.aoa_to_sheet(wsData);
-    ws['!cols'] = [{ wch: 14 }, { wch: 16 }, { wch: 42 }, { wch: 14 }, { wch: 14 }, { wch: 10 }];
+    ws['!cols'] = [{ wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 42 }, { wch: 14 }, { wch: 14 }, { wch: 10 }];
     w.XLSX.utils.book_append_sheet(wb, ws, 'Mis Precios');
     w.XLSX.writeFile(wb, 'mis_precios.xlsx');
     showToast('Excel exportado', 'success');
@@ -130,7 +140,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
         const ws = wb.Sheets[wb.SheetNames[0]];
         const rows: any[][] = w.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
         // Skip header row (Ref, Cod Proveedor, Descripcion, Precio Compra, Precio Venta, Margen %)
-        const start = String(rows[0]?.[0] || '').toLowerCase().includes('ref') ? 1 : 0;
+        const start = (String(rows[0]?.[0] || '').toLowerCase().includes('ref') || String(rows[0]?.[0] || '').toLowerCase().includes('cod') || String(rows[0]?.[1] || '').toLowerCase().includes('ref')) ? 1 : 0;
         const nuevos: any[] = [];
         rows.slice(start).forEach((cols: any[]) => {
           const ref = String(cols[0] || '').trim().toUpperCase();
@@ -305,13 +315,15 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                     const rows: any[][] = w.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
                     const start = String(rows[0]?.[0] || '').toLowerCase().includes('ref') ? 1 : 0;
                     const nuevos = rows.slice(start).map((cols: any[]) => {
-                      const ref = String(cols[0] || '').trim().toUpperCase();
-                      const codProv = String(cols[1] || '').trim().toUpperCase();
-                      const desc = String(cols[2] || '').trim();
-                      const costo = parseFloat(String(cols[3] || '0').replace(',', '.')) || 0;
-                      const margenVal = parseFloat(String(cols[5] || '50').replace(',', '.')) || 50;
+                      // Format: CodBarras | REF | CodProveedor | Descripcion | PrecioCompra | PrecioVenta | Margen%
+                      const codBarrasCol = String(cols[0] || '').trim();
+                      const ref = String(cols[1] || '').trim().toUpperCase();
+                      const codProv = String(cols[2] || '').trim().toUpperCase();
+                      const desc = String(cols[3] || '').trim();
+                      const costo = parseFloat(String(cols[4] || '0').replace(',', '.')) || 0;
+                      const margenVal = parseFloat(String(cols[6] || '50').replace(',', '.')) || 50;
                       if (!ref || !codProv) return null;
-                      return { codigoRef: ref, codigoProv: codProv, descripcion: desc, precioCosto: costo, margen: margenVal, proveedor: '', divisor: 1 };
+                      return { codigoRef: ref, codigoProv: codProv, descripcion: desc, precioCosto: costo, margen: margenVal, proveedor: '', divisor: 1, codigoBarras: codBarrasCol || undefined };
                     }).filter(Boolean);
                     if (nuevos.length === 0) { showToast('Sin productos válidos', 'error'); return; }
                     if (!window.confirm(`Importar ${nuevos.length} productos?`)) return;

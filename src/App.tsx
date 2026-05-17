@@ -28,6 +28,19 @@ export default function App() {
   const { data, setData, loaded, syncing } = useAppData(user);
   const [tab, setTab] = useState<TabId>(() => (localStorage.getItem('mn_lastTab') as TabId) || 'calc');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => (window as any).__isOnline !== false);
+
+  useEffect(() => {
+    const handler = () => setIsOnline((window as any).__isOnline !== false);
+    window.addEventListener('connectivityChange', handler);
+    window.addEventListener('online', handler);
+    window.addEventListener('offline', handler);
+    return () => {
+      window.removeEventListener('connectivityChange', handler);
+      window.removeEventListener('online', handler);
+      window.removeEventListener('offline', handler);
+    };
+  }, []);
   const [pendingCodProv, setPendingCodProv] = useState<string | undefined>();
   const [pendingCalcItems, setPendingCalcItems] = useState<any[] | undefined>();
   const [toast, setToast] = useState<ToastType | null>(null);
@@ -74,8 +87,8 @@ export default function App() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-            <div style={{ width: 7, height: 7, borderRadius: '50%', background: syncing ? '#fbbf24' : '#22c55e' }} />
-            <span style={{ color: '#6b7280' }}>{syncing ? 'Guardando...' : 'Sincronizado'}</span>
+            <div style={{ width: 7, height: 7, borderRadius: '50%', background: !isOnline ? '#ef4444' : syncing ? '#fbbf24' : '#22c55e' }} />
+            <span style={{ color: '#6b7280' }}>{!isOnline ? 'Sin conexión' : syncing ? 'Guardando...' : 'Sincronizado'}</span>
           </div>
           <button onClick={() => setMenuOpen(v => !v)} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', padding: 4 }}>
             <Icon name="menu" size={22} />
