@@ -28,6 +28,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
   const [codigoBarras, setCodigoBarras] = useState('');
   const [photoModal, setPhotoModal] = useState<{ codigoRef: string; descripcion: string } | null>(null);
   const [expandedRef, setExpandedRef] = useState<string | null>(null);
+  const [paginaSize, setPaginaSize] = useState(30);
 
   const margenFinal = margenCustom ? (parseFloat(margenCustomVal) || 50) : margenSel;
 
@@ -371,7 +372,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
               </div>
               <input className="input-field" style={{ paddingLeft: 38 }}
                 placeholder="Buscar por REF, cod, barras o descripción..."
-                value={busqueda} onChange={e => setBusqueda(e.target.value)} />
+                value={busqueda} onChange={e => { setBusqueda(e.target.value); setPaginaSize(30); }} />
             </div>
             <button className="btn-ghost" style={{ padding: '10px 14px', flexShrink: 0 }}
               onClick={() => setScanSearch(true)}>
@@ -388,8 +389,8 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
             </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, contain: 'layout' as any }}>
-            {filtrados.map((p, i) => {
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {filtrados.slice(0, paginaSize).map((p, i) => {
               const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
               const foto = data.fotos[p.codigoRef];
               const margenLabel = typeof p.margen === 'number'
@@ -447,6 +448,12 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                 </div>
               );
             })}
+            {filtrados.length > paginaSize && (
+              <button onClick={() => setPaginaSize(prev => prev + 30)}
+                style={{ width: '100%', padding: '12px', borderRadius: 12, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 14 }}>
+                Ver mas productos
+              </button>
+            )}
           </div>
         )}
       </div>

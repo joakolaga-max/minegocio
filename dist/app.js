@@ -920,6 +920,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
     const [codigoBarras, setCodigoBarras] = React.useState('');
     const [photoModal, setPhotoModal] = React.useState(null);
     const [expandedRef, setExpandedRef] = React.useState(null);
+    const [paginaSize, setPaginaSize] = React.useState(30);
     const margenFinal = margenCustom ? (parseFloat(margenCustomVal) || 50) : margenSel;
     // Auto-fill codigoProv when navigating from Proveedores
     React.useEffect(() => {
@@ -1229,48 +1230,50 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                 React.createElement("div", { style: { position: 'relative', flex: 1 } },
                     React.createElement("div", { style: { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' } },
                         React.createElement(Icon, { name: "search", size: 16 })),
-                    React.createElement("input", { className: "input-field", style: { paddingLeft: 38 }, placeholder: "Buscar por REF, cod, barras o descripci\u00F3n...", value: busqueda, onChange: e => setBusqueda(e.target.value) })),
+                    React.createElement("input", { className: "input-field", style: { paddingLeft: 38 }, placeholder: "Buscar por REF, cod, barras o descripci\u00F3n...", value: busqueda, onChange: e => { setBusqueda(e.target.value); setPaginaSize(30); } })),
                 React.createElement("button", { className: "btn-ghost", style: { padding: '10px 14px', flexShrink: 0 }, onClick: () => setScanSearch(true) },
                     React.createElement(Icon, { name: "camera", size: 18 })))),
             filtrados.length === 0 ? (React.createElement("div", { style: { textAlign: 'center', padding: '40px 20px', color: '#374151' } },
                 React.createElement(Icon, { name: "tag", size: 40 }),
-                React.createElement("div", { style: { marginTop: 12, fontSize: 14, color: '#6b7280' } }, (data.misProductos || []).length === 0 ? 'Todavía no agregaste productos' : 'Sin resultados'))) : (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } }, filtrados.map((p, i) => {
-                const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
-                const foto = data.fotos[p.codigoRef];
-                const margenLabel = typeof p.margen === 'number'
-                    ? `${p.margen}%`
-                    : `${data.margenes[p.margen]}%`;
-                const isExpanded = expandedRef === p.codigoRef;
-                const codBarras = p.codigoBarras;
-                return (React.createElement("div", { key: i, style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', isolation: 'isolate', transform: 'translateZ(0)' } },
-                    React.createElement("div", { style: { padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 } },
-                        foto && React.createElement("img", { src: foto, alt: "", style: { width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 } }),
-                        React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                            codBarras && (React.createElement("div", { style: { fontSize: 10, color: '#4b5563', fontFamily: 'monospace', marginBottom: 1 } }, codBarras)),
-                            React.createElement("div", { style: { fontSize: 13, color: '#cbd5e1', fontWeight: 500, wordBreak: 'break-word' } }, p.descripcion),
-                            React.createElement("div", { style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 3 } },
-                                React.createElement("span", { style: { fontSize: 17, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800, display: 'block', marginBottom: 2 } }, p.codigoRef),
-                                p.codigoProv && React.createElement("span", { style: { fontSize: 10, color: '#4b5563' } }, p.codigoProv),
-                                React.createElement("span", { className: "badge", style: { background: 'rgba(99,102,241,0.15)', color: '#818cf8', fontSize: 10 } }, margenLabel)),
-                            React.createElement("div", { style: { fontSize: 12, color: '#6b7280', marginTop: 2 } },
-                                "Costo: ",
-                                fmt(p.precioCosto),
-                                " \u2192 ",
-                                React.createElement("span", { style: { color: '#22c55e', fontWeight: 700 } },
-                                    fmt(pv),
-                                    p.divisor && p.divisor > 1 ? ` (${fmt(pv / p.divisor)} c/u)` : ''))),
-                        React.createElement("button", { onClick: () => setExpandedRef(isExpanded ? null : p.codigoRef), style: { background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', padding: '4px 8px', flexShrink: 0, fontSize: 18 } }, isExpanded ? '▲' : '▼')),
-                    isExpanded && (React.createElement("div", { style: { margin: '0 12px 12px', borderRadius: 10, padding: '10px', display: 'flex', gap: 8, background: '#111827' } },
-                        React.createElement("button", { onClick: () => { editar((data.misProductos || []).indexOf(p)); setExpandedRef(null); }, style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 } },
-                            React.createElement(Icon, { name: "settings", size: 14 }),
-                            " Editar"),
-                        React.createElement("button", { onClick: () => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion }), style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 } },
-                            React.createElement(Icon, { name: "camera", size: 14 }),
-                            " Foto"),
-                        React.createElement("button", { onClick: () => { eliminar((data.misProductos || []).indexOf(p)); setExpandedRef(null); }, style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 } },
-                            React.createElement(Icon, { name: "trash", size: 14 }),
-                            " Eliminar")))));
-            })))),
+                React.createElement("div", { style: { marginTop: 12, fontSize: 14, color: '#6b7280' } }, (data.misProductos || []).length === 0 ? 'Todavía no agregaste productos' : 'Sin resultados'))) : (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
+                filtrados.slice(0, paginaSize).map((p, i) => {
+                    const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
+                    const foto = data.fotos[p.codigoRef];
+                    const margenLabel = typeof p.margen === 'number'
+                        ? `${p.margen}%`
+                        : `${data.margenes[p.margen]}%`;
+                    const isExpanded = expandedRef === p.codigoRef;
+                    const codBarras = p.codigoBarras;
+                    return (React.createElement("div", { key: i, style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', isolation: 'isolate', transform: 'translateZ(0)' } },
+                        React.createElement("div", { style: { padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 } },
+                            foto && React.createElement("img", { src: foto, alt: "", style: { width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 } }),
+                            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                                codBarras && (React.createElement("div", { style: { fontSize: 10, color: '#4b5563', fontFamily: 'monospace', marginBottom: 1 } }, codBarras)),
+                                React.createElement("div", { style: { fontSize: 13, color: '#cbd5e1', fontWeight: 500, wordBreak: 'break-word' } }, p.descripcion),
+                                React.createElement("div", { style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginTop: 3 } },
+                                    React.createElement("span", { style: { fontSize: 17, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800, display: 'block', marginBottom: 2 } }, p.codigoRef),
+                                    p.codigoProv && React.createElement("span", { style: { fontSize: 10, color: '#4b5563' } }, p.codigoProv),
+                                    React.createElement("span", { className: "badge", style: { background: 'rgba(99,102,241,0.15)', color: '#818cf8', fontSize: 10 } }, margenLabel)),
+                                React.createElement("div", { style: { fontSize: 12, color: '#6b7280', marginTop: 2 } },
+                                    "Costo: ",
+                                    fmt(p.precioCosto),
+                                    " \u2192 ",
+                                    React.createElement("span", { style: { color: '#22c55e', fontWeight: 700 } },
+                                        fmt(pv),
+                                        p.divisor && p.divisor > 1 ? ` (${fmt(pv / p.divisor)} c/u)` : ''))),
+                            React.createElement("button", { onClick: () => setExpandedRef(isExpanded ? null : p.codigoRef), style: { background: 'none', border: 'none', color: '#4b5563', cursor: 'pointer', padding: '4px 8px', flexShrink: 0, fontSize: 18 } }, isExpanded ? '▲' : '▼')),
+                        isExpanded && (React.createElement("div", { style: { margin: '0 12px 12px', borderRadius: 10, padding: '10px', display: 'flex', gap: 8, background: '#111827' } },
+                            React.createElement("button", { onClick: () => { editar((data.misProductos || []).indexOf(p)); setExpandedRef(null); }, style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 } },
+                                React.createElement(Icon, { name: "settings", size: 14 }),
+                                " Editar"),
+                            React.createElement("button", { onClick: () => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion }), style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 } },
+                                React.createElement(Icon, { name: "camera", size: 14 }),
+                                " Foto"),
+                            React.createElement("button", { onClick: () => { eliminar((data.misProductos || []).indexOf(p)); setExpandedRef(null); }, style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 } },
+                                React.createElement(Icon, { name: "trash", size: 14 }),
+                                " Eliminar")))));
+                }),
+                filtrados.length > paginaSize && (React.createElement("button", { onClick: () => setPaginaSize(prev => prev + 30), style: { width: '100%', padding: '12px', borderRadius: 12, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 14 } }, "Ver mas productos"))))),
         scanSearch && (React.createElement(Scanner, { onResult: scanned => { setScanSearch(false); setBusqueda(scanned); }, onClose: () => setScanSearch(false) })),
         scanBarcode && (React.createElement(Scanner, { onResult: scanned => { setScanBarcode(false); setCodigoBarras(scanned); }, onClose: () => setScanBarcode(false) })),
         photoModal && (React.createElement("div", { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }, onClick: () => setPhotoModal(null) },
