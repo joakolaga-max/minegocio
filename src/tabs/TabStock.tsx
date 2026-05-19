@@ -17,29 +17,36 @@ function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }: {
   onPedir: () => void;
   inPedido: boolean;
 }) {
-  const [vals, setVals] = useState({ ...stock });
-  const actual = (vals.inicial || 0) + (vals.entradas || 0) - (vals.salidas || 0);
+  // Use strings so user can type freely (including clearing the field)
+  const [inicial, setInicial] = useState(String(stock.inicial || 0));
+  const [entradas, setEntradas] = useState(String(stock.entradas || 0));
+  const [salidas, setSalidas] = useState(String(stock.salidas || 0));
+  const [minimo, setMinimo] = useState(String(stock.minimo || 0));
 
-  const set = (field: keyof typeof vals, v: string) => {
-    setVals(prev => ({ ...prev, [field]: parseInt(v) || 0 }));
-  };
+  const numVal = (s: string) => parseInt(s) || 0;
+  const actual = numVal(inicial) + numVal(entradas) - numVal(salidas);
 
   const guardar = () => {
-    onSave(vals);
+    onSave({
+      inicial: numVal(inicial),
+      entradas: numVal(entradas),
+      salidas: numVal(salidas),
+      minimo: numVal(minimo),
+    });
   };
 
-  const campos: { key: keyof typeof vals; label: string }[] = [
-    { key: 'inicial', label: 'Inicial' },
-    { key: 'entradas', label: 'Entradas' },
-    { key: 'salidas', label: 'Salidas' },
-    { key: 'minimo', label: 'Mínimo' },
+  const campos = [
+    { label: 'Inicial', value: inicial, set: setInicial },
+    { label: 'Entradas', value: entradas, set: setEntradas },
+    { label: 'Salidas', value: salidas, set: setSalidas },
+    { label: 'Mínimo', value: minimo, set: setMinimo },
   ];
 
   return (
     <div style={{ borderTop: '1px solid #111827', padding: '12px 14px', background: '#161b27' }}>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
-        {campos.map(({ key, label }) => (
-          <div key={key} style={{ flex: 1, minWidth: 70, textAlign: 'center' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+        {campos.map(({ label, value, set }) => (
+          <div key={key} style={{ textAlign: 'center' }}>
             <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 4, textTransform: 'uppercase' }}>{label}</label>
             <input
               type="number" min={0}
@@ -55,19 +62,17 @@ function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }: {
           </div>
         ))}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <span style={{ fontSize: 13, color: '#94a3b8' }}>Actual: <strong style={{ color: actual < (vals.minimo || 0) && vals.minimo > 0 ? '#ef4444' : '#22c55e' }}>{actual}</strong></span>
+      <div style={{ textAlign: 'center', marginBottom: 8, fontSize: 13, color: '#94a3b8' }}>
+        Actual: <strong style={{ fontSize: 18, color: actual < numVal(minimo) && numVal(minimo) > 0 ? '#ef4444' : '#22c55e' }}>{actual}</strong>
       </div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={guardar}
-          style={{ flex: 2, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          <Icon name="check" size={14} /> Guardar
-        </button>
-        <button onClick={onPedir}
-          style={{ flex: 1, background: inPedido ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)', border: `1px solid ${inPedido ? '#22c55e' : '#6366f1'}`, color: inPedido ? '#22c55e' : '#818cf8', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 13 }}>
-          {inPedido ? '✓ En pedidos' : '+ Pedir'}
-        </button>
-      </div>
+      <button onClick={guardar}
+        style={{ width: '100%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
+        <Icon name="check" size={16} /> Guardar cambios
+      </button>
+      <button onClick={onPedir}
+        style={{ width: '100%', background: inPedido ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.08)', border: `1px solid ${inPedido ? '#22c55e' : '#374151'}`, color: inPedido ? '#22c55e' : '#6b7280', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 13 }}>
+        {inPedido ? '✓ Ya está en pedidos' : '+ Agregar a pedidos'}
+      </button>
     </div>
   );
 }

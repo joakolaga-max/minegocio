@@ -1346,22 +1346,29 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
 // ── src/tabs/TabStock.tsx ──
 // Subcomponente con estado local para los inputs
 function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }) {
-    const [vals, setVals] = React.useState({ ...stock });
-    const actual = (vals.inicial || 0) + (vals.entradas || 0) - (vals.salidas || 0);
-    const set = (field, v) => {
-        setVals(prev => ({ ...prev, [field]: parseInt(v) || 0 }));
-    };
+    // Use strings so user can type freely (including clearing the field)
+    const [inicial, setInicial] = React.useState(String(stock.inicial || 0));
+    const [entradas, setEntradas] = React.useState(String(stock.entradas || 0));
+    const [salidas, setSalidas] = React.useState(String(stock.salidas || 0));
+    const [minimo, setMinimo] = React.useState(String(stock.minimo || 0));
+    const numVal = (s) => parseInt(s) || 0;
+    const actual = numVal(inicial) + numVal(entradas) - numVal(salidas);
     const guardar = () => {
-        onSave(vals);
+        onSave({
+            inicial: numVal(inicial),
+            entradas: numVal(entradas),
+            salidas: numVal(salidas),
+            minimo: numVal(minimo),
+        });
     };
     const campos = [
-        { key: 'inicial', label: 'Inicial' },
-        { key: 'entradas', label: 'Entradas' },
-        { key: 'salidas', label: 'Salidas' },
-        { key: 'minimo', label: 'Mínimo' },
+        { label: 'Inicial', value: inicial, set: setInicial },
+        { label: 'Entradas', value: entradas, set: setEntradas },
+        { label: 'Salidas', value: salidas, set: setSalidas },
+        { label: 'Mínimo', value: minimo, set: setMinimo },
     ];
     return (React.createElement("div", { style: { borderTop: '1px solid #111827', padding: '12px 14px', background: '#161b27' } },
-        React.createElement("div", { style: { display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 } }, campos.map(({ key, label }) => (React.createElement("div", { key: key, style: { flex: 1, minWidth: 70, textAlign: 'center' } },
+        React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 } }, campos.map(({ label, value, set }) => (React.createElement("div", { key: key, style: { textAlign: 'center' } },
             React.createElement("label", { style: { fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 4, textTransform: 'uppercase' } }, label),
             React.createElement("input", { type: "number", min: 0, value: vals[key], onChange: e => set(key, e.target.value), style: {
                     width: '100%', height: 44, borderRadius: 8,
@@ -1369,15 +1376,13 @@ function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }) {
                     color: '#f1f5f9', textAlign: 'center',
                     fontSize: 18, fontWeight: 700, fontFamily: 'inherit', outline: 'none',
                 } }))))),
-        React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 } },
-            React.createElement("span", { style: { fontSize: 13, color: '#94a3b8' } },
-                "Actual: ",
-                React.createElement("strong", { style: { color: actual < (vals.minimo || 0) && vals.minimo > 0 ? '#ef4444' : '#22c55e' } }, actual))),
-        React.createElement("div", { style: { display: 'flex', gap: 8 } },
-            React.createElement("button", { onClick: guardar, style: { flex: 2, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 } },
-                React.createElement(Icon, { name: "check", size: 14 }),
-                " Guardar"),
-            React.createElement("button", { onClick: onPedir, style: { flex: 1, background: inPedido ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)', border: `1px solid ${inPedido ? '#22c55e' : '#6366f1'}`, color: inPedido ? '#22c55e' : '#818cf8', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 13 } }, inPedido ? '✓ En pedidos' : '+ Pedir'))));
+        React.createElement("div", { style: { textAlign: 'center', marginBottom: 8, fontSize: 13, color: '#94a3b8' } },
+            "Actual: ",
+            React.createElement("strong", { style: { fontSize: 18, color: actual < numVal(minimo) && numVal(minimo) > 0 ? '#ef4444' : '#22c55e' } }, actual)),
+        React.createElement("button", { onClick: guardar, style: { width: '100%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 } },
+            React.createElement(Icon, { name: "check", size: 16 }),
+            " Guardar cambios"),
+        React.createElement("button", { onClick: onPedir, style: { width: '100%', background: inPedido ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.08)', border: `1px solid ${inPedido ? '#22c55e' : '#374151'}`, color: inPedido ? '#22c55e' : '#6b7280', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 13 } }, inPedido ? '✓ Ya está en pedidos' : '+ Agregar a pedidos')));
 }
 function TabStock({ data, setData, showToast }) {
     const [busqueda, setBusqueda] = React.useState('');
