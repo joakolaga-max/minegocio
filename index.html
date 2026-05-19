@@ -61,8 +61,13 @@
       input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
     </style>
   <script>
+    // Unregister old service workers and register new one
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/minegocio/sw.js').catch(() => {});
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        for (const reg of regs) reg.unregister();
+      }).then(() => {
+        navigator.serviceWorker.register('/minegocio/sw.js?v=5');
+      });
     }
   </script>
 </head>
@@ -170,6 +175,6 @@
     window.dispatchEvent(new Event("fbReady"));
   </script>
 
-  <script src="dist/app.js"></script>
+  <script src="dist/app.js?v=1779159039"></script>
 </body>
 </html>
