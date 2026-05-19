@@ -100,7 +100,7 @@ export function TabStock({ data, setData, showToast }: Props) {
               const isEdit = editRef === p.codigoRef;
 
               return (
-                <div key={p.codigoRef} style={{ background: '#1e2230', borderRadius: 12, border: `1px solid ${bajo ? 'rgba(239,68,68,0.4)' : '#1e2535'}`, overflow: 'hidden' }}>
+                <div key={p.codigoRef} style={{ background: '#1e2230', borderRadius: 12, border: `1px solid ${bajo ? 'rgba(239,68,68,0.4)' : '#1e2535'}` }}>
                   {/* Header */}
                   <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}
                     onClick={() => setEditRef(isEdit ? null : p.codigoRef)}>
@@ -115,7 +115,7 @@ export function TabStock({ data, setData, showToast }: Props) {
                         {p.codigoProv && <span style={{ fontSize: 11, color: '#4b5563' }}>{p.codigoProv}</span>}
                         {bajo && <span className="badge" style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444' }}>⚠ Bajo mín.</span>}
                       </div>
-                      <div style={{ fontSize: 13, color: '#cbd5e1', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>
+                      <div style={{ fontSize: 13, color: '#cbd5e1', marginTop: 2, textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <div style={{ fontSize: 20, fontWeight: 700, color: bajo ? '#ef4444' : '#f1f5f9' }}>{p.actual}</div>

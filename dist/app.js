@@ -907,6 +907,7 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
 // ── src/tabs/TabMisPrecios.tsx ──
 const MARGEN_LABELS = { p1: 'p1', p2: 'p2', p3: 'p3', p4: 'p4' };
 function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPending }) {
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 768;
     const [busqueda, setBusqueda] = React.useState('');
     const [codigoRef, setCodigoRef] = React.useState('');
     const [codigoProv, setCodigoProv] = React.useState('');
@@ -920,6 +921,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
     const [codigoBarras, setCodigoBarras] = React.useState('');
     const [photoModal, setPhotoModal] = React.useState(null);
     const [paginaSize, setPaginaSize] = React.useState(30);
+    const [expandedRef, setExpandedRef] = React.useState(null);
     const margenFinal = margenCustom ? (parseFloat(margenCustomVal) || 50) : margenSel;
     // Auto-fill codigoProv when navigating from Proveedores
     React.useEffect(() => {
@@ -988,10 +990,12 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
         setCodigoBarras('');
         setEditIdx(null);
     };
+    const formRef = React.useRef(null);
     const editar = (i) => {
         const p = data.misProductos[i];
         setCodigoRef(p.codigoRef);
         setCodigoProv(p.codigoProv);
+        setCodigoBarras(p.codigoBarras || '');
         if (typeof p.margen === 'number') {
             setMargenCustom(true);
             setMargenCustomVal(String(p.margen));
@@ -1003,6 +1007,11 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
         }
         setDivisor(p.divisor || 1);
         setEditIdx(i);
+        // Scroll form into view
+        setTimeout(() => {
+            formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 50);
     };
     const eliminar = (i) => {
         if (!window.confirm('Eliminar este producto?'))
@@ -1087,7 +1096,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
         : (data.misProductos || []);
     const fmt = (n) => '$' + Math.round(n).toLocaleString('es-AR');
     return (React.createElement("div", null,
-        React.createElement("div", { className: "card" },
+        React.createElement("div", { className: "card", ref: formRef },
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 } },
                 React.createElement("div", { className: "section-title", style: { marginBottom: 0 } }, editIdx !== null ? 'Editar producto' : 'Agregar producto'),
                 editIdx !== null && (React.createElement("button", { className: "btn-ghost", style: { padding: '6px 12px', fontSize: 12 }, onClick: () => { setEditIdx(null); setCodigoRef(''); setCodigoProv(''); setMargenSel('p1'); setMargenCustom(false); setDivisor(1); } }, "Cancelar"))),
@@ -1242,33 +1251,56 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                         ? `${p.margen}%`
                         : `${data.margenes[p.margen]}%`;
                     const codBarras = p.codigoBarras;
-                    return (React.createElement("div", { key: i, style: { background: '#1e2230', borderRadius: 12, padding: '10px 12px', marginBottom: 2 } },
-                        React.createElement("div", { style: { display: 'flex', alignItems: 'flex-start', gap: 8 } },
-                            foto && React.createElement("img", { src: foto, alt: "", style: { width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0, marginTop: 2 } }),
-                            React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                                codBarras && React.createElement("div", { style: { fontSize: 10, color: '#4b5563', fontFamily: 'monospace' } }, codBarras),
-                                React.createElement("div", { style: { fontSize: 17, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800 } }, p.codigoRef),
-                                React.createElement("div", { style: { fontSize: 13, color: '#cbd5e1', wordBreak: 'break-word' } }, p.descripcion),
-                                React.createElement("div", { style: { display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap', marginTop: 2 } },
-                                    p.codigoProv && React.createElement("span", { style: { fontSize: 10, color: '#4b5563' } }, p.codigoProv),
-                                    React.createElement("span", { style: { fontSize: 10, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '1px 6px', borderRadius: 10 } }, margenLabel)),
-                                React.createElement("div", { style: { fontSize: 11, color: '#6b7280', marginTop: 2 } },
-                                    fmt(p.precioCosto),
-                                    " ",
-                                    React.createElement("span", { style: { color: '#22c55e', fontWeight: 700 } },
-                                        "\u2192 ",
-                                        fmt(pv)),
-                                    p.divisor && p.divisor > 1 ? React.createElement("span", { style: { color: '#6b7280' } },
-                                        " (",
-                                        fmt(pv / p.divisor),
-                                        " c/u)") : null)),
-                            React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 } },
-                                React.createElement("button", { onClick: () => editar((data.misProductos || []).indexOf(p)), style: { background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 8, padding: '5px 8px', cursor: 'pointer' } },
-                                    React.createElement(Icon, { name: "settings", size: 13 })),
-                                React.createElement("button", { onClick: () => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion }), style: { background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 8, padding: '5px 8px', cursor: 'pointer' } },
-                                    React.createElement(Icon, { name: "camera", size: 13 })),
-                                React.createElement("button", { onClick: () => eliminar((data.misProductos || []).indexOf(p)), style: { background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '5px 8px', cursor: 'pointer' } },
-                                    React.createElement(Icon, { name: "trash", size: 13 }))))));
+                    // Info content shared between both layouts
+                    const infoContent = (React.createElement(React.Fragment, null,
+                        foto && React.createElement("img", { src: foto, alt: "", style: { width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0, marginTop: 2 } }),
+                        React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                            codBarras && React.createElement("div", { style: { fontSize: 10, color: '#4b5563', fontFamily: 'monospace' } }, codBarras),
+                            React.createElement("div", { style: { fontSize: 17, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800 } }, p.codigoRef),
+                            React.createElement("div", { style: { fontSize: 13, color: '#cbd5e1', wordBreak: 'break-word' } }, p.descripcion),
+                            React.createElement("div", { style: { display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap', marginTop: 2 } },
+                                p.codigoProv && React.createElement("span", { style: { fontSize: 10, color: '#4b5563' } }, p.codigoProv),
+                                React.createElement("span", { style: { fontSize: 10, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '1px 6px', borderRadius: 10 } }, margenLabel)),
+                            React.createElement("div", { style: { fontSize: 11, color: '#6b7280', marginTop: 2 } },
+                                fmt(p.precioCosto),
+                                " ",
+                                React.createElement("span", { style: { color: '#22c55e', fontWeight: 700 } },
+                                    "\u2192 ",
+                                    fmt(pv)),
+                                p.divisor && p.divisor > 1 ? React.createElement("span", { style: { color: '#6b7280' } },
+                                    " (",
+                                    fmt(pv / p.divisor),
+                                    " c/u)") : null))));
+                    const idx2 = (data.misProductos || []).indexOf(p);
+                    if (isMobile) {
+                        // MOBILE: botones siempre visibles a la derecha, sin expand
+                        return (React.createElement("div", { key: i, style: { background: '#1e2230', borderRadius: 12, padding: '10px 12px', marginBottom: 2 } },
+                            React.createElement("div", { style: { display: 'flex', alignItems: 'flex-start', gap: 8 } },
+                                infoContent,
+                                React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 } },
+                                    React.createElement("button", { onClick: () => editar(idx2), style: { background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 8, padding: '5px 8px', cursor: 'pointer' } },
+                                        React.createElement(Icon, { name: "settings", size: 13 })),
+                                    React.createElement("button", { onClick: () => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion }), style: { background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 8, padding: '5px 8px', cursor: 'pointer' } },
+                                        React.createElement(Icon, { name: "camera", size: 13 })),
+                                    React.createElement("button", { onClick: () => eliminar(idx2), style: { background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '5px 8px', cursor: 'pointer' } },
+                                        React.createElement(Icon, { name: "trash", size: 13 }))))));
+                    }
+                    // DESKTOP: expand panel on click
+                    const isExpanded = expandedRef === p.codigoRef;
+                    return (React.createElement("div", { key: i, style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535' } },
+                        React.createElement("div", { style: { padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 10 }, onClick: () => setExpandedRef(isExpanded ? null : p.codigoRef) },
+                            infoContent,
+                            React.createElement("span", { style: { color: '#4b5563', fontSize: 16, flexShrink: 0 } }, isExpanded ? '▲' : '▼')),
+                        isExpanded && (React.createElement("div", { style: { margin: '0 12px 12px', borderRadius: 10, padding: '10px', display: 'flex', gap: 8, background: '#111827' } },
+                            React.createElement("button", { onClick: () => { editar(idx2); setExpandedRef(null); }, style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 } },
+                                React.createElement(Icon, { name: "settings", size: 14 }),
+                                " Editar"),
+                            React.createElement("button", { onClick: () => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion }), style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 } },
+                                React.createElement(Icon, { name: "camera", size: 14 }),
+                                " Foto"),
+                            React.createElement("button", { onClick: () => { eliminar(idx2); setExpandedRef(null); }, style: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 } },
+                                React.createElement(Icon, { name: "trash", size: 14 }),
+                                " Eliminar")))));
                 }),
                 filtrados.length > paginaSize && (React.createElement("button", { onClick: () => setPaginaSize(prev => prev + 30), style: { width: '100%', padding: '12px', borderRadius: 12, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 14 } }, "Ver mas productos"))))),
         scanSearch && (React.createElement(Scanner, { onResult: scanned => { setScanSearch(false); setBusqueda(scanned); }, onClose: () => setScanSearch(false) })),
@@ -1385,7 +1417,7 @@ function TabStock({ data, setData, showToast }) {
                 const foto = data.fotos[p.codigoRef];
                 const inPedido = (data.pedidos || []).find(x => x.codigoRef === p.codigoRef);
                 const isEdit = editRef === p.codigoRef;
-                return (React.createElement("div", { key: p.codigoRef, style: { background: '#1e2230', borderRadius: 12, border: `1px solid ${bajo ? 'rgba(239,68,68,0.4)' : '#1e2535'}`, overflow: 'hidden' } },
+                return (React.createElement("div", { key: p.codigoRef, style: { background: '#1e2230', borderRadius: 12, border: `1px solid ${bajo ? 'rgba(239,68,68,0.4)' : '#1e2535'}` } },
                     React.createElement("div", { style: { padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }, onClick: () => setEditRef(isEdit ? null : p.codigoRef) },
                         foto
                             ? React.createElement("img", { src: foto, alt: "", onClick: e => { e.stopPropagation(); setPhotoZoom(foto); }, style: { width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0, cursor: 'zoom-in' } })
