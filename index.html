@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+  <meta name="theme-color" content="#0f1117"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <title>MiNegocio</title>
+  <link rel="manifest" href="manifest.json"/>
+
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body { background: #0d1117; color: #f1f5f9; font-family: 'Space Grotesk', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+      .card { background: #161b27; border-radius: 16px; border: 1px solid #1e2535; padding: 16px; margin-bottom: 12px; }
+      .section-title { font-size: 18px; font-weight: 700; color: #f1f5f9; margin-bottom: 16px; }
+      
+      /* Input fix — prevents mobile browsers from overriding colors */
+      .input-field,
+      input[type="text"], input[type="email"], input[type="password"],
+      input[type="number"], input[type="search"], input[type="tel"],
+      textarea, select {
+        background: #1e2230 !important;
+        color: #f1f5f9 !important;
+        -webkit-text-fill-color: #f1f5f9 !important;
+        caret-color: #f1f5f9;
+        border: 1px solid #374151;
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        width: 100%;
+        transition: border-color 0.2s;
+      }
+      .input-field:focus, input:focus, textarea:focus {
+        border-color: #6366f1;
+        background: #1e2230 !important;
+        color: #f1f5f9 !important;
+        -webkit-text-fill-color: #f1f5f9 !important;
+      }
+      /* Autofill override — the main culprit on mobile */
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus,
+      input:-webkit-autofill:active,
+      textarea:-webkit-autofill {
+        -webkit-box-shadow: 0 0 0 9999px #1e2230 inset !important;
+        -webkit-text-fill-color: #f1f5f9 !important;
+        background-color: #1e2230 !important;
+        color: #f1f5f9 !important;
+      }
+      input::placeholder, textarea::placeholder { color: #4b5563; opacity: 1; }
+      
+      .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border: none; border-radius: 12px; padding: 12px 16px; cursor: pointer; font-family: inherit; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; transition: opacity 0.2s; }
+      .btn-primary:active { opacity: 0.85; }
+      .btn-ghost { background: transparent; border: 1px solid #374151; color: #94a3b8; border-radius: 12px; padding: 12px 16px; cursor: pointer; font-family: inherit; font-weight: 500; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+      .btn-danger { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #ef4444; border-radius: 12px; padding: 12px 16px; cursor: pointer; font-family: inherit; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+      .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+      input[type=number] { -moz-appearance: textfield; }
+      input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    </style>
+  <script>
+    // Unregister ALL service workers - not needed
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        for (const reg of regs) reg.unregister();
+      });
+    }
+  </script>
+</head>
+<body>
+  <div id="root">
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;gap:16px">
+      <div class="spinner"></div>
+      <div style="color:#6b7280;font-size:14px">Iniciando MiNegocio...</div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut,
+      sendPasswordResetEmail
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const app = initializeApp({
+      apiKey: "AIzaSyDpiL65zimS-hmdtaWocyCxUhsyQ0rITHM",
+      authDomain: "mi-negocio-d3d2c.firebaseapp.com",
+      projectId: "mi-negocio-d3d2c",
+      storageBucket: "mi-negocio-d3d2c.firebasestorage.app",
+      messagingSenderId: "301429118303",
+      appId: "1:301429118303:web:d67ee5239378746d8252ea"
+    });
+    const db = (() => {
+      try {
+        return initializeFirestore(app, {
+          cache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+        });
+      } catch(e) {
+        return getFirestore(app);
+      }
+    })();
+    const auth = getAuth(app);
+
+    // ── Firebase helpers with per-user path ──
+    window.__fb = {
+      save: async (path, data) => {
+        if (!window.__user) return;
+        // Always save to localStorage first (instant, works offline)
+        try { localStorage.setItem("mn_" + path, JSON.stringify(data)); } catch(e) {}
+        // Then sync to Firebase (works offline too with persistence enabled)
+        try {
+          await setDoc(
+            doc(db, "negocios", window.__user, "data", path),
+            { data: JSON.stringify(data), updatedAt: Date.now() },
+            { merge: true }
+          );
+        } catch(e) {
+          // Firebase offline - data is safe in localStorage, will sync when back online
+          console.log("Offline: saved locally, will sync when online");
+        }
+      },
+
+      load: async (path) => {
+        if (!window.__user) return [];
+        try {
+          const snap = await getDoc(
+            doc(db, "negocios", window.__user, "data", path)
+          );
+          if (snap.exists()) {
+            const val = JSON.parse(snap.data().data);
+            try { localStorage.setItem("mn_" + path, JSON.stringify(val)); } catch(e) {}
+            return val;
+          }
+        } catch(e) {}
+        const cached = localStorage.getItem("mn_" + path);
+        return cached ? JSON.parse(cached) : [];
+      }
+    };
+
+    // ── Auth actions exposed to React ──
+    window.login = async (email, password) => {
+      await signInWithEmailAndPassword(auth, email, password);
+    };
+
+    window.register = async (email, password) => {
+      await createUserWithEmailAndPassword(auth, email, password);
+    };
+
+    window.logout = async () => {
+      await signOut(auth);
+    };
+
+    window.resetPassword = async (email) => {
+      await sendPasswordResetEmail(auth, email);
+    };
+
+    // ── Watch auth state ──
+    onAuthStateChanged(auth, (user) => {
+      window.__user = user ? user.uid : null;
+      window.__authReady = true;
+      window.dispatchEvent(new Event("authReady"));
+    });
+
+    window.__fbReady = true;
+    window.dispatchEvent(new Event("fbReady"));
+  </script>
+
+  <script src="dist/app.js"></script>
+</body>
+</html>
