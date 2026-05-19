@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { AppData } from '../types';
 import { Icon } from '../components/Icon';
 import { Scanner } from '../components/Scanner';
@@ -7,6 +7,69 @@ interface Props {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
+}
+
+// Subcomponente con estado local para los inputs
+function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }: {
+  codigoRef: string;
+  stock: { inicial: number; entradas: number; salidas: number; minimo: number };
+  onSave: (vals: typeof stock) => void;
+  onPedir: () => void;
+  inPedido: boolean;
+}) {
+  const [vals, setVals] = useState({ ...stock });
+  const actual = (vals.inicial || 0) + (vals.entradas || 0) - (vals.salidas || 0);
+
+  const set = (field: keyof typeof vals, v: string) => {
+    setVals(prev => ({ ...prev, [field]: parseInt(v) || 0 }));
+  };
+
+  const guardar = () => {
+    onSave(vals);
+  };
+
+  const campos: { key: keyof typeof vals; label: string }[] = [
+    { key: 'inicial', label: 'Inicial' },
+    { key: 'entradas', label: 'Entradas' },
+    { key: 'salidas', label: 'Salidas' },
+    { key: 'minimo', label: 'Mínimo' },
+  ];
+
+  return (
+    <div style={{ borderTop: '1px solid #111827', padding: '12px 14px', background: '#161b27' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+        {campos.map(({ key, label }) => (
+          <div key={key} style={{ flex: 1, minWidth: 70, textAlign: 'center' }}>
+            <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 4, textTransform: 'uppercase' }}>{label}</label>
+            <input
+              type="number" min={0}
+              value={vals[key]}
+              onChange={e => set(key, e.target.value)}
+              style={{
+                width: '100%', height: 44, borderRadius: 8,
+                background: '#1e2230', border: '1px solid #6366f1',
+                color: '#f1f5f9', textAlign: 'center',
+                fontSize: 18, fontWeight: 700, fontFamily: 'inherit', outline: 'none',
+              }}
+            />
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <span style={{ fontSize: 13, color: '#94a3b8' }}>Actual: <strong style={{ color: actual < (vals.minimo || 0) && vals.minimo > 0 ? '#ef4444' : '#22c55e' }}>{actual}</strong></span>
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={guardar}
+          style={{ flex: 2, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <Icon name="check" size={14} /> Guardar
+        </button>
+        <button onClick={onPedir}
+          style={{ flex: 1, background: inPedido ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)', border: `1px solid ${inPedido ? '#22c55e' : '#6366f1'}`, color: inPedido ? '#22c55e' : '#818cf8', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 13 }}>
+          {inPedido ? '✓ En pedidos' : '+ Pedir'}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function TabStock({ data, setData, showToast }: Props) {
@@ -22,17 +85,16 @@ export function TabStock({ data, setData, showToast }: Props) {
   }).filter(p => !busqueda ||
     p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
     (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-    (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+    ((p as any).codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
     (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase())
   );
 
   const bajoMinimo = productos.filter(p => p.stock.minimo > 0 && p.actual < p.stock.minimo);
 
-  const updateStock = (ref: string, field: 'inicial' | 'entradas' | 'salidas' | 'minimo', val: number) => {
-    setData(d => {
-      const cur = (d.stock || {})[ref] || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
-      return { ...d, stock: { ...d.stock, [ref]: { ...cur, [field]: Math.max(0, val) } } };
-    });
+  const saveStock = (ref: string, vals: { inicial: number; entradas: number; salidas: number; minimo: number }) => {
+    setData(d => ({ ...d, stock: { ...d.stock, [ref]: vals } }));
+    showToast('Stock guardado', 'success');
+    setEditRef(null);
   };
 
   const agregarAPedido = (p: typeof productos[0]) => {
@@ -52,7 +114,6 @@ export function TabStock({ data, setData, showToast }: Props) {
 
   return (
     <div>
-      {/* Alerts */}
       {bajoMinimo.length > 0 && (
         <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 12, padding: '12px 16px', marginBottom: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444', fontWeight: 700, fontSize: 14, marginBottom: 6 }}>
@@ -96,13 +157,12 @@ export function TabStock({ data, setData, showToast }: Props) {
             {productos.map(p => {
               const bajo = p.stock.minimo > 0 && p.actual < p.stock.minimo;
               const foto = data.fotos[p.codigoRef];
-              const inPedido = (data.pedidos || []).find(x => x.codigoRef === p.codigoRef);
+              const inPedido = !!(data.pedidos || []).find(x => x.codigoRef === p.codigoRef);
               const isEdit = editRef === p.codigoRef;
 
               return (
                 <div key={p.codigoRef} style={{ background: '#1e2230', borderRadius: 12, border: `1px solid ${bajo ? 'rgba(239,68,68,0.4)' : '#1e2535'}` }}>
-                  {/* Header */}
-                  <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}
+                  <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
                     onClick={() => setEditRef(isEdit ? null : p.codigoRef)}>
                     {foto
                       ? <img src={foto} alt="" onClick={e => { e.stopPropagation(); setPhotoZoom(foto); }}
@@ -111,37 +171,27 @@ export function TabStock({ data, setData, showToast }: Props) {
                     }
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                        <span style={{ fontSize: 12, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 }}>{p.codigoRef}</span>
+                        <span style={{ fontSize: 13, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 }}>{p.codigoRef}</span>
                         {p.codigoProv && <span style={{ fontSize: 11, color: '#4b5563' }}>{p.codigoProv}</span>}
                         {bajo && <span className="badge" style={{ background: 'rgba(239,68,68,0.2)', color: '#ef4444' }}>⚠ Bajo mín.</span>}
                       </div>
-                      <div style={{ fontSize: 13, color: '#cbd5e1', marginTop: 2, textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>
+                      <div style={{ fontSize: 13, color: '#cbd5e1', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: 20, fontWeight: 700, color: bajo ? '#ef4444' : '#f1f5f9' }}>{p.actual}</div>
+                      <div style={{ fontSize: 24, fontWeight: 700, color: bajo ? '#ef4444' : '#f1f5f9' }}>{p.actual}</div>
                       {p.stock.minimo > 0 && <div style={{ fontSize: 11, color: '#6b7280' }}>mín: {p.stock.minimo}</div>}
                     </div>
                   </div>
 
-                  {/* Edit panel */}
                   {isEdit && (
-                    <div style={{ borderTop: '1px solid #111827', padding: '12px 14px', background: '#161b27' }}>
-                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
-                        {(['inicial', 'entradas', 'salidas', 'minimo'] as const).map(field => (
-                          <div key={field} style={{ flex: 1, minWidth: 70 }}>
-                            <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 4, textTransform: 'uppercase' }}>{field}</label>
-                            <input type="number" min={0}
-                              value={p.stock[field] || 0}
-                              onChange={e => updateStock(p.codigoRef, field, parseInt(e.target.value) || 0)}
-                              style={{ width: '100%', height: 36, borderRadius: 8, background: '#1e2230', border: '1px solid #374151', color: '#f1f5f9', textAlign: 'center', fontSize: 14, fontWeight: 700, fontFamily: 'inherit' }} />
-                          </div>
-                        ))}
-                      </div>
-                      <button onClick={() => agregarAPedido(p)}
-                        style={{ width: '100%', padding: '8px', borderRadius: 8, background: inPedido ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)', border: `1px solid ${inPedido ? '#22c55e' : '#6366f1'}`, color: inPedido ? '#22c55e' : '#818cf8', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 13 }}>
-                        {inPedido ? '✓ En pedidos' : '+ Pedir'}
-                      </button>
-                    </div>
+                    <StockEditor
+                      key={p.codigoRef + '-editor'}
+                      codigoRef={p.codigoRef}
+                      stock={p.stock}
+                      onSave={vals => saveStock(p.codigoRef, vals)}
+                      onPedir={() => agregarAPedido(p)}
+                      inPedido={inPedido}
+                    />
                   )}
                 </div>
               );
@@ -150,7 +200,6 @@ export function TabStock({ data, setData, showToast }: Props) {
         )}
       </div>
 
-      {/* Photo zoom modal */}
       {photoZoom && (
         <div onClick={() => setPhotoZoom(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <img src={photoZoom} alt="" style={{ maxWidth: '100%', maxHeight: '85vh', borderRadius: 16, objectFit: 'contain' }} />

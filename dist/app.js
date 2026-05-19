@@ -1344,6 +1344,41 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
 
 
 // ── src/tabs/TabStock.tsx ──
+// Subcomponente con estado local para los inputs
+function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }) {
+    const [vals, setVals] = React.useState({ ...stock });
+    const actual = (vals.inicial || 0) + (vals.entradas || 0) - (vals.salidas || 0);
+    const set = (field, v) => {
+        setVals(prev => ({ ...prev, [field]: parseInt(v) || 0 }));
+    };
+    const guardar = () => {
+        onSave(vals);
+    };
+    const campos = [
+        { key: 'inicial', label: 'Inicial' },
+        { key: 'entradas', label: 'Entradas' },
+        { key: 'salidas', label: 'Salidas' },
+        { key: 'minimo', label: 'Mínimo' },
+    ];
+    return (React.createElement("div", { style: { borderTop: '1px solid #111827', padding: '12px 14px', background: '#161b27' } },
+        React.createElement("div", { style: { display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 } }, campos.map(({ key, label }) => (React.createElement("div", { key: key, style: { flex: 1, minWidth: 70, textAlign: 'center' } },
+            React.createElement("label", { style: { fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 4, textTransform: 'uppercase' } }, label),
+            React.createElement("input", { type: "number", min: 0, value: vals[key], onChange: e => set(key, e.target.value), style: {
+                    width: '100%', height: 44, borderRadius: 8,
+                    background: '#1e2230', border: '1px solid #6366f1',
+                    color: '#f1f5f9', textAlign: 'center',
+                    fontSize: 18, fontWeight: 700, fontFamily: 'inherit', outline: 'none',
+                } }))))),
+        React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 } },
+            React.createElement("span", { style: { fontSize: 13, color: '#94a3b8' } },
+                "Actual: ",
+                React.createElement("strong", { style: { color: actual < (vals.minimo || 0) && vals.minimo > 0 ? '#ef4444' : '#22c55e' } }, actual))),
+        React.createElement("div", { style: { display: 'flex', gap: 8 } },
+            React.createElement("button", { onClick: guardar, style: { flex: 2, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 } },
+                React.createElement(Icon, { name: "check", size: 14 }),
+                " Guardar"),
+            React.createElement("button", { onClick: onPedir, style: { flex: 1, background: inPedido ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)', border: `1px solid ${inPedido ? '#22c55e' : '#6366f1'}`, color: inPedido ? '#22c55e' : '#818cf8', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 13 } }, inPedido ? '✓ En pedidos' : '+ Pedir'))));
+}
 function TabStock({ data, setData, showToast }) {
     const [busqueda, setBusqueda] = React.useState('');
     const [scanning, setScanning] = React.useState(false);
@@ -1359,11 +1394,10 @@ function TabStock({ data, setData, showToast }) {
         (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()));
     const bajoMinimo = productos.filter(p => p.stock.minimo > 0 && p.actual < p.stock.minimo);
-    const updateStock = (ref, field, val) => {
-        setData(d => {
-            const cur = (d.stock || {})[ref] || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
-            return { ...d, stock: { ...d.stock, [ref]: { ...cur, [field]: Math.maxval } } };
-        });
+    const saveStock = (ref, vals) => {
+        setData(d => ({ ...d, stock: { ...d.stock, [ref]: vals } }));
+        showToast('Stock guardado', 'success');
+        setEditRef(null);
     };
     const agregarAPedido = (p) => {
         if ((data.pedidos || []).find(x => x.codigoRef === p.codigoRef)) {
@@ -1415,32 +1449,25 @@ function TabStock({ data, setData, showToast }) {
                 React.createElement("div", { style: { marginTop: 12, fontSize: 14 } }, "Sin productos"))) : (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } }, productos.map(p => {
                 const bajo = p.stock.minimo > 0 && p.actual < p.stock.minimo;
                 const foto = data.fotos[p.codigoRef];
-                const inPedido = (data.pedidos || []).find(x => x.codigoRef === p.codigoRef);
+                const inPedido = !!(data.pedidos || []).find(x => x.codigoRef === p.codigoRef);
                 const isEdit = editRef === p.codigoRef;
                 return (React.createElement("div", { key: p.codigoRef, style: { background: '#1e2230', borderRadius: 12, border: `1px solid ${bajo ? 'rgba(239,68,68,0.4)' : '#1e2535'}` } },
-                    React.createElement("div", { style: { padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }, onClick: () => setEditRef(isEdit ? null : p.codigoRef) },
+                    React.createElement("div", { style: { padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }, onClick: () => setEditRef(isEdit ? null : p.codigoRef) },
                         foto
                             ? React.createElement("img", { src: foto, alt: "", onClick: e => { e.stopPropagation(); setPhotoZoom(foto); }, style: { width: 48, height: 48, borderRadius: 8, objectFit: 'cover', flexShrink: 0, cursor: 'zoom-in' } })
                             : React.createElement("div", { style: { width: 48, height: 48, borderRadius: 8, background: '#111827', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', fontSize: 20 } }, "\uD83D\uDCE6"),
                         React.createElement("div", { style: { flex: 1, minWidth: 0 } },
                             React.createElement("div", { style: { display: 'flex', gap: 6, alignItems: 'center' } },
-                                React.createElement("span", { style: { fontSize: 12, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 } }, p.codigoRef),
+                                React.createElement("span", { style: { fontSize: 13, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 } }, p.codigoRef),
                                 p.codigoProv && React.createElement("span", { style: { fontSize: 11, color: '#4b5563' } }, p.codigoProv),
                                 bajo && React.createElement("span", { className: "badge", style: { background: 'rgba(239,68,68,0.2)', color: '#ef4444' } }, "\u26A0 Bajo m\u00EDn.")),
-                            React.createElement("div", { style: { fontSize: 13, color: '#cbd5e1', marginTop: 2, textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, p.descripcion)),
+                            React.createElement("div", { style: { fontSize: 13, color: '#cbd5e1', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, p.descripcion)),
                         React.createElement("div", { style: { textAlign: 'right', flexShrink: 0 } },
-                            React.createElement("div", { style: { fontSize: 20, fontWeight: 700, color: bajo ? '#ef4444' : '#f1f5f9' } }, p.actual),
+                            React.createElement("div", { style: { fontSize: 24, fontWeight: 700, color: bajo ? '#ef4444' : '#f1f5f9' } }, p.actual),
                             p.stock.minimo > 0 && React.createElement("div", { style: { fontSize: 11, color: '#6b7280' } },
                                 "m\u00EDn: ",
                                 p.stock.minimo))),
-                    isEdit && (React.createElement("div", { style: { borderTop: '1px solid #111827', padding: '12px 14px', background: '#161b27' } },
-                        React.createElement("div", { style: { display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 } }, ['inicial', 'entradas', 'salidas', 'minimo'].map(field => (React.createElement("div", { key: field, style: { flex: 1, minWidth: 70 } },
-                            React.createElement("label", { style: { fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 4, textTransform: 'uppercase' } }, field),
-                            React.createElement("input", { type: "number", min: 0, defaultValue: p.stock[field] || 0, onBlur: e => updateStock(p.codigoRef, field, parseInt(e.target.value) || 0), onKeyDown: e => { if (e.key === 'Enter') {
-                                    updateStock(p.codigoRef, field, parseInt(e.target.value) || 0);
-                                    e.target.blur();
-                                } }, style: { width: '100%', height: 44, borderRadius: 8, background: '#1e2230', border: '1px solid #6366f1', color: '#f1f5f9', textAlign: 'center', fontSize: 18, fontWeight: 700, fontFamily: 'inherit', outline: 'none' } }))))),
-                        React.createElement("button", { onClick: () => agregarAPedido(p), style: { width: '100%', padding: '8px', borderRadius: 8, background: inPedido ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)', border: `1px solid ${inPedido ? '#22c55e' : '#6366f1'}`, color: inPedido ? '#22c55e' : '#818cf8', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 13 } }, inPedido ? '✓ En pedidos' : '+ Pedir')))));
+                    isEdit && (React.createElement(StockEditor, { key: p.codigoRef + '-editor', codigoRef: p.codigoRef, stock: p.stock, onSave: vals => saveStock(p.codigoRef, vals), onPedir: () => agregarAPedido(p), inPedido: inPedido }))));
             })))),
         photoZoom && (React.createElement("div", { onClick: () => setPhotoZoom(null), style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 } },
             React.createElement("img", { src: photoZoom, alt: "", style: { maxWidth: '100%', maxHeight: '85vh', borderRadius: 16, objectFit: 'contain' } }))),
