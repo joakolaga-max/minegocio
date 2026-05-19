@@ -1427,7 +1427,7 @@ function TabStock({ data, setData, showToast }) {
                                 React.createElement("span", { style: { fontSize: 12, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 } }, p.codigoRef),
                                 p.codigoProv && React.createElement("span", { style: { fontSize: 11, color: '#4b5563' } }, p.codigoProv),
                                 bajo && React.createElement("span", { className: "badge", style: { background: 'rgba(239,68,68,0.2)', color: '#ef4444' } }, "\u26A0 Bajo m\u00EDn.")),
-                            React.createElement("div", { style: { fontSize: 13, color: '#cbd5e1', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, p.descripcion)),
+                            React.createElement("div", { style: { fontSize: 13, color: '#cbd5e1', marginTop: 2, textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, p.descripcion)),
                         React.createElement("div", { style: { textAlign: 'right', flexShrink: 0 } },
                             React.createElement("div", { style: { fontSize: 20, fontWeight: 700, color: bajo ? '#ef4444' : '#f1f5f9' } }, p.actual),
                             p.stock.minimo > 0 && React.createElement("div", { style: { fontSize: 11, color: '#6b7280' } },
@@ -1436,7 +1436,10 @@ function TabStock({ data, setData, showToast }) {
                     isEdit && (React.createElement("div", { style: { borderTop: '1px solid #111827', padding: '12px 14px', background: '#161b27' } },
                         React.createElement("div", { style: { display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 10 } }, ['inicial', 'entradas', 'salidas', 'minimo'].map(field => (React.createElement("div", { key: field, style: { flex: 1, minWidth: 70 } },
                             React.createElement("label", { style: { fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 4, textTransform: 'uppercase' } }, field),
-                            React.createElement("input", { type: "number", min: 0, value: p.stock[field] || 0, onChange: e => updateStock(p.codigoRef, field, parseInt(e.target.value) || 0), style: { width: '100%', height: 36, borderRadius: 8, background: '#1e2230', border: '1px solid #374151', color: '#f1f5f9', textAlign: 'center', fontSize: 14, fontWeight: 700, fontFamily: 'inherit' } }))))),
+                            React.createElement("input", { type: "number", min: 0, defaultValue: p.stock[field] || 0, onBlur: e => updateStock(p.codigoRef, field, parseInt(e.target.value) || 0), onKeyDown: e => { if (e.key === 'Enter') {
+                                    updateStock(p.codigoRef, field, parseInt(e.target.value) || 0);
+                                    e.target.blur();
+                                } }, style: { width: '100%', height: 44, borderRadius: 8, background: '#1e2230', border: '1px solid #6366f1', color: '#f1f5f9', textAlign: 'center', fontSize: 18, fontWeight: 700, fontFamily: 'inherit', outline: 'none' } }))))),
                         React.createElement("button", { onClick: () => agregarAPedido(p), style: { width: '100%', padding: '8px', borderRadius: 8, background: inPedido ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)', border: `1px solid ${inPedido ? '#22c55e' : '#6366f1'}`, color: inPedido ? '#22c55e' : '#818cf8', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 13 } }, inPedido ? '✓ En pedidos' : '+ Pedir')))));
             })))),
         photoZoom && (React.createElement("div", { onClick: () => setPhotoZoom(null), style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 } },
