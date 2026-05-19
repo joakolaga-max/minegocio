@@ -83,7 +83,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import {
       getAuth,
       signInWithEmailAndPassword,
@@ -101,12 +101,15 @@
       messagingSenderId: "301429118303",
       appId: "1:301429118303:web:d67ee5239378746d8252ea"
     });
-    const db = getFirestore(app);
-    // Enable offline persistence
-    enableIndexedDbPersistence(db).catch(err => {
-      if (err.code === 'failed-precondition') console.warn('Offline persistence: multiple tabs open');
-      else if (err.code === 'unimplemented') console.warn('Offline persistence not supported');
-    });
+    const db = (() => {
+      try {
+        return initializeFirestore(app, {
+          cache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+        });
+      } catch(e) {
+        return getFirestore(app);
+      }
+    })();
     const auth = getAuth(app);
 
     // ── Firebase helpers with per-user path ──
