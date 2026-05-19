@@ -61,12 +61,10 @@
       input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
     </style>
   <script>
-    // Unregister old service workers and register new one
+    // Unregister ALL service workers - not needed
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(regs => {
         for (const reg of regs) reg.unregister();
-      }).then(() => {
-        navigator.serviceWorker.register('/minegocio/sw.js?v=5');
       });
     }
   </script>
@@ -175,6 +173,6 @@
     window.dispatchEvent(new Event("fbReady"));
   </script>
 
-  <script src="dist/app.js?v=1779159039"></script>
+  <script src="dist/app.js"></script>
 </body>
 </html>
