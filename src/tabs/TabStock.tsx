@@ -46,7 +46,7 @@ function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }: {
     <div style={{ borderTop: '1px solid #111827', padding: '12px 14px', background: '#161b27' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
         {campos.map(({ label, value, set }) => (
-          <div key={key} style={{ textAlign: 'center' }}>
+          <div key={label} style={{ textAlign: 'center' }}>
             <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 4, textTransform: 'uppercase' }}>{label}</label>
             <input
               type="number" min={0}
