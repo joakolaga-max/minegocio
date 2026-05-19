@@ -1379,7 +1379,7 @@ function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }) {
     return (React.createElement("div", { style: { borderTop: '1px solid #111827', padding: '12px 14px', background: '#161b27' } },
         React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 10 } }, campos.map(({ label, value, set }) => (React.createElement("div", { key: label, style: { textAlign: 'center' } },
             React.createElement("label", { style: { fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 4, textTransform: 'uppercase' } }, label),
-            React.createElement("input", { type: "number", min: 0, value: vals[key], onChange: e => set(key, e.target.value), style: {
+            React.createElement("input", { type: "number", min: 0, value: value, onChange: e => set(e.target.value), style: {
                     width: '100%', height: 44, borderRadius: 8,
                     background: '#1e2230', border: '1px solid #6366f1',
                     color: '#f1f5f9', textAlign: 'center',
