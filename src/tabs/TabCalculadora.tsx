@@ -192,12 +192,12 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
                     <div style={{ fontSize: 16, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{item.descripcion}</div>
                     {(() => {
                       const s = (data.stock || {})[item.codigoRef || ''];
-                      const actual = s ? (s.inicial||0)+(s.entradas||0)-(s.salidas||0) : null;
+                      const actual = s ? (s.inicial||0)+(s.entradas||0)-(s.salidas||0) : 0;
                       const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
-                      if (actual !== null && actual <= 0 && !inPedido) return (
+                      if (actual <= 0 && !inPedido) return (
                         <span style={{ color: '#ef4444', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>● Sin stock</span>
                       );
-                      if (actual !== null && actual <= 0 && inPedido) return (
+                      if (actual <= 0 && inPedido) return (
                         <span style={{ color: '#fbbf24', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>● En pedido</span>
                       );
                       return null;
@@ -207,9 +207,9 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
                     <span style={{ fontSize: 12, color: '#6b7280' }}>{fmtPeso(item.precioVenta)} c/u</span>
                     {(() => {
                       const s = (data.stock || {})[item.codigoRef || ''];
-                      const actual = s ? (s.inicial||0)+(s.entradas||0)-(s.salidas||0) : null;
+                      const actual = s ? (s.inicial||0)+(s.entradas||0)-(s.salidas||0) : 0;
                       const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
-                      if (actual !== null && actual <= 0 && !inPedido) return (
+                      if (actual <= 0 && !inPedido) return (
                         <button onClick={() => {
                           const prod = (data.misProductos || []).find(p => p.codigoRef === item.codigoRef);
                           if (!prod) return;
