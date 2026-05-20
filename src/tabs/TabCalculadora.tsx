@@ -188,40 +188,8 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
             {items.map((item, i) => (
               <div key={i} style={{ background: '#111827', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ fontSize: 16, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{item.descripcion}</div>
-                    {(() => {
-                      const s = (data.stock || {})[item.codigoRef || ''];
-                      const actual = s ? (s.inicial||0)+(s.entradas||0)-(s.salidas||0) : null;
-                      const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
-                      if (actual !== null && actual <= 0 && !inPedido) return (
-                        <span style={{ color: '#ef4444', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>● Sin stock</span>
-                      );
-                      if (actual !== null && actual <= 0 && inPedido) return (
-                        <span style={{ color: '#fbbf24', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>● En pedido</span>
-                      );
-                      return null;
-                    })()}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-                    <span style={{ fontSize: 12, color: '#6b7280' }}>{fmtPeso(item.precioVenta)} c/u</span>
-                    {(() => {
-                      const s = (data.stock || {})[item.codigoRef || ''];
-                      const actual = s ? (s.inicial||0)+(s.entradas||0)-(s.salidas||0) : null;
-                      const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
-                      if (actual !== null && actual <= 0 && !inPedido) return (
-                        <button onClick={() => {
-                          const prod = (data.misProductos || []).find(p => p.codigoRef === item.codigoRef);
-                          if (!prod) return;
-                          setData(d => ({ ...d, pedidos: [...(d.pedidos||[]), { codigoRef: prod.codigoRef, codigoProv: prod.codigoProv||'', descripcion: prod.descripcion, cantidad: 1, proveedor: prod.proveedor||'', precioCosto: prod.precioCosto||0 }] }));
-                          showToast('Agregado a pedidos', 'success');
-                        }} style={{ fontSize: 11, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 8, padding: '2px 8px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 }}>
-                          + Pedir
-                        </button>
-                      );
-                      return null;
-                    })()}
-                  </div>
+                  <div style={{ fontSize: 16, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.descripcion}</div>
+                  <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{fmtPeso(item.precioVenta)} c/u</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <button onClick={() => setItems(its => its.map((x, j) => j === i ? { ...x, cantidad: Math.max(1, x.cantidad - 1) } : x))}

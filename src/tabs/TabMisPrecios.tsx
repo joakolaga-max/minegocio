@@ -407,33 +407,65 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                 ? `${p.margen}%`
                 : `${data.margenes[p.margen as keyof typeof data.margenes]}%`;
               const codBarras = (p as any).codigoBarras;
-              const isExpanded = expandedRef === p.codigoRef;
+
+              // Info content shared between both layouts
+              const infoContent = (
+                <>
+                  {foto && <img src={foto} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0, marginTop: 2 }} />}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {codBarras && <div style={{ fontSize: 10, color: '#4b5563', fontFamily: 'monospace' }}>{codBarras}</div>}
+                    <div style={{ fontSize: 17, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800 }}>{p.codigoRef}</div>
+                    <div style={{ fontSize: 13, color: '#cbd5e1', wordBreak: 'break-word' }}>{p.descripcion}</div>
+                    <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap', marginTop: 2 }}>
+                      {p.codigoProv && <span style={{ fontSize: 10, color: '#4b5563' }}>{p.codigoProv}</span>}
+                      <span style={{ fontSize: 10, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '1px 6px', borderRadius: 10 }}>{margenLabel}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
+                      {fmt(p.precioCosto)} <span style={{ color: '#22c55e', fontWeight: 700 }}>→ {fmt(pv)}</span>
+                      {p.divisor && p.divisor > 1 ? <span style={{ color: '#6b7280' }}> ({fmt(pv / p.divisor)} c/u)</span> : null}
+                    </div>
+                  </div>
+                </>
+              );
+
               const idx2 = (data.misProductos || []).indexOf(p);
 
-              return (
-                <div key={i} style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', marginBottom: 2 }}>
-                  {/* Header - tap to expand */}
-                  <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-                    onClick={() => setExpandedRef(isExpanded ? null : p.codigoRef)}>
-                    {foto && <img src={foto} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      {codBarras && <div style={{ fontSize: 10, color: '#4b5563', fontFamily: 'monospace' }}>{codBarras}</div>}
-                      <div style={{ fontSize: 16, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800 }}>{p.codigoRef}</div>
-                      <div style={{ fontSize: 13, color: '#cbd5e1', wordBreak: 'break-word' }}>{p.descripcion}</div>
-                      <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap', marginTop: 2 }}>
-                        {p.codigoProv && <span style={{ fontSize: 10, color: '#4b5563' }}>{p.codigoProv}</span>}
-                        <span style={{ fontSize: 10, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '1px 6px', borderRadius: 10 }}>{margenLabel}</span>
-                      </div>
-                      <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
-                        {fmt(p.precioCosto)} <span style={{ color: '#22c55e', fontWeight: 700 }}>→ {fmt(pv)}</span>
-                        {p.divisor && p.divisor > 1 ? <span> ({fmt(pv / p.divisor)} c/u)</span> : null}
+              if (isMobile) {
+                // MOBILE: botones siempre visibles a la derecha, sin expand
+                return (
+                  <div key={i} style={{ background: '#1e2230', borderRadius: 12, padding: '10px 12px', marginBottom: 2 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      {infoContent}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flexShrink: 0 }}>
+                        <button onClick={() => editar(idx2)}
+                          style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 8, padding: '5px 8px', cursor: 'pointer' }}>
+                          <Icon name="settings" size={13} />
+                        </button>
+                        <button onClick={() => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion })}
+                          style={{ background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.3)', color: '#22c55e', borderRadius: 8, padding: '5px 8px', cursor: 'pointer' }}>
+                          <Icon name="camera" size={13} />
+                        </button>
+                        <button onClick={() => eliminar(idx2)}
+                          style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '5px 8px', cursor: 'pointer' }}>
+                          <Icon name="trash" size={13} />
+                        </button>
                       </div>
                     </div>
-                    <span style={{ color: '#4b5563', fontSize: 14, flexShrink: 0 }}>{isExpanded ? '▲' : '▼'}</span>
                   </div>
-                  {/* Actions - expanded */}
+                );
+              }
+
+              // DESKTOP: expand panel on click
+              const isExpanded = expandedRef === p.codigoRef;
+              return (
+                <div key={i} style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535' }}>
+                  <div style={{ padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 10 }}
+                    onClick={() => setExpandedRef(isExpanded ? null : p.codigoRef)}>
+                    {infoContent}
+                    <span style={{ color: '#4b5563', fontSize: 16, flexShrink: 0 }}>{isExpanded ? '▲' : '▼'}</span>
+                  </div>
                   {isExpanded && (
-                    <div style={{ margin: '0 10px 10px', borderRadius: 10, padding: '8px', display: 'flex', gap: 8, background: '#111827' }}>
+                    <div style={{ margin: '0 12px 12px', borderRadius: 10, padding: '10px', display: 'flex', gap: 8, background: '#111827' }}>
                       <button onClick={() => { editar(idx2); setExpandedRef(null); }}
                         style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 }}>
                         <Icon name="settings" size={14} /> Editar

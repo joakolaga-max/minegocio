@@ -44,7 +44,7 @@ function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }: {
 
   return (
     <div style={{ borderTop: '1px solid #111827', padding: '12px 14px', background: '#161b27' }}>
-      <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
         {campos.map(({ label, value, set }) => (
           <div key={label} style={{ textAlign: 'center' }}>
             <label style={{ fontSize: 10, color: '#6b7280', display: 'block', marginBottom: 4, textTransform: 'uppercase' }}>{label}</label>
