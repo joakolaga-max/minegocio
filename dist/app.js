@@ -677,11 +677,11 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                         React.createElement("div", { style: { fontSize: 16, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 } }, item.descripcion),
                         (() => {
                             const s = (data.stock || {})[item.codigoRef || ''];
-                            const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : null;
+                            const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
                             const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
-                            if (actual !== null && actual <= 0 && !inPedido)
+                            if (actual <= 0 && !inPedido)
                                 return (React.createElement("span", { style: { color: '#ef4444', fontSize: 11, fontWeight: 700, flexShrink: 0 } }, "\u25CF Sin stock"));
-                            if (actual !== null && actual <= 0 && inPedido)
+                            if (actual <= 0 && inPedido)
                                 return (React.createElement("span", { style: { color: '#fbbf24', fontSize: 11, fontWeight: 700, flexShrink: 0 } }, "\u25CF En pedido"));
                             return null;
                         })()),
@@ -691,9 +691,9 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                             " c/u"),
                         (() => {
                             const s = (data.stock || {})[item.codigoRef || ''];
-                            const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : null;
+                            const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
                             const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
-                            if (actual !== null && actual <= 0 && !inPedido)
+                            if (actual <= 0 && !inPedido)
                                 return (React.createElement("button", { onClick: () => {
                                         const prod = (data.misProductos || []).find(p => p.codigoRef === item.codigoRef);
                                         if (!prod)
