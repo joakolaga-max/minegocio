@@ -458,7 +458,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
             </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, isolation: 'isolate' }}>
             {expandedRef ? (
               // Modo expandido: solo muestra el producto seleccionado (igual que Stock)
               (() => {
@@ -477,7 +477,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                       style={{ width: '100%', marginBottom: 8, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', color: '#818cf8', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 }}>
                       ← Volver a la lista
                     </button>
-                    <div style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #6366f1' }}>
+                    <div style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #6366f1', transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)', isolation: 'isolate' }}>
                       <div style={{ padding: '12px 14px' }}>
                         {foto && <img src={foto} alt="" style={{ width: 90, height: 90, borderRadius: 10, objectFit: 'cover', marginBottom: 10, display: 'block' }} />}
                         {codBarras && <div style={{ fontSize: 10, color: '#4b5563', fontFamily: 'monospace', marginBottom: 2 }}>{codBarras}</div>}
@@ -513,7 +513,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                 const codBarras = (p as any).codigoBarras;
                 const idx2 = (data.misProductos || []).indexOf(p);
                 return (
-                  <div key={i} style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', marginBottom: 2 }}>
+                  <div key={i} style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', marginBottom: 2, transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)', isolation: 'isolate', contain: 'layout style' }}>
                     <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
                       onClick={() => setExpandedRef(p.codigoRef)}>
                       {foto && <img src={foto} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
