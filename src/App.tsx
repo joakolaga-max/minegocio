@@ -77,7 +77,7 @@ export default function App() {
   return (
     <div style={{ minHeight: '100vh', background: '#0d1117', color: '#f1f5f9', fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
       {/* Header */}
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: 'rgba(13,17,23,0.95)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #1e2535', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px' }}>
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, background: /Android/i.test(navigator.userAgent) ? 'rgba(13,17,23,0.99)' : 'rgba(13,17,23,0.95)', backdropFilter: /Android/i.test(navigator.userAgent) ? 'none' : 'blur(12px)', borderBottom: '1px solid #1e2535', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏪</div>
           <div>
