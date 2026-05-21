@@ -671,10 +671,10 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
         items.length === 0 ? (React.createElement("div", { style: { textAlign: 'center', padding: '40px 20px', color: '#374151' } },
             React.createElement(Icon, { name: "store", size: 44 }),
             React.createElement("div", { style: { marginTop: 12, fontSize: 14, color: '#6b7280' } }, "Busc\u00E1 un producto para agregar"))) : (React.createElement(React.Fragment, null,
-            React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 } }, items.map((item, i) => (React.createElement("div", { key: i, style: { background: '#111827', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10 } },
+            React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 } }, items.map((item, i) => (React.createElement("div", { key: i, style: { background: '#111827', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 } },
                 React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                    React.createElement("div", { style: { fontSize: 15, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, item.codigoRef || item.descripcion),
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' } },
+                    React.createElement("div", { style: { fontSize: 14, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, item.codigoRef || item.descripcion),
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 } },
                         React.createElement("span", { style: { fontSize: 12, color: '#6b7280' } },
                             fmtPeso(item.precioVenta),
                             " c/u"),
@@ -683,17 +683,17 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                             const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
                             const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
                             if (actual <= 0 && inPedido)
-                                return React.createElement("span", { style: { color: '#fbbf24', fontSize: 11, fontWeight: 700 } }, "\u25CF En pedido");
+                                return React.createElement("span", { style: { color: '#fbbf24', fontSize: 10, fontWeight: 700 } }, "\u25CF En pedido");
                             if (actual <= 0 && !inPedido)
                                 return (React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 4 } },
-                                    React.createElement("span", { style: { color: '#ef4444', fontSize: 11, fontWeight: 700 } }, "\u25CF Sin stock"),
+                                    React.createElement("span", { style: { color: '#ef4444', fontSize: 10, fontWeight: 700 } }, "\u25CF Sin stock"),
                                     React.createElement("button", { onClick: () => {
                                             const prod = (data.misProductos || []).find(p => p.codigoRef === item.codigoRef);
                                             if (!prod)
                                                 return;
                                             setData(d => ({ ...d, pedidos: [...(d.pedidos || []), { codigoRef: prod.codigoRef, codigoProv: prod.codigoProv || '', descripcion: prod.descripcion, cantidad: 1, proveedor: prod.proveedor || '', precioCosto: prod.precioCosto || 0 }] }));
                                             showToast('Agregado a pedidos', 'success');
-                                        }, style: { fontSize: 11, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 8, padding: '2px 8px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 } }, "+ Pedir")));
+                                        }, style: { fontSize: 10, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 6, padding: '1px 6px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 } }, "+ Pedir")));
                             return null;
                         })())),
                 React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6 } },

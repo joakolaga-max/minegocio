@@ -43,11 +43,14 @@ function parseXLSX(buffer: ArrayBuffer): Producto[] {
   for (const cols of rows) {
     const cod = String(cols[0] ?? '').trim();
     const desc = String(cols[1] ?? '').trim();
-    const priceRaw = String(cols[2] ?? '0').trim();
     // Skip empty rows and header rows
     if (!cod || !desc) continue;
     if (cod.toUpperCase() === 'CODIGO' || cod.toUpperCase() === 'COD') continue;
-    const precio = parsePrecio(priceRaw);
+    // If Excel already parsed it as number, use it directly (avoid string conversion bug)
+    const priceRaw = cols[2];
+    const precio = (typeof priceRaw === 'number') 
+      ? Math.round(priceRaw * 100) / 100
+      : parsePrecio(String(priceRaw ?? '0'));
     productos.push({
       codigo: cod.toUpperCase(),
       descripcion: desc,
