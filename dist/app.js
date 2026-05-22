@@ -1084,10 +1084,9 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
         }
         setDivisor(p.divisor || 1);
         setEditIdx(i);
-        // Scroll form into view
+        // Scroll form into view (only when actually editing)
         setTimeout(() => {
             formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            window.scrollTo({ top: 0, behavior: 'smooth' });
         }, 50);
     };
     const eliminar = (i) => {
