@@ -32,7 +32,7 @@ function ProductoAcciones({ onEditar, onFoto, onEliminar }: {
   onEliminar: () => void;
 }) {
   return (
-    <div style={{ margin: '0 10px 10px', borderRadius: 10, padding: '8px', display: 'flex', gap: 8, background: '#111827' }}>
+    <div style={{ margin: '0 10px 10px', borderRadius: 10, padding: '8px', display: 'flex', gap: 8, background: '#111827', transform: 'translate3d(0,0,0)', position: 'relative', zIndex: 2 }}>
       <button onClick={onEditar}
         style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 }}>
         <Icon name="settings" size={14} /> Editar
@@ -485,7 +485,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                       style={{ width: '100%', marginBottom: 8, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', color: '#818cf8', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 }}>
                       ← Volver a la lista
                     </button>
-                    <div style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #6366f1' }}>
+                    <div style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #6366f1', transform: 'translate3d(0,0,0)', position: 'relative', zIndex: 1 }}>
                       <div style={{ padding: '12px 14px' }}>
                         {foto && <img src={foto} alt="" style={{ width: 90, height: 90, borderRadius: 10, objectFit: 'cover', marginBottom: 10, display: 'block' }} />}
                         {codBarras && <div style={{ fontSize: 10, color: '#4b5563', fontFamily: 'monospace', marginBottom: 2 }}>{codBarras}</div>}
