@@ -1364,7 +1364,11 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                         : `${data.margenes[p.margen]}%`;
                     const codBarras = p.codigoBarras;
                     return (React.createElement("div", { key: p.codigoRef, style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', marginBottom: 2 } },
-                        React.createElement("div", { style: { padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }, onClick: () => setExpandedRef(p.codigoRef) },
+                        React.createElement("div", { style: { padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }, onClick: () => {
+                                const scrollY = window.scrollY;
+                                setExpandedRef(p.codigoRef);
+                                requestAnimationFrame(() => window.scrollToscrollY);
+                            } },
                             foto && React.createElement("img", { src: foto, alt: "", style: { width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 } }),
                             React.createElement("div", { style: { flex: 1, minWidth: 0 } },
                                 codBarras && React.createElement("div", { style: { fontSize: 10, color: '#4b5563', fontFamily: 'monospace' } }, codBarras),

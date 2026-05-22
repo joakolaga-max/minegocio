@@ -68,6 +68,21 @@
       });
     }
   </script>
+  <style>
+    /* Force Firebase auth iframe into isolated GPU layer */
+    iframe[src*="firebase"],
+    iframe[src*="firebaseapp"],
+    iframe[name^="I0_"] {
+      transform: translateZ(0) !important;
+      will-change: transform !important;
+      isolation: isolate !important;
+      contain: strict !important;
+    }
+    #root {
+      transform: translateZ(0);
+      will-change: auto;
+    }
+  </style>
 </head>
 <body style="isolation:isolate">
   <div id="root">
