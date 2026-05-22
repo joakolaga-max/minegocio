@@ -79,7 +79,9 @@
       contain: strict !important;
     }
     #root {
-      transform: translateZ(0);
+      transform: translate3d(0,0,0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
       will-change: auto;
     }
   </style>
