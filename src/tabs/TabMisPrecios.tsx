@@ -458,40 +458,43 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
             </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, isolation: 'isolate' }}>
-            {expandedRef ? (
-              // Modo expandido: solo muestra el producto seleccionado (igual que Stock)
-              (() => {
-                const p = filtrados.find(x => x.codigoRef === expandedRef);
-                if (!p) return null;
-                const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
-                const foto = data.fotos[p.codigoRef];
-                const margenLabel = typeof p.margen === 'number'
-                  ? `${p.margen}%`
-                  : `${data.margenes[p.margen as keyof typeof data.margenes]}%`;
-                const codBarras = (p as any).codigoBarras;
-                const idx2 = (data.misProductos || []).indexOf(p);
-                return (
-                  <div>
-                    <button onClick={() => setExpandedRef(null)}
-                      style={{ width: '100%', marginBottom: 8, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', color: '#818cf8', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 }}>
-                      ← Volver a la lista
-                    </button>
-                    <div style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #6366f1', transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)', isolation: 'isolate' }}>
-                      <div style={{ padding: '12px 14px' }}>
-                        {foto && <img src={foto} alt="" style={{ width: 90, height: 90, borderRadius: 10, objectFit: 'cover', marginBottom: 10, display: 'block' }} />}
-                        {codBarras && <div style={{ fontSize: 10, color: '#4b5563', fontFamily: 'monospace', marginBottom: 2 }}>{codBarras}</div>}
-                        <div style={{ fontSize: 18, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800 }}>{p.codigoRef}</div>
-                        <div style={{ fontSize: 14, color: '#cbd5e1', marginTop: 4, wordBreak: 'break-word' }}>{p.descripcion}</div>
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 6, flexWrap: 'wrap' }}>
-                          {p.codigoProv && <span style={{ fontSize: 11, color: '#4b5563' }}>{p.codigoProv}</span>}
-                          <span style={{ fontSize: 11, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: 10 }}>{margenLabel}</span>
-                        </div>
-                        <div style={{ fontSize: 13, color: '#6b7280', marginTop: 6 }}>
-                          {fmt(p.precioCosto)} <span style={{ color: '#22c55e', fontWeight: 700 }}>→ {fmt(pv)}</span>
-                          {p.divisor && p.divisor > 1 ? <span> ({fmt(pv / p.divisor)} c/u)</span> : null}
-                        </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {filtrados.slice(0, paginaSize).map((p, i) => {
+              const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
+              const foto = data.fotos[p.codigoRef];
+              const margenLabel = typeof p.margen === 'number'
+                ? `${p.margen}%`
+                : `${data.margenes[p.margen as keyof typeof data.margenes]}%`;
+              const codBarras = (p as any).codigoBarras;
+              const idx2 = (data.misProductos || []).indexOf(p);
+              const isOpen = expandedRef === p.codigoRef;
+              return (
+                <div key={p.codigoRef} style={{ background: '#1e2230', borderRadius: 12, border: `1px solid ${isOpen ? '#6366f1' : '#1e2535'}` }}>
+                  {/* Fila principal — siempre visible */}
+                  <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                    onClick={() => setExpandedRef(isOpen ? null : p.codigoRef)}>
+                    {foto && <img src={foto} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {codBarras && <div style={{ fontSize: 10, color: '#4b5563', fontFamily: 'monospace' }}>{codBarras}</div>}
+                      <div style={{ fontSize: 15, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.codigoRef}</div>
+                      <div style={{ fontSize: 12, color: '#cbd5e1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 2 }}>
+                        {p.codigoProv && <span style={{ fontSize: 10, color: '#4b5563' }}>{p.codigoProv}</span>}
+                        <span style={{ fontSize: 10, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '1px 6px', borderRadius: 10 }}>{margenLabel}</span>
                       </div>
+                      <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
+                        {fmt(p.precioCosto)} <span style={{ color: '#22c55e', fontWeight: 700 }}>→ {fmt(pv)}</span>
+                        {p.divisor && p.divisor > 1 ? <span> ({fmt(pv / p.divisor)} c/u)</span> : null}
+                      </div>
+                    </div>
+                    <span style={{ color: isOpen ? '#818cf8' : '#4b5563', fontSize: 14, flexShrink: 0, transition: 'transform 0.2s', display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none' }}>▼</span>
+                  </div>
+
+                  {/* Acciones inline — solo cuando está abierto, sin desmontar la lista */}
+                  {isOpen && (
+                    <div style={{ borderTop: '1px solid #111827', padding: '10px 12px', background: '#161b27', borderRadius: '0 0 12px 12px' }}>
+                      {foto && <img src={foto} alt="" style={{ width: 72, height: 72, borderRadius: 8, objectFit: 'cover', marginBottom: 10, display: 'block' }} />}
+                      <div style={{ fontSize: 13, color: '#cbd5e1', marginBottom: 10, wordBreak: 'break-word' }}>{p.descripcion}</div>
                       <ProductoAcciones
                         key={p.codigoRef + '-actions'}
                         onEditar={() => { editar(idx2); setExpandedRef(null); }}
@@ -499,48 +502,15 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                         onEliminar={() => { eliminar(idx2); setExpandedRef(null); }}
                       />
                     </div>
-                  </div>
-                );
-              })()
-            ) : (
-              // Modo lista normal
-              filtrados.slice(0, paginaSize).map((p, i) => {
-                const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
-                const foto = data.fotos[p.codigoRef];
-                const margenLabel = typeof p.margen === 'number'
-                  ? `${p.margen}%`
-                  : `${data.margenes[p.margen as keyof typeof data.margenes]}%`;
-                const codBarras = (p as any).codigoBarras;
-                const idx2 = (data.misProductos || []).indexOf(p);
-                return (
-                  <div key={i} style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', marginBottom: 2, transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)', isolation: 'isolate', contain: 'layout style' }}>
-                    <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-                      onClick={() => setExpandedRef(p.codigoRef)}>
-                      {foto && <img src={foto} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        {codBarras && <div style={{ fontSize: 10, color: '#4b5563', fontFamily: 'monospace' }}>{codBarras}</div>}
-                        <div style={{ fontSize: 16, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800 }}>{p.codigoRef}</div>
-                        <div style={{ fontSize: 13, color: '#cbd5e1', wordBreak: 'break-word' }}>{p.descripcion}</div>
-                        <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap', marginTop: 2 }}>
-                          {p.codigoProv && <span style={{ fontSize: 10, color: '#4b5563' }}>{p.codigoProv}</span>}
-                          <span style={{ fontSize: 10, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '1px 6px', borderRadius: 10 }}>{margenLabel}</span>
-                        </div>
-                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
-                          {fmt(p.precioCosto)} <span style={{ color: '#22c55e', fontWeight: 700 }}>→ {fmt(pv)}</span>
-                          {p.divisor && p.divisor > 1 ? <span> ({fmt(pv / p.divisor)} c/u)</span> : null}
-                        </div>
-                      </div>
-                      <span style={{ color: '#4b5563', fontSize: 14, flexShrink: 0 }}>▼</span>
-                    </div>
-                  </div>
-                );
-              })
-            )}
+                  )}
+                </div>
+              );
+            })}
 
             {filtrados.length > paginaSize && (
               <button onClick={() => setPaginaSize(prev => prev + 30)}
                 style={{ width: '100%', padding: '12px', borderRadius: 12, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 14 }}>
-                Ver mas productos
+                Ver más ({filtrados.length - paginaSize} restantes)
               </button>
             )}
           </div>
