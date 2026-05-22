@@ -1324,7 +1324,10 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
             filtrados.length === 0 ? (React.createElement("div", { style: { textAlign: 'center', padding: '40px 20px', color: '#374151' } },
                 React.createElement(Icon, { name: "tag", size: 40 }),
                 React.createElement("div", { style: { marginTop: 12, fontSize: 14, color: '#6b7280' } }, (data.misProductos || []).length === 0 ? 'Todavía no agregaste productos' : 'Sin resultados'))) : (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
-                filtrados.slice(0, paginaSize).map((p, i) => {
+                expandedRef ? ((() => {
+                    const p = filtrados.find(x => x.codigoRef === expandedRef);
+                    if (!p)
+                        return null;
                     const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
                     const foto = data.fotos[p.codigoRef];
                     const margenLabel = typeof p.margen === 'number'
@@ -1332,12 +1335,38 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                         : `${data.margenes[p.margen]}%`;
                     const codBarras = p.codigoBarras;
                     const idx2 = (data.misProductos || []).indexOf(p);
-                    const isOpen = expandedRef === p.codigoRef;
-                    return (React.createElement("div", { key: p.codigoRef, style: { background: '#1e2230', borderRadius: 12, border: `1px solid ${isOpen ? '#6366f1' : '#1e2535'}` } },
-                        React.createElement("div", { style: { padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }, onClick: () => setExpandedRef(isOpen ? null : p.codigoRef) },
-                            foto
-                                ? React.createElement("div", { style: { width: 44, height: 44, borderRadius: 8, background: '#2a3040', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 } }, "\uD83D\uDDBC")
-                                : null,
+                    return (React.createElement("div", null,
+                        React.createElement("button", { onClick: () => setExpandedRef(null), style: { width: '100%', marginBottom: 8, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', color: '#818cf8', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 } }, "\u2190 Volver a la lista"),
+                        React.createElement("div", { style: { background: '#1e2230', borderRadius: 12, border: '1px solid #6366f1' } },
+                            React.createElement("div", { style: { padding: '12px 14px' } },
+                                foto && React.createElement("img", { src: foto, alt: "", style: { width: 90, height: 90, borderRadius: 10, objectFit: 'cover', marginBottom: 10, display: 'block' } }),
+                                codBarras && React.createElement("div", { style: { fontSize: 10, color: '#4b5563', fontFamily: 'monospace', marginBottom: 2 } }, codBarras),
+                                React.createElement("div", { style: { fontSize: 18, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800 } }, p.codigoRef),
+                                React.createElement("div", { style: { fontSize: 14, color: '#cbd5e1', marginTop: 4, wordBreak: 'break-word' } }, p.descripcion),
+                                React.createElement("div", { style: { display: 'flex', gap: 6, alignItems: 'center', marginTop: 6, flexWrap: 'wrap' } },
+                                    p.codigoProv && React.createElement("span", { style: { fontSize: 11, color: '#4b5563' } }, p.codigoProv),
+                                    React.createElement("span", { style: { fontSize: 11, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: 10 } }, margenLabel)),
+                                React.createElement("div", { style: { fontSize: 13, color: '#6b7280', marginTop: 6 } },
+                                    fmt(p.precioCosto),
+                                    " ",
+                                    React.createElement("span", { style: { color: '#22c55e', fontWeight: 700 } },
+                                        "\u2192 ",
+                                        fmt(pv)),
+                                    p.divisor && p.divisor > 1 ? React.createElement("span", null,
+                                        " (",
+                                        fmt(pv / p.divisor),
+                                        " c/u)") : null)),
+                            React.createElement(ProductoAcciones, { key: p.codigoRef + '-actions', onEditar: () => { editar(idx2); setExpandedRef(null); }, onFoto: () => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion }), onEliminar: () => { eliminar(idx2); setExpandedRef(null); } }))));
+                })()) : (filtrados.slice(0, paginaSize).map((p, i) => {
+                    const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
+                    const foto = data.fotos[p.codigoRef];
+                    const margenLabel = typeof p.margen === 'number'
+                        ? `${p.margen}%`
+                        : `${data.margenes[p.margen]}%`;
+                    const codBarras = p.codigoBarras;
+                    return (React.createElement("div", { key: p.codigoRef, style: { background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', marginBottom: 2 } },
+                        React.createElement("div", { style: { padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }, onClick: () => setExpandedRef(p.codigoRef) },
+                            foto && React.createElement("img", { src: foto, alt: "", style: { width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 } }),
                             React.createElement("div", { style: { flex: 1, minWidth: 0 } },
                                 codBarras && React.createElement("div", { style: { fontSize: 10, color: '#4b5563', fontFamily: 'monospace' } }, codBarras),
                                 React.createElement("div", { style: { fontSize: 15, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, p.codigoRef),
@@ -1355,12 +1384,8 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                                         " (",
                                         fmt(pv / p.divisor),
                                         " c/u)") : null)),
-                            React.createElement("span", { style: { color: isOpen ? '#818cf8' : '#4b5563', fontSize: 12, flexShrink: 0 } }, isOpen ? '▲' : '▼')),
-                        isOpen && (React.createElement("div", { style: { borderTop: '1px solid #111827', padding: '12px 14px', background: '#161b27', borderRadius: '0 0 12px 12px' } },
-                            foto && (React.createElement(FotoDelayada, { src: foto, style: { width: 80, height: 80, borderRadius: 8, objectFit: 'cover', marginBottom: 10, display: 'block' } })),
-                            React.createElement("div", { style: { fontSize: 13, color: '#cbd5e1', marginBottom: 10, wordBreak: 'break-word' } }, p.descripcion),
-                            React.createElement(ProductoAcciones, { key: p.codigoRef + '-actions', onEditar: () => { editar(idx2); setExpandedRef(null); }, onFoto: () => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion }), onEliminar: () => { eliminar(idx2); setExpandedRef(null); } })))));
-                }),
+                            React.createElement("span", { style: { color: '#4b5563', fontSize: 14, flexShrink: 0 } }, "\u25BC"))));
+                })),
                 filtrados.length > paginaSize && (React.createElement("button", { onClick: () => setPaginaSize(prev => prev + 30), style: { width: '100%', padding: '12px', borderRadius: 12, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, fontSize: 14 } },
                     "Ver m\u00E1s (",
                     filtrados.length - paginaSize,
