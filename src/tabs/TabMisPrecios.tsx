@@ -15,7 +15,17 @@ interface Props {
 const MARGEN_LABELS: Record<string, string> = { p1: 'p1', p2: 'p2', p3: 'p3', p4: 'p4' };
 
 
-// Subcomponente separado - evita el bug de Android al expandir
+// Muestra la foto con delay para evitar el glitch de GPU en Android
+function FotoDelayada({ src, style }: { src: string; style: React.CSSProperties }) {
+  const [visible, setVisible] = React.useState(false);
+  React.useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 150);
+    return () => clearTimeout(t);
+  }, []);
+  if (!visible) return <div style={{ ...style, background: '#111827', borderRadius: (style.borderRadius as any) || 8 }} />;
+  return <img src={src} alt="" style={style} />;
+}
+
 function ProductoAcciones({ onEditar, onFoto, onEliminar }: {
   onEditar: () => void;
   onFoto: () => void;
@@ -470,10 +480,14 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
               const isOpen = expandedRef === p.codigoRef;
               return (
                 <div key={p.codigoRef} style={{ background: '#1e2230', borderRadius: 12, border: `1px solid ${isOpen ? '#6366f1' : '#1e2535'}` }}>
-                  {/* Fila principal — siempre visible */}
+                  {/* Fila principal — siempre visible, sin foto para no saturar GPU */}
                   <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
                     onClick={() => setExpandedRef(isOpen ? null : p.codigoRef)}>
-                    {foto && <img src={foto} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
+                    {/* Thumbnail solo como placeholder de color, sin decodificar imagen */}
+                    {foto
+                      ? <div style={{ width: 44, height: 44, borderRadius: 8, background: '#2a3040', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🖼</div>
+                      : null
+                    }
                     <div style={{ flex: 1, minWidth: 0 }}>
                       {codBarras && <div style={{ fontSize: 10, color: '#4b5563', fontFamily: 'monospace' }}>{codBarras}</div>}
                       <div style={{ fontSize: 15, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.codigoRef}</div>
@@ -487,13 +501,18 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                         {p.divisor && p.divisor > 1 ? <span> ({fmt(pv / p.divisor)} c/u)</span> : null}
                       </div>
                     </div>
-                    <span style={{ color: isOpen ? '#818cf8' : '#4b5563', fontSize: 14, flexShrink: 0, transition: 'transform 0.2s', display: 'inline-block', transform: isOpen ? 'rotate(180deg)' : 'none' }}>▼</span>
+                    <span style={{ color: isOpen ? '#818cf8' : '#4b5563', fontSize: 12, flexShrink: 0 }}>{isOpen ? '▲' : '▼'}</span>
                   </div>
 
-                  {/* Acciones inline — solo cuando está abierto, sin desmontar la lista */}
+                  {/* Panel expandido inline — la imagen se muestra con delay para no glitchear */}
                   {isOpen && (
-                    <div style={{ borderTop: '1px solid #111827', padding: '10px 12px', background: '#161b27', borderRadius: '0 0 12px 12px' }}>
-                      {foto && <img src={foto} alt="" style={{ width: 72, height: 72, borderRadius: 8, objectFit: 'cover', marginBottom: 10, display: 'block' }} />}
+                    <div style={{ borderTop: '1px solid #111827', padding: '12px 14px', background: '#161b27', borderRadius: '0 0 12px 12px' }}>
+                      {foto && (
+                        <FotoDelayada
+                          src={foto}
+                          style={{ width: 80, height: 80, borderRadius: 8, objectFit: 'cover', marginBottom: 10, display: 'block' }}
+                        />
+                      )}
                       <div style={{ fontSize: 13, color: '#cbd5e1', marginBottom: 10, wordBreak: 'break-word' }}>{p.descripcion}</div>
                       <ProductoAcciones
                         key={p.codigoRef + '-actions'}
