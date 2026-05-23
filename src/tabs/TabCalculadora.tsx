@@ -29,6 +29,9 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
   const [scanning, setScanning] = useState(false);
   const [showPresupuesto, setShowPresupuesto] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showCustom, setShowCustom] = useState(false);
+  const [customDesc, setCustomDesc] = useState('');
+  const [customPrecio, setCustomPrecio] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const total = items.reduce((sum, i) => sum + i.precioVenta * i.cantidad, 0);
@@ -125,6 +128,9 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
           </div>
           <button className="btn-ghost" style={{ padding: '8px 12px', flexShrink: 0 }} onClick={() => setScanning(true)}>
             <Icon name="camera" size={18} />
+          </button>
+          <button className="btn-ghost" style={{ padding: '8px 12px', flexShrink: 0, color: '#818cf8' }} onClick={() => { setCustomDesc(''); setCustomPrecio(''); setShowCustom(true); }}>
+            <span style={{ fontSize: 18, fontWeight: 700 }}>$+</span>
           </button>
         </div>
 
@@ -255,6 +261,72 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
           }}
           data={data}
         />
+      )}
+
+      {/* Custom item modal */}
+      {showCustom && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onClick={() => setShowCustom(false)}>
+          <div style={{ background: '#1e2230', borderRadius: 16, padding: 20, width: '100%', maxWidth: 400 }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontWeight: 700, fontSize: 16, color: '#f1f5f9', marginBottom: 16 }}>Agregar importe libre</div>
+            <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Descripción</label>
+            <input className="input-field" style={{ marginBottom: 12 }}
+              placeholder="Ej: Mano de obra, Flete..."
+              value={customDesc}
+              onChange={e => setCustomDesc(e.target.value)}
+              autoFocus
+            />
+            <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Precio</label>
+            <input className="input-field" style={{ marginBottom: 20 }}
+              type="number" placeholder="0"
+              value={customPrecio}
+              onChange={e => setCustomPrecio(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  const precio = parseFloat(customPrecio.replace(',', '.')) || 0;
+                  if (!customDesc.trim() || precio <= 0) return;
+                  setItems(prev => [...prev, {
+                    codigoRef: customDesc.trim(),
+                    descripcion: customDesc.trim(),
+                    codigoProv: '',
+                    precioCosto: precio,
+                    precioVenta: precio,
+                    cantidad: 1,
+                    margen: 0,
+                    proveedor: '',
+                    divisor: 1,
+                  }]);
+                  setShowCustom(false);
+                }
+              }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setShowCustom(false)}
+                style={{ flex: 1, padding: '12px', borderRadius: 10, background: 'none', border: '1px solid #374151', color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>
+                Cancelar
+              </button>
+              <button onClick={() => {
+                const precio = parseFloat(customPrecio.replace(',', '.')) || 0;
+                if (!customDesc.trim() || precio <= 0) return;
+                setItems(prev => [...prev, {
+                  codigoRef: customDesc.trim(),
+                  descripcion: customDesc.trim(),
+                  codigoProv: '',
+                  precioCosto: precio,
+                  precioVenta: precio,
+                  cantidad: 1,
+                  margen: 0,
+                  proveedor: '',
+                  divisor: 1,
+                }]);
+                setShowCustom(false);
+              }} style={{ flex: 2, padding: '12px', borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700 }}>
+                Agregar al carrito
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {scanning && (

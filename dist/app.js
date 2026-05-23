@@ -560,6 +560,9 @@ function TabCalculadora({ data, setData, showToast }) {
     const [scanning, setScanning] = React.useState(false);
     const [showPresupuesto, setShowPresupuesto] = React.useState(false);
     const [showSuggestions, setShowSuggestions] = React.useState(false);
+    const [showCustom, setShowCustom] = React.useState(false);
+    const [customDesc, setCustomDesc] = React.useState('');
+    const [customPrecio, setCustomPrecio] = React.useState('');
     const inputRef = React.useRef(null);
     const total = items.reduce((sum, i) => sum + i.precioVenta * i.cantidad, 0);
     const sugerencias = busqueda.length > 0
@@ -637,7 +640,9 @@ function TabCalculadora({ data, setData, showToast }) {
                     React.createElement("input", { ref: inputRef, className: "input-field", style: { paddingLeft: 38 }, placeholder: "Buscar por REF, cod proveedor o c\u00F3digo de barras...", value: busqueda, onChange: e => { setBusqueda(e.target.value); setShowSuggestions(true); }, onKeyDown: e => { if (e.key === 'Enter' && sugerencias.length > 0)
                             agregarProducto(sugerencias[0].codigoRef); } })),
                 React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', flexShrink: 0 }, onClick: () => setScanning(true) },
-                    React.createElement(Icon, { name: "camera", size: 18 }))),
+                    React.createElement(Icon, { name: "camera", size: 18 })),
+                React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', flexShrink: 0, color: '#818cf8' }, onClick: () => { setCustomDesc(''); setCustomPrecio(''); setShowCustom(true); } },
+                    React.createElement("span", { style: { fontSize: 18, fontWeight: 700 } }, "$+"))),
             showSuggestions && sugerencias.length > 0 && (React.createElement("div", { style: { position: 'absolute', top: '100%', left: 0, right: 0, background: '#1e2230', border: '1px solid #374151', borderRadius: 12, zIndex: 50, maxHeight: 300, overflowY: 'auto', marginTop: 4 } }, sugerencias.map((p, i) => {
                 const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
                 const s = (data.stock || {})[p.codigoRef];
@@ -707,6 +712,50 @@ function TabCalculadora({ data, setData, showToast }) {
                 showToast('Presupuesto guardado', 'success');
                 setShowPresupuesto(false);
             }, data: data })),
+        showCustom && (React.createElement("div", { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }, onClick: () => setShowCustom(false) },
+            React.createElement("div", { style: { background: '#1e2230', borderRadius: 16, padding: 20, width: '100%', maxWidth: 400 }, onClick: e => e.stopPropagation() },
+                React.createElement("div", { style: { fontWeight: 700, fontSize: 16, color: '#f1f5f9', marginBottom: 16 } }, "Agregar importe libre"),
+                React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 } }, "Descripci\u00F3n"),
+                React.createElement("input", { className: "input-field", style: { marginBottom: 12 }, placeholder: "Ej: Mano de obra, Flete...", value: customDesc, onChange: e => setCustomDesc(e.target.value), autoFocus: true }),
+                React.createElement("label", { style: { fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 } }, "Precio"),
+                React.createElement("input", { className: "input-field", style: { marginBottom: 20 }, type: "number", placeholder: "0", value: customPrecio, onChange: e => setCustomPrecio(e.target.value), onKeyDown: e => {
+                        if (e.key === 'Enter') {
+                            const precio = parseFloat(customPrecio.replace(',', '.')) || 0;
+                            if (!customDesc.trim() || precio <= 0)
+                                return;
+                            setItems(prev => [...prev, {
+                                    codigoRef: customDesc.trim(),
+                                    descripcion: customDesc.trim(),
+                                    codigoProv: '',
+                                    precioCosto: precio,
+                                    precioVenta: precio,
+                                    cantidad: 1,
+                                    margen: 0,
+                                    proveedor: '',
+                                    divisor: 1,
+                                }]);
+                            setShowCustom(false);
+                        }
+                    } }),
+                React.createElement("div", { style: { display: 'flex', gap: 8 } },
+                    React.createElement("button", { onClick: () => setShowCustom(false), style: { flex: 1, padding: '12px', borderRadius: 10, background: 'none', border: '1px solid #374151', color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 } }, "Cancelar"),
+                    React.createElement("button", { onClick: () => {
+                            const precio = parseFloat(customPrecio.replace(',', '.')) || 0;
+                            if (!customDesc.trim() || precio <= 0)
+                                return;
+                            setItems(prev => [...prev, {
+                                    codigoRef: customDesc.trim(),
+                                    descripcion: customDesc.trim(),
+                                    codigoProv: '',
+                                    precioCosto: precio,
+                                    precioVenta: precio,
+                                    cantidad: 1,
+                                    margen: 0,
+                                    proveedor: '',
+                                    divisor: 1,
+                                }]);
+                            setShowCustom(false);
+                        }, style: { flex: 2, padding: '12px', borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700 } }, "Agregar al carrito"))))),
         scanning && (React.createElement(Scanner, { onResult: code => { setScanning(false); agregarProducto(code.toUpperCase()); }, onClose: () => setScanning(false) }))));
 }
 
