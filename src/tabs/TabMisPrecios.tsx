@@ -524,7 +524,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                       onClick={() => {
                       const scrollY = window.scrollY;
                       setExpandedRef(p.codigoRef);
-                      requestAnimationFrame(() => window.scrollTo(0, scrollY));
+                      requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'auto' })));
                     }}>
                       {foto && <img src={foto} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
                       <div style={{ flex: 1, minWidth: 0 }}>
