@@ -657,15 +657,15 @@ function TabCalculadora({ data, setData, showToast }) {
                 const s = (data.stock || {})[item.codigoRef || ''];
                 const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
                 const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
-                return (React.createElement("div", { key: i, style: { background: '#111827', borderRadius: 12, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap' } },
-                    React.createElement("div", { style: { flex: 1, minWidth: 0, overflow: 'hidden' } },
-                        React.createElement("div", { style: { fontSize: 13, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, item.codigoRef || item.descripcion),
+                return (React.createElement("div", { key: i, style: { background: '#111827', borderRadius: 12, padding: '10px 12px' } },
+                    React.createElement("div", { style: { marginBottom: 8 } },
+                        React.createElement("div", { style: { fontSize: 14, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, item.codigoRef || item.descripcion),
                         React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 } },
-                            React.createElement("span", { style: { fontSize: 11, color: '#6b7280', flexShrink: 0 } },
+                            React.createElement("span", { style: { fontSize: 11, color: '#6b7280' } },
                                 fmtPeso(item.precioVenta),
                                 " c/u"),
-                            actual <= 0 && inPedido && (React.createElement("span", { style: { color: '#fbbf24', fontSize: 10, fontWeight: 700, flexShrink: 0 } }, "\u25CF En pedido")),
-                            actual <= 0 && !inPedido && (React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0 } },
+                            actual <= 0 && inPedido && (React.createElement("span", { style: { color: '#fbbf24', fontSize: 10, fontWeight: 700 } }, "\u25CF En pedido")),
+                            actual <= 0 && !inPedido && (React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 4 } },
                                 React.createElement("span", { style: { color: '#ef4444', fontSize: 10, fontWeight: 700 } }, "\u25CF Sin stock"),
                                 React.createElement("button", { onClick: () => {
                                         const prod = (data.misProductos || []).find(p => p.codigoRef === item.codigoRef);
@@ -673,15 +673,15 @@ function TabCalculadora({ data, setData, showToast }) {
                                             return;
                                         setData(d => ({ ...d, pedidos: [...(d.pedidos || []), { codigoRef: prod.codigoRef, codigoProv: prod.codigoProv || '', descripcion: prod.descripcion, cantidad: 1, proveedor: prod.proveedor || '', precioCosto: prod.precioCosto || 0 }] }));
                                         showToast('Agregado a pedidos', 'success');
-                                    }, style: { fontSize: 10, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 6, padding: '1px 5px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 } }, "+Pedir"))))),
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 } },
-                        React.createElement("button", { onClick: () => updateQty(i, -1), style: { width: 28, height: 28, borderRadius: 8, background: '#374151', border: 'none', color: '#f1f5f9', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, "\u2212"),
-                        React.createElement("span", { style: { minWidth: 24, textAlign: 'center', fontWeight: 700, fontSize: 14, color: '#f1f5f9' } }, item.cantidad),
-                        React.createElement("button", { onClick: () => updateQty(i, 1), style: { width: 28, height: 28, borderRadius: 8, background: '#6366f1', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, "+")),
-                    React.createElement("div", { style: { flexShrink: 0, minWidth: 64, textAlign: 'right' } },
-                        React.createElement("div", { style: { fontWeight: 700, color: '#22c55e', fontSize: 13 } }, fmtPeso(item.precioVenta * item.cantidad))),
-                    React.createElement("button", { onClick: () => removeItem(i), style: { width: 30, height: 30, borderRadius: 8, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 } },
-                        React.createElement(Icon, { name: "trash", size: 13 }))));
+                                    }, style: { fontSize: 10, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 6, padding: '1px 6px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 } }, "+Pedir"))))),
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+                        React.createElement("button", { onClick: () => removeItem(i), style: { width: 32, height: 32, borderRadius: 8, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 } },
+                            React.createElement(Icon, { name: "trash", size: 14 })),
+                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' } },
+                            React.createElement("button", { onClick: () => updateQty(i, -1), style: { width: 32, height: 32, borderRadius: 8, background: '#374151', border: 'none', color: '#f1f5f9', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, "\u2212"),
+                            React.createElement("span", { style: { minWidth: 28, textAlign: 'center', fontWeight: 700, fontSize: 16, color: '#f1f5f9' } }, item.cantidad),
+                            React.createElement("button", { onClick: () => updateQty(i, 1), style: { width: 32, height: 32, borderRadius: 8, background: '#6366f1', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, "+")),
+                        React.createElement("div", { style: { fontWeight: 700, color: '#22c55e', fontSize: 14, flexShrink: 0, minWidth: 70, textAlign: 'right' } }, fmtPeso(item.precioVenta * item.cantidad)))));
             })),
             React.createElement("div", { style: { background: 'linear-gradient(135deg,#1e3a2e,#1a3025)', borderRadius: 14, border: '1px solid #166534', padding: '14px 18px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
                 React.createElement("div", { style: { fontSize: 13, color: '#86efac', fontWeight: 600 } }, "Total"),

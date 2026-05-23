@@ -170,42 +170,46 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
               const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
               const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
               return (
-                <div key={i} style={{ background: '#111827', borderRadius: 12, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                    <div style={{ fontSize: 13, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div key={i} style={{ background: '#111827', borderRadius: 12, padding: '10px 12px' }}>
+                  {/* Row 1: name + stock */}
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 14, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.codigoRef || item.descripcion}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                      <span style={{ fontSize: 11, color: '#6b7280', flexShrink: 0 }}>{fmtPeso(item.precioVenta)} c/u</span>
+                      <span style={{ fontSize: 11, color: '#6b7280' }}>{fmtPeso(item.precioVenta)} c/u</span>
                       {actual <= 0 && inPedido && (
-                        <span style={{ color: '#fbbf24', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>● En pedido</span>
+                        <span style={{ color: '#fbbf24', fontSize: 10, fontWeight: 700 }}>● En pedido</span>
                       )}
                       {actual <= 0 && !inPedido && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           <span style={{ color: '#ef4444', fontSize: 10, fontWeight: 700 }}>● Sin stock</span>
                           <button onClick={() => {
                             const prod = (data.misProductos || []).find(p => p.codigoRef === item.codigoRef);
                             if (!prod) return;
                             setData(d => ({ ...d, pedidos: [...(d.pedidos || []), { codigoRef: prod.codigoRef, codigoProv: prod.codigoProv || '', descripcion: prod.descripcion, cantidad: 1, proveedor: prod.proveedor || '', precioCosto: prod.precioCosto || 0 }] }));
                             showToast('Agregado a pedidos', 'success');
-                          }} style={{ fontSize: 10, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 6, padding: '1px 5px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 }}>
+                          }} style={{ fontSize: 10, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 6, padding: '1px 6px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 }}>
                             +Pedir
                           </button>
                         </span>
                       )}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                    <button onClick={() => updateQty(i, -1)} style={{ width: 28, height: 28, borderRadius: 8, background: '#374151', border: 'none', color: '#f1f5f9', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                    <span style={{ minWidth: 24, textAlign: 'center', fontWeight: 700, fontSize: 14, color: '#f1f5f9' }}>{item.cantidad}</span>
-                    <button onClick={() => updateQty(i, 1)} style={{ width: 28, height: 28, borderRadius: 8, background: '#6366f1', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                  {/* Row 2: delete | - qty + | total */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button onClick={() => removeItem(i)} style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Icon name="trash" size={14} />
+                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
+                      <button onClick={() => updateQty(i, -1)} style={{ width: 32, height: 32, borderRadius: 8, background: '#374151', border: 'none', color: '#f1f5f9', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                      <span style={{ minWidth: 28, textAlign: 'center', fontWeight: 700, fontSize: 16, color: '#f1f5f9' }}>{item.cantidad}</span>
+                      <button onClick={() => updateQty(i, 1)} style={{ width: 32, height: 32, borderRadius: 8, background: '#6366f1', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                    </div>
+                    <div style={{ fontWeight: 700, color: '#22c55e', fontSize: 14, flexShrink: 0, minWidth: 70, textAlign: 'right' }}>
+                      {fmtPeso(item.precioVenta * item.cantidad)}
+                    </div>
                   </div>
-                  <div style={{ flexShrink: 0, minWidth: 64, textAlign: 'right' }}>
-                    <div style={{ fontWeight: 700, color: '#22c55e', fontSize: 13 }}>{fmtPeso(item.precioVenta * item.cantidad)}</div>
-                  </div>
-                  <button onClick={() => removeItem(i)} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Icon name="trash" size={13} />
-                  </button>
                 </div>
               );
             })}
