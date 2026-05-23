@@ -657,7 +657,7 @@ function TabCalculadora({ data, setData, showToast }) {
                 const s = (data.stock || {})[item.codigoRef || ''];
                 const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
                 const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
-                return (React.createElement("div", { key: i, style: { background: '#111827', borderRadius: 12, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 } },
+                return (React.createElement("div", { key: i, style: { background: '#111827', borderRadius: 12, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap' } },
                     React.createElement("div", { style: { flex: 1, minWidth: 0, overflow: 'hidden' } },
                         React.createElement("div", { style: { fontSize: 13, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, item.codigoRef || item.descripcion),
                         React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 } },
