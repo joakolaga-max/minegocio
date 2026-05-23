@@ -1,7 +1,5 @@
-const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-
 const ts = require('/home/claude/.npm-global/lib/node_modules/typescript/lib/typescript.js');
 
 function transpileFile(filePath) {
@@ -43,14 +41,19 @@ const files = [
   'src/main.tsx',
 ];
 
+// React hooks and APIs that should resolve directly from global React/ReactDOM
+const REACT_HOOKS = ['useState','useEffect','useRef','useCallback','useMemo','useContext',
+  'useReducer','useLayoutEffect','useImperativeHandle','useDebugValue','useId',
+  'createContext','createRef','forwardRef','memo','Fragment','Children','cloneElement','isValidElement'];
+
 let bundle = `// MiNegocio v2.0 - Built ${new Date().toISOString()}
-const { useState, useEffect, useRef, useCallback, useMemo } = React;
+const { ${REACT_HOOKS.join(', ')} } = React;
 
 const __modules = {};
 const __require = (name) => {
   if (name === 'react') return React;
   if (name === 'react-dom' || name === 'react-dom/client') return ReactDOM;
-  const key = name.replace(/^\\.\\//,'').replace(/\\.\\.\\/[^/]+\\//g,'').replace(/\\.(tsx?|jsx?)$/,'');
+  const key = name.replace(/^\\.\\//, '').replace(/\\.\\.\\/[^/]+\\//g, '').replace(/\\.(tsx?|jsx?)$/, '');
   if (__modules[key]) return __modules[key];
   for (const k of Object.keys(__modules)) {
     if (k === key || k.endsWith('/' + key) || k.endsWith(key)) return __modules[k];
@@ -61,17 +64,15 @@ const __require = (name) => {
 `;
 
 console.log('Compiling TypeScript...');
-
-function getFiles(dir, files = []) {
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) getFiles(full, files);
-    else if (/\.(tsx?|jsx?)$/.test(entry.name)) files.push(full);
+const srcFiles = [];
+function getFiles(dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) getFiles(full);
+    else if (/\.(tsx?|jsx?)$/.test(e.name)) srcFiles.push(full);
   }
-  return files;
 }
-const srcFiles = getFiles('./src');
+getFiles('./src');
 console.log(`Found ${srcFiles.length} source files`);
 
 for (const file of files) {
@@ -79,33 +80,33 @@ for (const file of files) {
   console.log(`  Compiling: ${file}`);
   let code = transpileFile(file);
 
-  // Strip TS boilerplate
+  // 1. Strip boilerplate
   code = code.replace(/^"use strict";\s*/mg, '');
   code = code.replace(/Object\.defineProperty\(exports,\s*["']__esModule["'],\s*\{[^}]*\}\);\s*/g, '');
+  code = code.replace(/var __importDefault\s*=[\s\S]*?;\n/g, '');
+  code = code.replace(/var __importStar\s*=[\s\S]*?;\n/g, '');
 
-  // Strip __importDefault / __importStar helpers entirely
-  code = code.replace(/var __importDefault\s*=.*?;\n/gs, '');
-  code = code.replace(/var __importStar\s*=.*?;\n/gs, '');
+  // 2. Remove react/reactdom require lines entirely
+  code = code.replace(/^const \w+ = require\(["']react['"]\);\s*\n/mg, '');
+  code = code.replace(/^const \w+ = require\(["']react-dom\/client['"]\);\s*\n/mg, '');
+  code = code.replace(/^const \w+ = require\(["']react-dom['"]\);\s*\n/mg, '');
 
-  // Replace react imports: const react_1 = require("react") -> removed, replace react_1.default -> React
-  code = code.replace(/^const \w+ = require\(["']react['"]\);\s*/mg, '');
-  code = code.replace(/^const \w+ = require\(["']react-dom['"]\);\s*/mg, '');
-  code = code.replace(/^const \w+ = require\(["']react-dom\/client['"]\);\s*/mg, '');
+  // 3. Replace (0, react_1.hookName)( -> hookName(
+  code = code.replace(/\(0,\s*react_1\.(use\w+|create\w+|memo|forwardRef|Fragment|Children|cloneElement|isValidElement)\)/g, '$1');
 
-  // Replace _1.default.createElement -> React.createElement etc
-  code = code.replace(/\b(\w+)_1\.default\.createElement/g, 'React.createElement');
-  code = code.replace(/\b(\w+)_1\.default\b/g, 'React');
+  // 4. Replace react_1.createElement -> React.createElement and react_1.X -> React.X
+  code = code.replace(/\breact_1\.createElement\b/g, 'React.createElement');
+  code = code.replace(/\breact_1\.(\w+)\b/g, 'React.$1');
 
-  // Replace remaining require() with __require()
+  // 5. Replace ReactDOM patterns
+  code = code.replace(/\(0,\s*client_1\.createRoot\)/g, 'ReactDOM.createRoot');
+  code = code.replace(/\bclient_1\.createRoot\b/g, 'ReactDOM.createRoot');
+
+  // 6. Replace remaining require() -> __require()
   code = code.replace(/\brequire\(/g, '__require(');
-
-  // Fix createRoot
-  code = code.replace(/\(0,\s*\w+\.createRoot\)/g, 'ReactDOM.createRoot');
-  code = code.replace(/\bReactDOM\.createRoot\b/g, 'ReactDOM.createRoot');
 
   const moduleName = file.replace(/^src\//, '').replace(/\.(tsx?|jsx?)$/, '');
   code = `\n// === ${file} ===\n(function() {\nconst exports = {};\n${code}\n__modules['${moduleName}'] = exports;\n})();\n`;
-
   bundle += code;
 }
 
