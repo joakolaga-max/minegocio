@@ -15,7 +15,7 @@ const DEFAULT_DATA: AppData = {
   pedidosHistorial: [],
 };
 
-const PATHS = ['proveedores', 'misProductos', 'config', 'stock', 'ventas', 'fotos', 'pedidos', 'pedidosHistorial'] as const;
+const PATHS = ['proveedores', 'misProductos', 'config', 'stock', 'ventas', 'fotos', 'pedidos', 'pedidosHistorial', 'presupuestos'] as const;
 
 export function useAppData(user: string | null) {
   const [data, setData] = useState<AppData>(DEFAULT_DATA);
@@ -26,7 +26,7 @@ export function useAppData(user: string | null) {
   const loadAll = useCallback(async () => {
     setSyncing(true);
     try {
-      const [provData, misData, config, stockData, ventasData, fotosData, pedidosData, pedHistData] =
+      const [provData, misData, config, stockData, ventasData, fotosData, pedidosData, pedHistData, presupuestosData] =
         await Promise.all(PATHS.map(p => loadFromFirebase(p)));
 
       setData(d => {
@@ -40,6 +40,7 @@ export function useAppData(user: string | null) {
           fotos: (fotosData as any) ?? d.fotos,
           pedidos: (pedidosData as any) ?? d.pedidos,
           pedidosHistorial: (pedHistData as any) ?? d.pedidosHistorial,
+          presupuestos: (presupuestosData as any) ?? d.presupuestos,
         };
         prevRef.current = newData;
         return newData;
@@ -78,6 +79,7 @@ export function useAppData(user: string | null) {
       if (s('fotos')) saves.push(saveToFirebase('fotos', data.fotos));
       if (s('pedidos')) saves.push(saveToFirebase('pedidos', data.pedidos));
       if (s('pedidosHistorial')) saves.push(saveToFirebase('pedidosHistorial', data.pedidosHistorial));
+      if (s('presupuestos')) saves.push(saveToFirebase('presupuestos', data.presupuestos));
       if (saves.length > 0) await Promise.all(saves);
       prevRef.current = data;
       setSyncing(false);
