@@ -671,39 +671,35 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
         items.length === 0 ? (React.createElement("div", { style: { textAlign: 'center', padding: '40px 20px', color: '#374151' } },
             React.createElement(Icon, { name: "store", size: 44 }),
             React.createElement("div", { style: { marginTop: 12, fontSize: 14, color: '#6b7280' } }, "Busc\u00E1 un producto para agregar"))) : (React.createElement(React.Fragment, null,
-            React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 } }, items.map((item, i) => (React.createElement("div", { key: i, style: { background: '#111827', borderRadius: 12, padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 } },
-                React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                    React.createElement("div", { style: { fontSize: 14, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, item.codigoRef || item.descripcion),
-                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 } },
-                        React.createElement("span", { style: { fontSize: 12, color: '#6b7280' } },
-                            fmtPeso(item.precioVenta),
-                            " c/u"),
-                        (() => {
-                            const s = (data.stock || {})[item.codigoRef || ''];
-                            const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
-                            const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
-                            if (actual <= 0 && inPedido)
-                                return React.createElement("span", { style: { color: '#fbbf24', fontSize: 10, fontWeight: 700 } }, "\u25CF En pedido");
-                            if (actual <= 0 && !inPedido)
-                                return (React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 4 } },
-                                    React.createElement("span", { style: { color: '#ef4444', fontSize: 10, fontWeight: 700 } }, "\u25CF Sin stock"),
-                                    React.createElement("button", { onClick: () => {
-                                            const prod = (data.misProductos || []).find(p => p.codigoRef === item.codigoRef);
-                                            if (!prod)
-                                                return;
-                                            setData(d => ({ ...d, pedidos: [...(d.pedidos || []), { codigoRef: prod.codigoRef, codigoProv: prod.codigoProv || '', descripcion: prod.descripcion, cantidad: 1, proveedor: prod.proveedor || '', precioCosto: prod.precioCosto || 0 }] }));
-                                            showToast('Agregado a pedidos', 'success');
-                                        }, style: { fontSize: 10, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 6, padding: '1px 6px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 } }, "+ Pedir")));
-                            return null;
-                        })())),
-                React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6 } },
-                    React.createElement("button", { onClick: () => setItems(its => its.map((x, j) => j === i ? { ...x, cantidad: Math.max(1, x.cantidad - 1) } : x)), style: { width: 28, height: 28, borderRadius: 6, background: '#374151', border: 'none', color: '#f1f5f9', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, "\u2212"),
-                    React.createElement("input", { type: "number", min: 1, value: item.cantidad, onChange: e => setItems(its => its.map((x, j) => j === i ? { ...x, cantidad: Math.max(1, parseInt(e.target.value) || 1) } : x)), style: { width: 44, height: 28, borderRadius: 6, background: '#1e2230', border: '1px solid #374151', color: '#f1f5f9', textAlign: 'center', fontSize: 13, fontWeight: 700, fontFamily: 'inherit' } }),
-                    React.createElement("button", { onClick: () => setItems(its => its.map((x, j) => j === i ? { ...x, cantidad: x.cantidad + 1 } : x)), style: { width: 28, height: 28, borderRadius: 6, background: '#6366f1', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, "+"),
-                    React.createElement("div", { style: { width: 70, textAlign: 'right', fontSize: 13, color: '#22c55e', fontWeight: 700 } }, fmtPesoInt(item.precioVenta * item.cantidad)),
-                    React.createElement("button", { onClick: () => setItems(its => its.filter((_, j) => j !== i)), style: { background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 6, padding: '5px 7px', cursor: 'pointer', display: 'flex', alignItems: 'center' } },
-                        React.createElement(Icon, { name: "trash", size: 13 }))))))),
-            React.createElement("div", { style: { background: 'linear-gradient(135deg,#1e3a2e,#1a3025)', borderRadius: 14, border: '1px solid #166534', padding: '14px 18px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+            React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 } },
+                items.map((item, i) => (React.createElement("div", { key: i, style: { background: '#111827', borderRadius: 12, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 } },
+                    React.createElement("div", { style: { flex: 1, minWidth: 0, overflow: 'hidden' } },
+                        React.createElement("div", { style: { fontSize: 13, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, item.codigoRef || item.descripcion),
+                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, overflow: 'hidden' } },
+                            React.createElement("span", { style: { fontSize: 11, color: '#6b7280', flexShrink: 0 } },
+                                fmtPeso(item.precioVenta),
+                                " c/u"),
+                            (() => {
+                                const s = (data.stock || {})[item.codigoRef || ''];
+                                const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
+                                const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
+                                if (actual <= 0 && inPedido)
+                                    return React.createElement("span", { style: { color: '#fbbf24', fontSize: 10, fontWeight: 700, flexShrink: 0 } }, "\u25CF En pedido");
+                                if (actual <= 0 && !inPedido)
+                                    return (React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0 } },
+                                        React.createElement("span", { style: { color: '#ef4444', fontSize: 10, fontWeight: 700 } }, "\u25CF Sin stock"),
+                                        React.createElement("button", { onClick: () => {
+                                                const prod = (data.misProductos || []).find(p => p.codigoRef === item.codigoRef);
+                                                if (!prod)
+                                                    return;
+                                                setData(d => ({ ...d, pedidos: [...(d.pedidos || []), { codigoRef: prod.codigoRef, codigoProv: prod.codigoProv || '', descripcion: prod.descripcion, cantidad: 1, proveedor: prod.proveedor || '', precioCosto: prod.precioCosto || 0 }] }));
+                                                showToast('Agregado a pedidos', 'success');
+                                            }, style: { fontSize: 10, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 6, padding: '1px 5px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 } }, "+Pedir")));
+                                return null;
+                            })())),
+                    "         ))}")) /* Total + actions */, { /* Total + actions */}
+                    < div, style = {}, { background: 'linear-gradient(135deg,#1e3a2e,#1a3025)', borderRadius: 14, border: '1px solid #166534', padding: '14px 18px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }),
+                ">",
                 React.createElement("div", { style: { fontSize: 13, color: '#86efac', fontWeight: 600 } }, "Total"),
                 React.createElement("div", { style: { fontSize: 24, fontWeight: 700, color: '#22c55e' } }, fmtPeso(total))),
             React.createElement("div", { style: { display: 'flex', gap: 8 } },
