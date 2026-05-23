@@ -1,22 +1,24 @@
-// MiNegocio v2.0 - Built 2026-05-23T05:24:07.093Z
-const { useState, useEffect, useRef, useCallback, useMemo, useContext, useReducer, useLayoutEffect, useImperativeHandle, useDebugValue, useId, createContext, createRef, forwardRef, memo, Fragment, Children, cloneElement, isValidElement } = React;
+
+// MiNegocio v2.0 - Built 2026-05-23T05:30:09.780Z
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
 
 const __modules = {};
 const __require = (name) => {
   if (name === 'react') return React;
   if (name === 'react-dom' || name === 'react-dom/client') return ReactDOM;
-  const key = name.replace(/^\.\//, '').replace(/\.\.\/[^/]+\//g, '').replace(/\.(tsx?|jsx?)$/, '');
+  const key = name.replace(/^\.\//,'').replace(/\.\.\/[^/]+\//g,'').replace(/\.(tsx?|jsx?)$/,'');
   if (__modules[key]) return __modules[key];
   for (const k of Object.keys(__modules)) {
     if (k === key || k.endsWith('/' + key) || k.endsWith(key)) return __modules[k];
   }
-  console.warn('Module not found:', name);
   return {};
 };
 
 // === src/types.ts ===
 (function() {
 const exports = {};
+const module = { exports };
 
 __modules['types'] = exports;
 })();
@@ -24,6 +26,7 @@ __modules['types'] = exports;
 // === src/lib/utils.ts ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.genId = exports.nowStr = exports.todayStr = exports.calcPrecioVenta = exports.fmtPesoInt = exports.fmtPeso = void 0;
 const fmtPeso = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2 }).format(n || 0);
 exports.fmtPeso = fmtPeso;
@@ -50,6 +53,7 @@ __modules['lib/utils'] = exports;
 // === src/lib/firebase.ts ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.loadFromFirebase = exports.saveToFirebase = void 0;
 const saveToFirebase = async (path, data) => {
     const w = window;
@@ -71,6 +75,7 @@ __modules['lib/firebase'] = exports;
 // === src/components/Icon.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.Icon = Icon;
 const icons = {
     search: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
@@ -103,6 +108,7 @@ __modules['components/Icon'] = exports;
 // === src/components/Toast.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.Toast = Toast;
 const colors = {
     success: { bg: 'rgba(34,197,94,0.15)', border: '#22c55e', text: '#22c55e' },
@@ -134,6 +140,7 @@ __modules['components/Toast'] = exports;
 // === src/components/Modal.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.Modal = Modal;
 const Icon_1 = __require("./Icon");
 function Modal({ title, onClose, children, position = 'center' }) {
@@ -161,6 +168,7 @@ __modules['components/Modal'] = exports;
 // === src/components/Scanner.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.Scanner = Scanner;
 const Icon_1 = __require("./Icon");
 function Scanner({ onResult, onClose }) {
@@ -283,6 +291,7 @@ __modules['components/Scanner'] = exports;
 // === src/components/LoginScreen.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.LoginScreen = LoginScreen;
 function LoginScreen({ onLogin }) {
     const [email, setEmail] = useState('');
@@ -367,6 +376,7 @@ __modules['components/LoginScreen'] = exports;
 // === src/components/Presupuesto.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.Presupuesto = Presupuesto;
 const Icon_1 = __require("./Icon");
 function Presupuesto({ items, total, onClose, onGuardar, empresaData, telefonoData, direccionData }) {
@@ -526,6 +536,7 @@ __modules['components/Presupuesto'] = exports;
 // === src/hooks/useAppData.ts ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.useAppData = useAppData;
 const firebase_1 = __require("../lib/firebase");
 const DEFAULT_MARGENES = { p1: 50, p2: 40, p3: 30, p4: 20 };
@@ -636,6 +647,7 @@ __modules['hooks/useAppData'] = exports;
 // === src/tabs/TabCalculadora.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.TabCalculadora = TabCalculadora;
 const utils_1 = __require("../lib/utils");
 const Icon_1 = __require("../components/Icon");
@@ -852,6 +864,7 @@ __modules['tabs/TabCalculadora'] = exports;
 // === src/tabs/TabProveedores.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.TabProveedores = TabProveedores;
 const Icon_1 = __require("../components/Icon");
 const parsePrecio = (s) => {
@@ -1051,6 +1064,7 @@ __modules['tabs/TabProveedores'] = exports;
 // === src/tabs/TabMisPrecios.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.TabMisPrecios = TabMisPrecios;
 const Icon_1 = __require("../components/Icon");
 const Scanner_1 = __require("../components/Scanner");
@@ -1547,6 +1561,7 @@ __modules['tabs/TabMisPrecios'] = exports;
 // === src/tabs/TabStock.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.TabStock = TabStock;
 const Icon_1 = __require("../components/Icon");
 const Scanner_1 = __require("../components/Scanner");
@@ -1691,6 +1706,7 @@ __modules['tabs/TabStock'] = exports;
 // === src/tabs/TabVentas.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.TabVentas = TabVentas;
 const Icon_1 = __require("../components/Icon");
 const Presupuesto_1 = __require("../components/Presupuesto");
@@ -1785,6 +1801,7 @@ __modules['tabs/TabVentas'] = exports;
 // === src/tabs/TabPedidos.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.TabPedidos = TabPedidos;
 const Icon_1 = __require("../components/Icon");
 const utils_1 = __require("../lib/utils");
@@ -2060,6 +2077,7 @@ __modules['tabs/TabPedidos'] = exports;
 // === src/tabs/TabPresupuestos.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.TabPresupuestos = TabPresupuestos;
 const Icon_1 = __require("../components/Icon");
 const Presupuesto_1 = __require("../components/Presupuesto");
@@ -2127,6 +2145,7 @@ __modules['tabs/TabPresupuestos'] = exports;
 // === src/tabs/TabConfig.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.TabConfig = TabConfig;
 const Icon_1 = __require("../components/Icon");
 function TabConfig({ data, setData, showToast }) {
@@ -2226,6 +2245,7 @@ __modules['tabs/TabConfig'] = exports;
 // === src/App.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 exports.default = App;
 const useAppData_1 = __require("./hooks/useAppData");
 const Toast_1 = __require("./components/Toast");
@@ -2351,10 +2371,11 @@ __modules['App'] = exports;
 // === src/main.tsx ===
 (function() {
 const exports = {};
+const module = { exports };
 const App_1 = __require("./App");
 const root = document.getElementById('root');
 if (root) {
-    ReactDOM.createRoot(root).render(React.createElement((__modules["App"] && (__modules["App"].default || __modules["App"])), null));
+    ReactDOM.createRoot(root).render(React.createElement((__modules['App'] && (__modules['App'].default || __modules['App'])), null));
 }
 
 __modules['main'] = exports;
