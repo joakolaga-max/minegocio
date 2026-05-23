@@ -113,6 +113,9 @@ export function TabPresupuestos({ data, setData, showToast, onCargarEnCalculador
           items={verPresupuesto.items}
           total={verPresupuesto.total}
           onClose={() => setVerPresupuesto(null)}
+          empresaData={data.empresa}
+          telefonoData={data.telefono}
+          direccionData={data.direccion}
         />
       )}
     </div>

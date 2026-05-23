@@ -20,10 +20,10 @@ export function TabConfig({ data, setData, showToast }: Props) {
   // Proveedores
   const [nombres, setNombres] = useState((data.proveedores || []).map(p => p.nombre));
 
-  // Presupuesto - read from data (Firebase synced)
-  const [empresa, setEmpresa] = useState(() => (data as any).empresa || localStorage.getItem('mn_empresa') || '');
-  const [telefono, setTelefono] = useState(() => (data as any).telefono || localStorage.getItem('mn_telefono') || '');
-  const [direccion, setDireccion] = useState(() => (data as any).direccion || localStorage.getItem('mn_direccion') || '');
+  // Presupuesto - sincronizado via Firebase
+  const [empresa, setEmpresa] = useState(() => data.empresa || localStorage.getItem('mn_empresa') || '');
+  const [telefono, setTelefono] = useState(() => data.telefono || localStorage.getItem('mn_telefono') || '');
+  const [direccion, setDireccion] = useState(() => data.direccion || localStorage.getItem('mn_direccion') || '');
 
   const mult = (pct: number) => pct >= 100 ? '∞' : (100 / (100 - pct)).toFixed(2) + 'x';
   const pct = (s: string) => Math.min(99, Math.max(1, parseFloat(s) || 1));
@@ -42,9 +42,7 @@ export function TabConfig({ data, setData, showToast }: Props) {
   };
 
   const guardarPresupuesto = () => {
-    // Save to Firebase via data
-    setData(d => ({ ...d, empresa, telefono, direccion } as any));
-    // Also save to localStorage as fallback
+    setData(d => ({ ...d, empresa, telefono, direccion }));
     localStorage.setItem('mn_empresa', empresa);
     localStorage.setItem('mn_telefono', telefono);
     localStorage.setItem('mn_direccion', direccion);
