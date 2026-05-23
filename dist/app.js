@@ -1,33 +1,95 @@
+// MiNegocio v3.0
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-// MiNegocio v3.0 - Built 2026-05-23T04:44:18.834Z
-const { useState, useEffect, useRef, useCallback } = React;
-const { createRoot } = ReactDOM;
 
-const __modules = {};
-const __require = (name) => {
-  if (name === "react") return React;
-  if (name === "react-dom" || name === "react-dom/client") return ReactDOM;
-  const key = name.replace(/^\.\//, "").replace(/\.(tsx?|jsx?)$/, "");
-  if (__modules[key]) return __modules[key];
-  for (const k of Object.keys(__modules)) {
-    if (k === key || k.endsWith("/" + key) || k.endsWith(key)) return __modules[k];
+// ── types ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
   }
-  return {};
-};
-
-// === src/types.ts ===
-(function() {
-const exports = {};
-const module = { exports };
-
-__modules["types"] = exports;
 })();
 
-// === src/lib/utils.ts ===
-(function() {
-const exports = {};
-const module = { exports };
-exports.genId = exports.nowStr = exports.todayStr = exports.calcPrecioVenta = exports.fmtPesoInt = exports.fmtPeso = void 0;
+// ── utils ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  exports.genId = exports.nowStr = exports.todayStr = exports.calcPrecioVenta = exports.fmtPesoInt = exports.fmtPeso = void 0;
 const fmtPeso = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2 }).format(n || 0);
 exports.fmtPeso = fmtPeso;
 const fmtPesoInt = (n) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0 }).format(n || 0);
@@ -47,14 +109,55 @@ exports.nowStr = nowStr;
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 exports.genId = genId;
 
-__modules["lib/utils"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/lib/firebase.ts ===
-(function() {
-const exports = {};
-const module = { exports };
-exports.loadFromFirebase = exports.saveToFirebase = void 0;
+// ── firebase ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  exports.loadFromFirebase = exports.saveToFirebase = void 0;
 const saveToFirebase = async (path, data) => {
     const w = window;
     if (w.__fb)
@@ -69,14 +172,55 @@ const loadFromFirebase = async (path) => {
 };
 exports.loadFromFirebase = loadFromFirebase;
 
-__modules["lib/firebase"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/components/Icon.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __importDefault = (this && this.__importDefault) || function (mod) {
+// ── Icon ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 exports.Icon = Icon;
@@ -106,14 +250,55 @@ function Icon({ name, size = 20, className = '' }) {
     return (react_1.default.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", className: className, style: { flexShrink: 0 } }, d.split(' M').filter(Boolean).map((seg, i) => (react_1.default.createElement("path", { key: i, d: (i === 0 ? '' : 'M') + seg })))));
 }
 
-__modules["components/Icon"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/components/Toast.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+// ── Toast ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -172,19 +357,60 @@ function Toast({ toast, onClose }) {
         } }, toast.msg));
 }
 
-__modules["components/Toast"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/components/Modal.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __importDefault = (this && this.__importDefault) || function (mod) {
+// ── Modal ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 exports.Modal = Modal;
 const react_1 = __importDefault(require("react"));
-const Icon_1 = __require("./Icon");
+const Icon_1 = require("./Icon");
 function Modal({ title, onClose, children, position = 'center' }) {
     return (react_1.default.createElement("div", { onClick: onClose, style: {
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
@@ -204,14 +430,55 @@ function Modal({ title, onClose, children, position = 'center' }) {
             children)));
 }
 
-__modules["components/Modal"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/components/Scanner.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+// ── Scanner ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -246,7 +513,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 exports.Scanner = Scanner;
 const react_1 = __importStar(require("react"));
-const Icon_1 = __require("./Icon");
+const Icon_1 = require("./Icon");
 function Scanner({ onResult, onClose }) {
     const videoRef = (0, react_1.useRef)(null);
     const cleanupRef = (0, react_1.useRef)(null);
@@ -361,14 +628,55 @@ function Scanner({ onResult, onClose }) {
             } }, "Apunt\u00E1 la c\u00E1mara al c\u00F3digo de barras")));
 }
 
-__modules["components/Scanner"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/components/LoginScreen.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+// ── LoginScreen ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -480,14 +788,55 @@ function LoginScreen({ onLogin }) {
                     react_1.default.createElement("span", { onClick: () => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); setResetSent(false); }, style: { color: '#818cf8', fontWeight: 600, cursor: 'pointer' } }, mode === 'login' ? 'Registrate' : 'Iniciá sesión'))))));
 }
 
-__modules["components/LoginScreen"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/components/Presupuesto.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+// ── Presupuesto ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -522,7 +871,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 exports.Presupuesto = Presupuesto;
 const react_1 = __importStar(require("react"));
-const Icon_1 = __require("./Icon");
+const Icon_1 = require("./Icon");
 function Presupuesto({ items, total, onClose, onGuardar, empresaData, telefonoData, direccionData }) {
     const [nombreEmpresa, setNombreEmpresa] = (0, react_1.useState)(() => empresaData || localStorage.getItem('mn_empresa') || '');
     const [telefono, setTelefono] = (0, react_1.useState)(() => telefonoData || localStorage.getItem('mn_telefono') || '');
@@ -674,15 +1023,57 @@ function Presupuesto({ items, total, onClose, onGuardar, empresaData, telefonoDa
                     " Imprimir / Guardar PDF")))));
 }
 
-__modules["components/Presupuesto"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/hooks/useAppData.ts ===
-(function() {
-const exports = {};
-const module = { exports };
-exports.useAppData = useAppData;
-const firebase_1 = __require("../lib/firebase");
+// ── useAppData ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  exports.useAppData = useAppData;
+const react_1 = require("react");
+const firebase_1 = require("../lib/firebase");
 const DEFAULT_MARGENES = { p1: 50, p2: 40, p3: 30, p4: 20 };
 const DEFAULT_DATA = {
     proveedores: Array.from({ length: 10 }, (_, i) => ({ id: i + 1, nombre: `Proveedor ${i + 1}`, productos: [] })),
@@ -779,14 +1170,55 @@ function useAppData(user) {
     return { data, setData, loaded, syncing };
 }
 
-__modules["hooks/useAppData"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/tabs/TabCalculadora.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+// ── TabCalculadora ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -821,10 +1253,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 exports.TabCalculadora = TabCalculadora;
 const react_1 = __importStar(require("react"));
-const utils_1 = __require("../lib/utils");
-const Icon_1 = __require("../components/Icon");
-const Scanner_1 = __require("../components/Scanner");
-const Presupuesto_1 = __require("../components/Presupuesto");
+const utils_1 = require("../lib/utils");
+const Icon_1 = require("../components/Icon");
+const Scanner_1 = require("../components/Scanner");
+const Presupuesto_1 = require("../components/Presupuesto");
 function TabCalculadora({ data, setData, showToast }) {
     const [items, setItems] = (0, react_1.useState)([]);
     const [busqueda, setBusqueda] = (0, react_1.useState)('');
@@ -1030,14 +1462,55 @@ function TabCalculadora({ data, setData, showToast }) {
         scanning && (react_1.default.createElement(Scanner_1.Scanner, { onResult: code => { setScanning(false); agregarProducto(code.toUpperCase()); }, onClose: () => setScanning(false) }))));
 }
 
-__modules["tabs/TabCalculadora"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/tabs/TabProveedores.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+// ── TabProveedores ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -1072,7 +1545,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 exports.TabProveedores = TabProveedores;
 const react_1 = __importStar(require("react"));
-const Icon_1 = __require("../components/Icon");
+const Icon_1 = require("../components/Icon");
 const parsePrecio = (s) => {
     const clean = String(s || '0').trim().replace(/\.(?=\d{3})/g, '').replace(',', '.');
     return parseFloat(clean) || 0;
@@ -1264,14 +1737,55 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
                     ". Us\u00E1 el buscador para filtrar.")))))));
 }
 
-__modules["tabs/TabProveedores"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/tabs/TabMisPrecios.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+// ── TabMisPrecios ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -1306,9 +1820,9 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 exports.TabMisPrecios = TabMisPrecios;
 const react_1 = __importStar(require("react"));
-const Icon_1 = __require("../components/Icon");
-const Scanner_1 = __require("../components/Scanner");
-const utils_1 = __require("../lib/utils");
+const Icon_1 = require("../components/Icon");
+const Scanner_1 = require("../components/Scanner");
+const utils_1 = require("../lib/utils");
 const MARGEN_LABELS = { p1: 'p1', p2: 'p2', p3: 'p3', p4: 'p4' };
 // Muestra la foto con delay para evitar el glitch de GPU en Android
 function FotoDelayada({ src, style }) {
@@ -1795,14 +2309,55 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                 react_1.default.createElement("button", { className: "btn-ghost", style: { width: '100%', justifyContent: 'center' }, onClick: () => setPhotoModal(null) }, "Cerrar"))))));
 }
 
-__modules["tabs/TabMisPrecios"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/tabs/TabStock.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+// ── TabStock ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -1837,8 +2392,8 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 exports.TabStock = TabStock;
 const react_1 = __importStar(require("react"));
-const Icon_1 = __require("../components/Icon");
-const Scanner_1 = __require("../components/Scanner");
+const Icon_1 = require("../components/Icon");
+const Scanner_1 = require("../components/Scanner");
 // Subcomponente con estado local para los inputs
 function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }) {
     // Use strings so user can type freely (including clearing the field)
@@ -1974,14 +2529,55 @@ function TabStock({ data, setData, showToast }) {
         scanning && (react_1.default.createElement(Scanner_1.Scanner, { onResult: code => { setScanning(false); setBusqueda(code.toUpperCase()); }, onClose: () => setScanning(false) }))));
 }
 
-__modules["tabs/TabStock"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/tabs/TabVentas.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+// ── TabVentas ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -2016,8 +2612,8 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 exports.TabVentas = TabVentas;
 const react_1 = __importStar(require("react"));
-const Icon_1 = __require("../components/Icon");
-const Presupuesto_1 = __require("../components/Presupuesto");
+const Icon_1 = require("../components/Icon");
+const Presupuesto_1 = require("../components/Presupuesto");
 function TabVentas({ data, setData, showToast }) {
     const [expandedId, setExpandedId] = (0, react_1.useState)(null);
     const [presupuestoVenta, setPresupuestoVenta] = (0, react_1.useState)(null);
@@ -2103,14 +2699,55 @@ function TabVentas({ data, setData, showToast }) {
         presupuestoVenta && (react_1.default.createElement(Presupuesto_1.Presupuesto, { items: presupuestoVenta.items, total: presupuestoVenta.total, onClose: () => setPresupuestoVenta(null), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion }))));
 }
 
-__modules["tabs/TabVentas"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/tabs/TabPedidos.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+// ── TabPedidos ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -2145,9 +2782,9 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 exports.TabPedidos = TabPedidos;
 const react_1 = __importStar(require("react"));
-const Icon_1 = __require("../components/Icon");
-const utils_1 = __require("../lib/utils");
-const firebase_1 = __require("../lib/firebase");
+const Icon_1 = require("../components/Icon");
+const utils_1 = require("../lib/utils");
+const firebase_1 = require("../lib/firebase");
 function TabPedidos({ data, setData, showToast }) {
     const [vistaHistorial, setVistaHistorial] = (0, react_1.useState)(false);
     const [busqueda, setBusqueda] = (0, react_1.useState)('');
@@ -2413,14 +3050,55 @@ function TabPedidos({ data, setData, showToast }) {
                         (p.precioCosto || 0).toFixed(0)))))))))));
 }
 
-__modules["tabs/TabPedidos"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/tabs/TabPresupuestos.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+// ── TabPresupuestos ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -2455,8 +3133,8 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 exports.TabPresupuestos = TabPresupuestos;
 const react_1 = __importStar(require("react"));
-const Icon_1 = __require("../components/Icon");
-const Presupuesto_1 = __require("../components/Presupuesto");
+const Icon_1 = require("../components/Icon");
+const Presupuesto_1 = require("../components/Presupuesto");
 const fmt = (n) => '$' + Math.round(n).toLocaleString('es-AR');
 function TabPresupuestos({ data, setData, showToast, onCargarEnCalculadora }) {
     const presupuestos = data.presupuestos || [];
@@ -2515,14 +3193,55 @@ function TabPresupuestos({ data, setData, showToast, onCargarEnCalculadora }) {
         verPresupuesto && (react_1.default.createElement(Presupuesto_1.Presupuesto, { items: verPresupuesto.items, total: verPresupuesto.total, onClose: () => setVerPresupuesto(null), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion }))));
 }
 
-__modules["tabs/TabPresupuestos"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/tabs/TabConfig.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+// ── TabConfig ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -2557,7 +3276,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 exports.TabConfig = TabConfig;
 const react_1 = __importStar(require("react"));
-const Icon_1 = __require("../components/Icon");
+const Icon_1 = require("../components/Icon");
 function TabConfig({ data, setData, showToast }) {
     const [openSection, setOpenSection] = (0, react_1.useState)('margenes');
     // Márgenes
@@ -2647,14 +3366,55 @@ function TabConfig({ data, setData, showToast }) {
                 " Guardar datos")))));
 }
 
-__modules["tabs/TabConfig"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/App.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+// ── App ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
@@ -2689,18 +3449,18 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 exports.default = App;
 const react_1 = __importStar(require("react"));
-const useAppData_1 = __require("./hooks/useAppData");
-const Toast_1 = __require("./components/Toast");
-const Icon_1 = __require("./components/Icon");
-const LoginScreen_1 = __require("./components/LoginScreen");
-const TabCalculadora_1 = __require("./tabs/TabCalculadora");
-const TabProveedores_1 = __require("./tabs/TabProveedores");
-const TabMisPrecios_1 = __require("./tabs/TabMisPrecios");
-const TabStock_1 = __require("./tabs/TabStock");
-const TabVentas_1 = __require("./tabs/TabVentas");
-const TabPedidos_1 = __require("./tabs/TabPedidos");
-const TabConfig_1 = __require("./tabs/TabConfig");
-const TabPresupuestos_1 = __require("./tabs/TabPresupuestos");
+const useAppData_1 = require("./hooks/useAppData");
+const Toast_1 = require("./components/Toast");
+const Icon_1 = require("./components/Icon");
+const LoginScreen_1 = require("./components/LoginScreen");
+const TabCalculadora_1 = require("./tabs/TabCalculadora");
+const TabProveedores_1 = require("./tabs/TabProveedores");
+const TabMisPrecios_1 = require("./tabs/TabMisPrecios");
+const TabStock_1 = require("./tabs/TabStock");
+const TabVentas_1 = require("./tabs/TabVentas");
+const TabPedidos_1 = require("./tabs/TabPedidos");
+const TabConfig_1 = require("./tabs/TabConfig");
+const TabPresupuestos_1 = require("./tabs/TabPresupuestos");
 const NAV = [
     { id: 'proveedores', label: 'Proveedores', icon: 'upload' },
     { id: 'precios', label: 'Mis Precios', icon: 'tag' },
@@ -2807,22 +3567,71 @@ function App() {
         react_1.default.createElement(Toast_1.Toast, { toast: toast, onClose: () => setToast(null) })));
 }
 
-__modules["App"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
 
-// === src/main.tsx ===
-(function() {
-const exports = {};
-const module = { exports };
-var __importDefault = (this && this.__importDefault) || function (mod) {
+// ── main ──
+(function(){
+  const exports = {};
+  const module = { exports };
+  const require = (m) => {
+    if (m === 'react') return { default: React, createElement: React.createElement, useState, useEffect, useRef, useCallback, useMemo, Fragment: React.Fragment };
+    if (m === 'react-dom' || m === 'react-dom/client') return { default: ReactDOM, createRoot: ReactDOM.createRoot };
+    if (m === "./Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "../components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    if (m === "./Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "../components/Toast") return { Toast: typeof Toast !== "undefined" ? Toast : window["Toast"] };
+    if (m === "./Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "../components/Modal") return { Modal: typeof Modal !== "undefined" ? Modal : window["Modal"] };
+    if (m === "./Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "../components/Scanner") return { Scanner: typeof Scanner !== "undefined" ? Scanner : window["Scanner"] };
+    if (m === "./LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "../components/LoginScreen") return { LoginScreen: typeof LoginScreen !== "undefined" ? LoginScreen : window["LoginScreen"] };
+    if (m === "./Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../components/Presupuesto") return { Presupuesto: typeof Presupuesto !== "undefined" ? Presupuesto : window["Presupuesto"] };
+    if (m === "../lib/utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "./utils") return { fmtPeso: typeof fmtPeso !== "undefined" ? fmtPeso : window["fmtPeso"], fmtPesoInt: typeof fmtPesoInt !== "undefined" ? fmtPesoInt : window["fmtPesoInt"], calcPrecioVenta: typeof calcPrecioVenta !== "undefined" ? calcPrecioVenta : window["calcPrecioVenta"], todayStr: typeof todayStr !== "undefined" ? todayStr : window["todayStr"], nowStr: typeof nowStr !== "undefined" ? nowStr : window["nowStr"], genId: typeof genId !== "undefined" ? genId : window["genId"] };
+    if (m === "../lib/firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "./firebase") return { saveToFirebase: typeof saveToFirebase !== "undefined" ? saveToFirebase : window["saveToFirebase"], loadFromFirebase: typeof loadFromFirebase !== "undefined" ? loadFromFirebase : window["loadFromFirebase"] };
+    if (m === "../hooks/useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "./useAppData") return { useAppData: typeof useAppData !== "undefined" ? useAppData : window["useAppData"] };
+    if (m === "../tabs/TabCalculadora") return { TabCalculadora: typeof TabCalculadora !== "undefined" ? TabCalculadora : window["TabCalculadora"] };
+    if (m === "../tabs/TabProveedores") return { TabProveedores: typeof TabProveedores !== "undefined" ? TabProveedores : window["TabProveedores"] };
+    if (m === "../tabs/TabMisPrecios") return { TabMisPrecios: typeof TabMisPrecios !== "undefined" ? TabMisPrecios : window["TabMisPrecios"] };
+    if (m === "../tabs/TabStock") return { TabStock: typeof TabStock !== "undefined" ? TabStock : window["TabStock"] };
+    if (m === "../tabs/TabVentas") return { TabVentas: typeof TabVentas !== "undefined" ? TabVentas : window["TabVentas"] };
+    if (m === "../tabs/TabPedidos") return { TabPedidos: typeof TabPedidos !== "undefined" ? TabPedidos : window["TabPedidos"] };
+    if (m === "../tabs/TabPresupuestos") return { TabPresupuestos: typeof TabPresupuestos !== "undefined" ? TabPresupuestos : window["TabPresupuestos"] };
+    if (m === "../tabs/TabConfig") return { TabConfig: typeof TabConfig !== "undefined" ? TabConfig : window["TabConfig"] };
+    if (m === "./App") return { default: App };
+    if (m === "./components/Icon") return { Icon: typeof Icon !== "undefined" ? Icon : window["Icon"] };
+    console.warn('require not found:', m);
+    return {};
+  };
+  var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 const react_1 = __importDefault(require("react"));
+const client_1 = require("react-dom/client");
 const App_1 = __importDefault(require("./App"));
 const root = document.getElementById('root');
 if (root) {
-    ReactDOM.createRoot(root).render(react_1.default.createElement(App_1.default, null));
+    (0, client_1.createRoot)(root).render(react_1.default.createElement(App_1.default, null));
 }
 
-__modules["main"] = exports;
+  // Promover exports al scope global
+  if (typeof exports === 'object') {
+    Object.keys(exports).forEach(k => {
+      if (k !== '__esModule' && exports[k] !== undefined) {
+        window[k] = exports[k];
+      }
+    });
+  }
 })();
