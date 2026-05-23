@@ -468,10 +468,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {expandedRef ? (
-              (() => {
-                const p = filtrados.find(x => x.codigoRef === expandedRef);
-                if (!p) return null;
+            {filtrados.slice(0, paginaSize).map((p, i) => {
                 const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
                 const foto = data.fotos[p.codigoRef];
                 const margenLabel = typeof p.margen === 'number'
@@ -479,53 +476,12 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                   : `${data.margenes[p.margen as keyof typeof data.margenes]}%`;
                 const codBarras = (p as any).codigoBarras;
                 const idx2 = (data.misProductos || []).indexOf(p);
+                const isExpanded = expandedRef === p.codigoRef;
+
                 return (
-                  <div>
-                    <button onClick={() => setExpandedRef(null)}
-                      style={{ width: '100%', marginBottom: 8, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', color: '#818cf8', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 }}>
-                      ← Volver a la lista
-                    </button>
-                    <div style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #6366f1', transform: 'translate3d(0,0,0)', position: 'relative', zIndex: 1 }}>
-                      <div style={{ padding: '12px 14px' }}>
-                        {foto && <img src={foto} alt="" style={{ width: 90, height: 90, borderRadius: 10, objectFit: 'cover', marginBottom: 10, display: 'block' }} />}
-                        {codBarras && <div style={{ fontSize: 10, color: '#4b5563', fontFamily: 'monospace', marginBottom: 2 }}>{codBarras}</div>}
-                        <div style={{ fontSize: 18, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800 }}>{p.codigoRef}</div>
-                        <div style={{ fontSize: 14, color: '#cbd5e1', marginTop: 4, wordBreak: 'break-word' }}>{p.descripcion}</div>
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 6, flexWrap: 'wrap' }}>
-                          {p.codigoProv && <span style={{ fontSize: 11, color: '#4b5563' }}>{p.codigoProv}</span>}
-                          <span style={{ fontSize: 11, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: 10 }}>{margenLabel}</span>
-                        </div>
-                        <div style={{ fontSize: 13, color: '#6b7280', marginTop: 6 }}>
-                          {fmt(p.precioCosto)} <span style={{ color: '#22c55e', fontWeight: 700 }}>→ {fmt(pv)}</span>
-                          {p.divisor && p.divisor > 1 ? <span> ({fmt(pv / p.divisor)} c/u)</span> : null}
-                        </div>
-                      </div>
-                      <ProductoAcciones
-                        key={p.codigoRef + '-actions'}
-                        onEditar={() => { editar(idx2); setExpandedRef(null); }}
-                        onFoto={() => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion })}
-                        onEliminar={() => { eliminar(idx2); setExpandedRef(null); }}
-                      />
-                    </div>
-                  </div>
-                );
-              })()
-            ) : (
-              filtrados.slice(0, paginaSize).map((p, i) => {
-                const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
-                const foto = data.fotos[p.codigoRef];
-                const margenLabel = typeof p.margen === 'number'
-                  ? `${p.margen}%`
-                  : `${data.margenes[p.margen as keyof typeof data.margenes]}%`;
-                const codBarras = (p as any).codigoBarras;
-                return (
-                  <div key={p.codigoRef} style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', marginBottom: 2 }}>
+                  <div key={p.codigoRef} style={{ background: '#1e2230', borderRadius: 12, border: `1px solid ${isExpanded ? '#6366f1' : '#1e2535'}`, marginBottom: 2 }}>
                     <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-                      onClick={() => {
-                      const scrollY = window.scrollY;
-                      setExpandedRef(p.codigoRef);
-                      requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'auto' })));
-                    }}>
+                      onClick={() => setExpandedRef(isExpanded ? null : p.codigoRef)}>
                       {foto && <img src={foto} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         {codBarras && <div style={{ fontSize: 10, color: '#4b5563', fontFamily: 'monospace' }}>{codBarras}</div>}
@@ -540,12 +496,19 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                           {p.divisor && p.divisor > 1 ? <span> ({fmt(pv / p.divisor)} c/u)</span> : null}
                         </div>
                       </div>
-                      <span style={{ color: '#4b5563', fontSize: 14, flexShrink: 0 }}>▼</span>
+                      <span style={{ color: '#4b5563', fontSize: 14, flexShrink: 0 }}>{isExpanded ? '▲' : '▼'}</span>
                     </div>
+                    {isExpanded && (
+                      <ProductoAcciones
+                        key={p.codigoRef + '-actions'}
+                        onEditar={() => { editar(idx2); setExpandedRef(null); }}
+                        onFoto={() => setPhotoModal({ codigoRef: p.codigoRef, descripcion: p.descripcion })}
+                        onEliminar={() => { eliminar(idx2); setExpandedRef(null); }}
+                      />
+                    )}
                   </div>
                 );
-              })
-            )}
+              })}
 
             {filtrados.length > paginaSize && (
               <button onClick={() => setPaginaSize(prev => prev + 30)}
