@@ -35,9 +35,6 @@ export function useAppData(user: string | null) {
           proveedores: (provData as any)?.length ? provData as any : d.proveedores,
           misProductos: (misData as any) ?? d.misProductos,
           margenes: (config as any)?.margenes ?? d.margenes,
-          empresa: (config as any)?.empresa ?? d.empresa,
-          telefono: (config as any)?.telefono ?? d.telefono,
-          direccion: (config as any)?.direccion ?? d.direccion,
           stock: (stockData as any) ?? d.stock,
           ventas: (ventasData as any) ?? d.ventas,
           fotos: (fotosData as any) ?? d.fotos,
@@ -76,8 +73,7 @@ export function useAppData(user: string | null) {
       const saves: Promise<void>[] = [];
       if (s('proveedores')) saves.push(saveToFirebase('proveedores', data.proveedores));
       if (s('misProductos')) saves.push(saveToFirebase('misProductos', data.misProductos));
-      if (s('margenes') || s('misProductos') || s('empresa') || s('telefono') || s('direccion'))
-        saves.push(saveToFirebase('config', { margenes: data.margenes, empresa: data.empresa, telefono: data.telefono, direccion: data.direccion }));
+      if (s('margenes') || s('misProductos')) saves.push(saveToFirebase('config', { margenes: data.margenes }));
       if (s('stock')) saves.push(saveToFirebase('stock', data.stock));
       if (s('ventas')) saves.push(saveToFirebase('ventas', data.ventas));
       if (s('fotos')) saves.push(saveToFirebase('fotos', data.fotos));

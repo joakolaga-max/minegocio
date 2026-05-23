@@ -79,9 +79,6 @@ export interface AppData {
   fotos: Record<string, string>;
   pedidos: PedidoItem[];
   pedidosHistorial: Orden[];
-  empresa?: string;
-  telefono?: string;
-  direccion?: string;
 }
 
 export type TabId = 'calc' | 'proveedores' | 'precios' | 'stock' | 'ventas' | 'pedidos' | 'presupuestos' | 'config';

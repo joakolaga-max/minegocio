@@ -246,9 +246,6 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
           items={items}
           total={total}
           onClose={() => setShowPresupuesto(false)}
-          empresaData={data.empresa}
-          telefonoData={data.telefono}
-          direccionData={data.direccion}
           onGuardar={(cliente, nota, descuento) => {
             const pres = {
               id: Date.now().toString(36),
