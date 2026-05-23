@@ -188,6 +188,8 @@
 
     window.__fbReady = true;
     window.dispatchEvent(new Event("fbReady"));
+    window.addEventListener('error', e => console.error('SCRIPT ERROR:', e.message, e.filename));
+    window.addEventListener('unhandledrejection', e => console.error('PROMISE ERROR:', e.reason));
   </script>
 
   <script src="dist/app.js"></script>
