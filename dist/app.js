@@ -554,83 +554,78 @@ function useAppData(user) {
 
 
 // ── src/tabs/TabCalculadora.tsx ──
-function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending }) {
+function TabCalculadora({ data, setData, showToast }) {
     const [items, setItems] = React.useState([]);
     const [busqueda, setBusqueda] = React.useState('');
     const [scanning, setScanning] = React.useState(false);
     const [showPresupuesto, setShowPresupuesto] = React.useState(false);
-    // Load items from saved presupuesto
-    React.useEffect(() => {
-        if (pendingItems && pendingItems.length > 0) {
-            setItems(pendingItems.map(i => ({ ...i, divisor: 1 })));
-            onClearPending?.();
-        }
-    }, [pendingItems]);
     const [showSuggestions, setShowSuggestions] = React.useState(false);
+    const inputRef = React.useRef(null);
+    const total = items.reduce((sum, i) => sum + i.precioVenta * i.cantidad, 0);
     const sugerencias = busqueda.length > 0
-        ? (data.misProductos || []).filter(p => p.codigoRef.toUpperCase().includes(busqueda.toUpperCase()) ||
-            (p.codigoProv || '').toUpperCase().includes(busqueda.toUpperCase()) ||
-            (p.codigoBarras || '').toUpperCase().includes(busqueda.toUpperCase()) ||
-            (p.descripcion || '').toUpperCase().includes(busqueda.toUpperCase())).slice(0, 8)
+        ? (data.misProductos || []).filter(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
+            (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+            (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+            (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase())).slice(0, 8)
         : [];
-    const total = items.reduce((s, i) => s + i.precioVenta * i.cantidad, 0);
-    const agregarProducto = React.useCallback((codigoRef) => {
-        const prod = (data.misProductos || []).find(p => p.codigoRef === codigoRef.toUpperCase() ||
-            p.codigoProv === codigoRef.toUpperCase() ||
-            (p.codigoBarras || '').toUpperCase() === codigoRef.toUpperCase());
-        if (!prod) {
-            showToast('Código no encontrado', 'error');
+    const agregarProducto = React.useCallback((ref) => {
+        const p = (data.misProductos || []).find(x => x.codigoRef.toLowerCase() === ref.toLowerCase() ||
+            (x.codigoProv || '').toLowerCase() === ref.toLowerCase() ||
+            (x.codigoBarras || '').toLowerCase() === ref.toLowerCase());
+        if (!p) {
+            showToast('Producto no encontrado', 'error');
             return;
         }
-        const pvTotal = calcPrecioVenta(prod.precioCosto, prod.margen, data.margenes);
-        const div = (prod.divisor && prod.divisor > 1) ? prod.divisor : 1;
-        const pv = pvTotal / div;
-        const desc = div > 1 ? `${prod.descripcion} (÷${div})` : prod.descripcion;
-        setItems(its => {
-            const idx = its.findIndex(i => i.codigoRef === prod.codigoRef);
+        const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
+        setItems(prev => {
+            const idx = prev.findIndex(i => i.codigoRef === p.codigoRef);
             if (idx >= 0) {
-                const n = [...its];
-                n[idx] = { ...n[idx], cantidad: n[idx].cantidad + 1 };
-                return n;
+                const next = [...prev];
+                next[idx] = { ...next[idx], cantidad: next[idx].cantidad + 1 };
+                return next;
             }
-            return [...its, { codigoRef: prod.codigoRef, descripcion: desc, precioVenta: pv, cantidad: 1, divisor: div }];
+            return [...prev, {
+                    codigoRef: p.codigoRef,
+                    descripcion: p.descripcion,
+                    codigoProv: p.codigoProv || '',
+                    precioCosto: p.precioCosto,
+                    precioVenta: pv,
+                    cantidad: 1,
+                    margen: p.margen,
+                    proveedor: p.proveedor || '',
+                    divisor: p.divisor || 1,
+                }];
         });
         setBusqueda('');
         setShowSuggestions(false);
-    }, [data, showToast]);
-    const confirmarVenta = () => {
-        if (items.length === 0) {
-            showToast('No hay productos', 'error');
-            return;
-        }
-        if (!window.confirm(`Confirmar venta por ${fmtPeso(total)}?`))
-            return;
-        setData(d => {
-            // Discount stock
-            const newStock = { ...d.stock };
-            items.forEach(item => {
-                if (item.codigoRef) {
-                    const cur = newStock[item.codigoRef] || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
-                    newStock[item.codigoRef] = { ...cur, salidas: (cur.salidas || 0) + item.cantidad * item.divisor };
-                }
-            });
-            // Register sale
-            const venta = {
-                id: genId(),
-                fecha: todayStr(),
-                hora: nowStr(),
-                items: items.map(i => ({
-                    codigoRef: i.codigoRef,
-                    descripcion: i.descripcion,
-                    cantidad: i.cantidad,
-                    precioVenta: i.precioVenta,
-                })),
-                total,
-            };
-            return { ...d, stock: newStock, ventas: [...d.ventas, venta] };
+        showToast(`${p.codigoRef} agregado`, 'success');
+    }, [data.misProductos, data.margenes, showToast]);
+    const updateQty = (idx, delta) => {
+        setItems(prev => {
+            const next = [...prev];
+            const newQty = next[idx].cantidad + delta;
+            if (newQty <= 0)
+                return next.filter((_, i) => i !== idx);
+            next[idx] = { ...next[idx], cantidad: newQty };
+            return next;
         });
+    };
+    const removeItem = (idx) => {
+        setItems(prev => prev.filter((_, i) => i !== idx));
+    };
+    const registrarVenta = () => {
+        if (items.length === 0)
+            return;
+        const venta = {
+            id: Date.now().toString(36),
+            fecha: new Date().toLocaleDateString('es-AR'),
+            hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+            items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta })),
+            total,
+        };
+        setData(d => ({ ...d, ventas: [venta, ...(d.ventas || [])] }));
         setItems([]);
-        showToast('Venta confirmada', 'success');
+        showToast('Venta registrada', 'success');
     };
     return (React.createElement("div", { className: "card" },
         React.createElement("div", { className: "section-title" }, "Calculadora"),
@@ -639,94 +634,81 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                 React.createElement("div", { style: { position: 'relative', flex: 1 } },
                     React.createElement("div", { style: { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' } },
                         React.createElement(Icon, { name: "search", size: 16 })),
-                    React.createElement("input", { className: "input-field", style: { paddingLeft: 38, background: '#1e2230', color: '#f1f5f9' }, placeholder: "Buscar por REF, cod proveedor o descripci\u00F3n...", value: busqueda, onChange: e => { setBusqueda(e.target.value.toUpperCase()); setShowSuggestions(true); }, onKeyDown: e => { if (e.key === 'Enter')
-                            agregarProducto(busqueda); if (e.key === 'Escape')
-                            setShowSuggestions(false); }, onFocus: () => setShowSuggestions(true), onBlur: () => setTimeout(() => setShowSuggestions(false), 150) })),
-                React.createElement("button", { className: "btn-ghost", onClick: () => setScanning(true), style: { padding: '10px 14px' } },
-                    React.createElement(Icon, { name: "camera", size: 20 }))),
-            showSuggestions && sugerencias.length > 0 && (React.createElement("div", { style: {
-                    position: 'absolute', top: '100%', left: 0, right: 0,
-                    background: '#1e2230', border: '1px solid #374151', borderRadius: 12,
-                    zIndex: 200, maxHeight: 300, overflowY: 'auto', marginTop: 4,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-                } }, sugerencias.map((p, i) => {
+                    React.createElement("input", { ref: inputRef, className: "input-field", style: { paddingLeft: 38 }, placeholder: "Buscar por REF, cod proveedor o c\u00F3digo de barras...", value: busqueda, onChange: e => { setBusqueda(e.target.value); setShowSuggestions(true); }, onKeyDown: e => { if (e.key === 'Enter' && sugerencias.length > 0)
+                            agregarProducto(sugerencias[0].codigoRef); } })),
+                React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', flexShrink: 0 }, onClick: () => setScanning(true) },
+                    React.createElement(Icon, { name: "camera", size: 18 }))),
+            showSuggestions && sugerencias.length > 0 && (React.createElement("div", { style: { position: 'absolute', top: '100%', left: 0, right: 0, background: '#1e2230', border: '1px solid #374151', borderRadius: 12, zIndex: 50, maxHeight: 300, overflowY: 'auto', marginTop: 4 } }, sugerencias.map((p, i) => {
                 const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
-                const div = p.divisor && p.divisor > 1 ? p.divisor : 1;
-                const foto = data.fotos[p.codigoRef];
-                return (React.createElement("div", { key: i, onClick: () => agregarProducto(p.codigoRef), style: {
-                        padding: '10px 14px', cursor: 'pointer',
-                        borderBottom: i < sugerencias.length - 1 ? '1px solid #111827' : 'none',
-                        display: 'flex', alignItems: 'center', gap: 10,
-                    }, onMouseEnter: e => (e.currentTarget.style.background = 'rgba(99,102,241,0.1)'), onMouseLeave: e => (e.currentTarget.style.background = 'transparent') },
-                    foto && React.createElement("img", { src: foto, alt: "", style: { width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 } }),
-                    React.createElement("div", { style: { flex: 1, minWidth: 0 } },
-                        React.createElement("div", { style: { display: 'flex', gap: 6, alignItems: 'center' } },
-                            React.createElement("span", { style: { fontSize: 12, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 } }, p.codigoRef),
-                            p.codigoProv && React.createElement("span", { style: { fontSize: 11, color: '#4b5563' } }, p.codigoProv)),
-                        React.createElement("div", { style: { fontSize: 15, color: '#f1f5f9', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, p.descripcion)),
-                    React.createElement("div", { style: { fontSize: 13, color: '#22c55e', fontWeight: 700, flexShrink: 0 } },
-                        fmtPesoInt(pv / div),
-                        div > 1 ? ' c/u' : '')));
+                const s = (data.stock || {})[p.codigoRef];
+                const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
+                const inPedido = (data.pedidos || []).find(x => x.codigoRef === p.codigoRef);
+                return (React.createElement("div", { key: i, onClick: () => agregarProducto(p.codigoRef), style: { padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 } },
+                    React.createElement("div", { style: { minWidth: 0 } },
+                        React.createElement("div", { style: { fontSize: 13, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 } }, p.codigoRef),
+                        React.createElement("div", { style: { fontSize: 12, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, p.descripcion),
+                        actual <= 0 && (React.createElement("span", { style: { fontSize: 10, color: inPedido ? '#fbbf24' : '#ef4444', fontWeight: 700 } }, inPedido ? '● En pedido' : '● Sin stock'))),
+                    React.createElement("div", { style: { fontWeight: 700, color: '#22c55e', fontSize: 13, flexShrink: 0 } }, fmtPeso(pv))));
             })))),
-        items.length === 0 ? (React.createElement("div", { style: { textAlign: 'center', padding: '40px 20px', color: '#374151' } },
-            React.createElement(Icon, { name: "store", size: 44 }),
-            React.createElement("div", { style: { marginTop: 12, fontSize: 14, color: '#6b7280' } }, "Busc\u00E1 un producto para agregar"))) : (React.createElement(React.Fragment, null,
-            React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 } },
-                items.map((item, i) => (React.createElement("div", { key: i, style: { background: '#111827', borderRadius: 12, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 } },
+        items.length === 0 ? (React.createElement("div", { style: { textAlign: 'center', padding: '40px 20px', color: '#6b7280' } },
+            React.createElement(Icon, { name: "cart", size: 40 }),
+            React.createElement("div", { style: { marginTop: 12, fontSize: 14 } }, "Busc\u00E1 un producto para agregar"))) : (React.createElement("div", null,
+            React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 } }, items.map((item, i) => {
+                const s = (data.stock || {})[item.codigoRef || ''];
+                const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
+                const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
+                return (React.createElement("div", { key: i, style: { background: '#111827', borderRadius: 12, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8 } },
                     React.createElement("div", { style: { flex: 1, minWidth: 0, overflow: 'hidden' } },
                         React.createElement("div", { style: { fontSize: 13, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, item.codigoRef || item.descripcion),
-                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, overflow: 'hidden' } },
+                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 } },
                             React.createElement("span", { style: { fontSize: 11, color: '#6b7280', flexShrink: 0 } },
                                 fmtPeso(item.precioVenta),
                                 " c/u"),
-                            (() => {
-                                const s = (data.stock || {})[item.codigoRef || ''];
-                                const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
-                                const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
-                                if (actual <= 0 && inPedido)
-                                    return React.createElement("span", { style: { color: '#fbbf24', fontSize: 10, fontWeight: 700, flexShrink: 0 } }, "\u25CF En pedido");
-                                if (actual <= 0 && !inPedido)
-                                    return (React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0 } },
-                                        React.createElement("span", { style: { color: '#ef4444', fontSize: 10, fontWeight: 700 } }, "\u25CF Sin stock"),
-                                        React.createElement("button", { onClick: () => {
-                                                const prod = (data.misProductos || []).find(p => p.codigoRef === item.codigoRef);
-                                                if (!prod)
-                                                    return;
-                                                setData(d => ({ ...d, pedidos: [...(d.pedidos || []), { codigoRef: prod.codigoRef, codigoProv: prod.codigoProv || '', descripcion: prod.descripcion, cantidad: 1, proveedor: prod.proveedor || '', precioCosto: prod.precioCosto || 0 }] }));
-                                                showToast('Agregado a pedidos', 'success');
-                                            }, style: { fontSize: 10, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 6, padding: '1px 5px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 } }, "+Pedir")));
-                                return null;
-                            })())
-              ))
-            ))
-          ),
-          React.createElement("div", { style: { background: 'linear-gradient(135deg,#1e3a2e,#1a3025)', borderRadius: 14, border: '1px solid #166534', padding: '14px 18px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                            actual <= 0 && inPedido && (React.createElement("span", { style: { color: '#fbbf24', fontSize: 10, fontWeight: 700, flexShrink: 0 } }, "\u25CF En pedido")),
+                            actual <= 0 && !inPedido && (React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0 } },
+                                React.createElement("span", { style: { color: '#ef4444', fontSize: 10, fontWeight: 700 } }, "\u25CF Sin stock"),
+                                React.createElement("button", { onClick: () => {
+                                        const prod = (data.misProductos || []).find(p => p.codigoRef === item.codigoRef);
+                                        if (!prod)
+                                            return;
+                                        setData(d => ({ ...d, pedidos: [...(d.pedidos || []), { codigoRef: prod.codigoRef, codigoProv: prod.codigoProv || '', descripcion: prod.descripcion, cantidad: 1, proveedor: prod.proveedor || '', precioCosto: prod.precioCosto || 0 }] }));
+                                        showToast('Agregado a pedidos', 'success');
+                                    }, style: { fontSize: 10, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 6, padding: '1px 5px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 } }, "+Pedir"))))),
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 } },
+                        React.createElement("button", { onClick: () => updateQty(i, -1), style: { width: 28, height: 28, borderRadius: 8, background: '#374151', border: 'none', color: '#f1f5f9', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, "\u2212"),
+                        React.createElement("span", { style: { minWidth: 24, textAlign: 'center', fontWeight: 700, fontSize: 14, color: '#f1f5f9' } }, item.cantidad),
+                        React.createElement("button", { onClick: () => updateQty(i, 1), style: { width: 28, height: 28, borderRadius: 8, background: '#6366f1', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, "+")),
+                    React.createElement("div", { style: { flexShrink: 0, minWidth: 64, textAlign: 'right' } },
+                        React.createElement("div", { style: { fontWeight: 700, color: '#22c55e', fontSize: 13 } }, fmtPeso(item.precioVenta * item.cantidad))),
+                    React.createElement("button", { onClick: () => removeItem(i), style: { width: 30, height: 30, borderRadius: 8, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 } },
+                        React.createElement(Icon, { name: "trash", size: 13 }))));
+            })),
+            React.createElement("div", { style: { background: 'linear-gradient(135deg,#1e3a2e,#1a3025)', borderRadius: 14, border: '1px solid #166534', padding: '14px 18px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
                 React.createElement("div", { style: { fontSize: 13, color: '#86efac', fontWeight: 600 } }, "Total"),
                 React.createElement("div", { style: { fontSize: 24, fontWeight: 700, color: '#22c55e' } }, fmtPeso(total))),
             React.createElement("div", { style: { display: 'flex', gap: 8 } },
-                React.createElement("button", { className: "btn-ghost", style: { padding: '12px 14px' }, onClick: () => { if (window.confirm('Limpiar calculadora?'))
-                        setItems([]); } },
+                React.createElement("button", { className: "btn-ghost", style: { padding: '12px 14px' }, onClick: () => setItems([]) },
                     React.createElement(Icon, { name: "trash", size: 16 })),
                 React.createElement("button", { className: "btn-ghost", style: { flex: 1, justifyContent: 'center' }, onClick: () => setShowPresupuesto(true) },
                     React.createElement(Icon, { name: "download", size: 16 }),
                     " Presupuesto"),
-                React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: 'center' }, onClick: confirmarVenta },
+                React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: 'center' }, onClick: registrarVenta },
                     React.createElement(Icon, { name: "check", size: 16 }),
                     " Venta")))),
-        showPresupuesto && (React.createElement(Presupuesto, { items: items, total: total, onClose: () => setShowPresupuesto(false), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion, onGuardar: (cliente) => {
+        showPresupuesto && (React.createElement(Presupuesto, { items: items, total: total, onClose: () => setShowPresupuesto(false), onGuardar: (cliente, nota, descuento) => {
                 const pres = {
                     id: Date.now().toString(36),
                     fecha: new Date().toLocaleDateString('es-AR'),
                     hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
                     cliente,
                     items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta })),
-                    total: total,
+                    total,
                 };
                 setData(d => ({ ...d, presupuestos: [...(d.presupuestos || []), pres] }));
                 showToast('Presupuesto guardado', 'success');
                 setShowPresupuesto(false);
-            } })),
-        scanning && (React.createElement(Scanner, { onResult: code => { setScanning(false); agregarProducto(code); }, onClose: () => setScanning(false) }))));
+            }, data: data })),
+        scanning && (React.createElement(Scanner, { onResult: code => { setScanning(false); agregarProducto(code.toUpperCase()); }, onClose: () => setScanning(false) }))));
 }
 
 
