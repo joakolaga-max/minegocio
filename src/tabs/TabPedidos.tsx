@@ -251,22 +251,24 @@ export function TabPedidos({ data, setData, showToast }: Props) {
                           </div>
                         </div>
                         {items.map((p, i) => (
-                          <div key={p.codigoRef || p.codigoProv || i} style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: i < items.length - 1 ? '1px solid #111827' : 'none' }}>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                                <span style={{ fontSize: 12, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 }}>{p.codigoRef || p.codigoProv}</span>
-                                {p.codigoProv && p.codigoRef && <span style={{ fontSize: 11, color: '#4b5563' }}>{p.codigoProv}</span>}
-                              </div>
-                              <div style={{ fontSize: 13, color: '#cbd5e1', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>
+                          <div key={p.codigoRef || p.codigoProv || i} style={{ padding: '10px 14px', borderBottom: i < items.length - 1 ? '1px solid #111827' : 'none' }}>
+                            {/* Row 1: descripcion */}
+                            <div style={{ fontSize: 13, color: '#cbd5e1', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 4 }}>{p.descripcion}</div>
+                            <div style={{ fontSize: 11, color: '#4b5563', marginBottom: 8 }}>
+                              {p.codigoRef && <span style={{ color: '#818cf8', fontFamily: 'monospace', marginRight: 6 }}>{p.codigoRef}</span>}
+                              {p.codigoProv && <span>{p.codigoProv}</span>}
+                              {p.precioCosto > 0 && <span style={{ marginLeft: 6 }}>· ${p.precioCosto.toLocaleString('es-AR')}</span>}
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <button onClick={() => cambiarCant(p.codigoRef || p.codigoProv, -1)} style={{ width: 28, height: 28, borderRadius: 6, background: '#374151', border: 'none', color: '#f1f5f9', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                            {/* Row 2: - qty + | trash */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <button onClick={() => cambiarCant(p.codigoRef || p.codigoProv, -1)} style={{ width: 30, height: 30, borderRadius: 6, background: '#374151', border: 'none', color: '#f1f5f9', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                               <input type="number" min={1} value={p.cantidad || 1}
                                 onChange={e => { const ref = p.codigoRef || p.codigoProv; setData(d => ({ ...d, pedidos: (d.pedidos || []).map(x => (x.codigoRef || x.codigoProv) === ref ? { ...x, cantidad: Math.max(1, parseInt(e.target.value) || 1) } : x) })); }}
-                                style={{ width: 44, height: 28, borderRadius: 6, background: '#1e2230', border: '1px solid #374151', color: '#f1f5f9', textAlign: 'center', fontSize: 13, fontWeight: 700, fontFamily: 'inherit' }} />
-                              <button onClick={() => cambiarCant(p.codigoRef || p.codigoProv, 1)} style={{ width: 28, height: 28, borderRadius: 6, background: '#6366f1', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
-                              <button onClick={() => quitar(p.codigoRef || p.codigoProv)} style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit', fontSize: 12, fontWeight: 600 }}>
-                                <Icon name="trash" size={13} /> Quitar
+                                style={{ width: 44, height: 30, borderRadius: 6, background: '#1e2230', border: '1px solid #374151', color: '#f1f5f9', textAlign: 'center', fontSize: 13, fontWeight: 700, fontFamily: 'inherit' }} />
+                              <button onClick={() => cambiarCant(p.codigoRef || p.codigoProv, 1)} style={{ width: 30, height: 30, borderRadius: 6, background: '#6366f1', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                              <div style={{ flex: 1 }} />
+                              <button onClick={() => quitar(p.codigoRef || p.codigoProv)} style={{ width: 30, height: 30, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Icon name="trash" size={13} />
                               </button>
                             </div>
                           </div>
