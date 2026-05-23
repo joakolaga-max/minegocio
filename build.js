@@ -111,5 +111,13 @@ for (const file of files) {
 }
 
 fs.mkdirSync('./dist', { recursive: true });
+
+// Post-process: fix React.default -> React
+bundle = bundle.replace(/React\.default\.createElement/g, 'React.createElement');
+bundle = bundle.replace(/React\.default\.(\w+)/g, 'React.$1');
+// Fix App_1.default -> actual App export
+bundle = bundle.replace(/App_1\.default/g, '(__modules["App"] && (__modules["App"].default || __modules["App"]))');
+
+fs.mkdirSync('./dist', { recursive: true });
 fs.writeFileSync('./dist/app.js', bundle);
 console.log(`Bundle created: dist/app.js (${(bundle.length/1024).toFixed(1)}kb)`);
