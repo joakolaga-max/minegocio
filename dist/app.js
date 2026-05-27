@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-05-27T00:41:10.577Z
+// MiNegocio v2.0 - Built 2026-05-27T01:19:50.348Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -953,7 +953,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                 React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: 'center' }, onClick: registrarVenta },
                     React.createElement(Icon_1.Icon, { name: "check", size: 16 }),
                     " Venta")))),
-        showPresupuesto && (React.createElement(Presupuesto_1.Presupuesto, { items: items, total: total, onClose: () => setShowPresupuesto(false), onGuardar: (cliente, nota, descuento) => {
+        showPresupuesto && (React.createElement(Presupuesto_1.Presupuesto, { items: items, total: total, onClose: () => setShowPresupuesto(false), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion, onGuardar: (cliente, nota, descuento) => {
                 const pres = {
                     id: Date.now().toString(36),
                     fecha: new Date().toLocaleDateString('es-AR'),
@@ -965,7 +965,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                 setData(d => ({ ...d, presupuestos: [...(d.presupuestos || []), pres] }));
                 showToast('Presupuesto guardado', 'success');
                 setShowPresupuesto(false);
-            }, data: data })),
+            } })),
         showCustom && (React.createElement("div", { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }, onClick: () => setShowCustom(false) },
             React.createElement("div", { style: { background: '#1e2230', borderRadius: 16, padding: 20, width: '100%', maxWidth: 400 }, onClick: e => e.stopPropagation() },
                 React.createElement("div", { style: { fontWeight: 700, fontSize: 16, color: '#f1f5f9', marginBottom: 16 } }, "Agregar importe libre"),

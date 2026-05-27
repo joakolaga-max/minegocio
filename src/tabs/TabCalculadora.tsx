@@ -264,6 +264,9 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
           items={items}
           total={total}
           onClose={() => setShowPresupuesto(false)}
+          empresaData={(data as any).empresa}
+          telefonoData={(data as any).telefono}
+          direccionData={(data as any).direccion}
           onGuardar={(cliente, nota, descuento) => {
             const pres = {
               id: Date.now().toString(36),
@@ -277,7 +280,6 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
             showToast('Presupuesto guardado', 'success');
             setShowPresupuesto(false);
           }}
-          data={data}
         />
       )}
 
