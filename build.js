@@ -72,7 +72,7 @@ const REACT_HOOKS = [
 
 let bundle = `
 // MiNegocio v2.0 - Built ${new Date().toISOString()}
-const { useState, useEffect, useRef, useCallback, useMemo } = React;
+const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 `;
 
