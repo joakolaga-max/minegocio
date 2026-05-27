@@ -53,7 +53,7 @@ export function TabConfig({ data, setData, showToast }: Props) {
     showToast('Datos guardados y sincronizados', 'success');
   };
 
-  const SectionHeader = ({ id, label, icon }: { id: string; label: string; icon: string }) => (
+  const SectionHeader = ({ id, label, icon }: { id: string; label: string; icon: string }) => { const { theme: T } = useTheme(); return (
     <button
       onClick={() => setOpenSection(openSection === id ? null : id)}
       style={{

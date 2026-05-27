@@ -18,6 +18,7 @@ function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }: {
   onPedir: () => void;
   inPedido: boolean;
 }) {
+  const { theme: T } = useTheme();
   // Use strings so user can type freely (including clearing the field)
   const [inicial, setInicial] = useState(String(stock.inicial || 0));
   const [entradas, setEntradas] = useState(String(stock.entradas || 0));

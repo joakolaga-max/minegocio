@@ -18,6 +18,7 @@ const MARGEN_LABELS: Record<string, string> = { p1: 'p1', p2: 'p2', p3: 'p3', p4
 
 // Muestra la foto con delay para evitar el glitch de GPU en Android
 function FotoDelayada({ src, style }: { src: string; style: React.CSSProperties }) {
+  const { theme: T } = useTheme();
   const [visible, setVisible] = React.useState(false);
   React.useEffect(() => {
     const t = setTimeout(() => setVisible(true), 150);
@@ -32,6 +33,7 @@ function ProductoAcciones({ onEditar, onFoto, onEliminar }: {
   onFoto: () => void;
   onEliminar: () => void;
 }) {
+  const { theme: T } = useTheme();
   return (
     <div style={{ margin: '0 10px 10px', borderRadius: 10, padding: '8px', display: 'flex', gap: 8, background: T.sectionBg, transform: 'translate3d(0,0,0)', position: 'relative', zIndex: 2 }}>
       <button onClick={onEditar}
