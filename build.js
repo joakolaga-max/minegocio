@@ -41,6 +41,8 @@ function transpileFile(filePath) {
 
 const files = [
   'src/types.ts',
+  'src/theme.ts',
+  'src/ThemeContext.tsx',
   'src/lib/utils.ts',
   'src/lib/firebase.ts',
   'src/components/Icon.tsx',

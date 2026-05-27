@@ -4,6 +4,11 @@ interface Props {
   onLogin: () => void;
 }
 
+// ── Lista blanca de emails autorizados ──
+const EMAILS_AUTORIZADOS: string[] = [
+  'joakolaga@gmail.com',
+];
+
 export function LoginScreen({ onLogin }: Props) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,6 +21,12 @@ export function LoginScreen({ onLogin }: Props) {
 
   const handle = async (action: 'login' | 'register') => {
     if (!email.trim() || !password) { setError('Completá email y contraseña'); return; }
+    // Verificar lista blanca
+    const emailNorm = email.trim().toLowerCase();
+    if (!EMAILS_AUTORIZADOS.map(e => e.toLowerCase()).includes(emailNorm)) {
+      setError('Email no autorizado para acceder a esta aplicación');
+      return;
+    }
     setError(''); setLoading(true);
     try {
       if (action === 'login') await w.login(email.trim(), password);

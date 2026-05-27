@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AppData } from '../types';
 import { calcPrecioVenta, fmtPeso } from '../lib/utils';
 import { Icon } from '../components/Icon';
@@ -21,10 +21,28 @@ interface Props {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;
   showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
+  pendingItems?: any[];
+  onClearPending?: () => void;
 }
 
-export function TabCalculadora({ data, setData, showToast }: Props) {
+export function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending }: Props) {
   const [items, setItems] = useState<CartItem[]>([]);
+
+  // Cargar items desde presupuestos
+  useEffect(() => {
+    if (pendingItems && pendingItems.length > 0) {
+      setItems(pendingItems.map((p: any) => ({
+        codigoRef: p.codigoRef || '',
+        descripcion: p.descripcion || '',
+        precioCosto: p.precioCosto || 0,
+        precioVenta: p.precioVenta || 0,
+        margen: p.margen || 0,
+        cantidad: p.cantidad || 1,
+        proveedor: p.proveedor || '',
+      })));
+      onClearPending && onClearPending();
+    }
+  }, [pendingItems]);
   const [busqueda, setBusqueda] = useState('');
   const [scanning, setScanning] = useState(false);
   const [showPresupuesto, setShowPresupuesto] = useState(false);
@@ -208,7 +226,7 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
                       <button onClick={() => updateQty(i, -1)} style={{ width: 32, height: 32, borderRadius: 8, background: '#374151', border: 'none', color: '#f1f5f9', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                      <span style={{ minWidth: 28, textAlign: 'center', fontWeight: 700, fontSize: 16, color: '#f1f5f9' }}>{item.cantidad}</span>
+                      <input type="number" min={1} value={item.cantidad} onChange={e => { const v = parseInt(e.target.value) || 1; setItems(next => { const n = [...next]; n[i] = { ...n[i], cantidad: Math.max(1, v) }; return n; }); }} style={{ width: 44, textAlign: "center", fontWeight: 700, fontSize: 16, color: "#f1f5f9", background: "#1e2230", border: "1px solid #374151", borderRadius: 8, padding: "4px 2px", fontFamily: "inherit", outline: "none" }} />
                       <button onClick={() => updateQty(i, 1)} style={{ width: 32, height: 32, borderRadius: 8, background: '#6366f1', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                     </div>
                     <div style={{ fontWeight: 700, color: '#22c55e', fontSize: 14, flexShrink: 0, minWidth: 70, textAlign: 'right' }}>

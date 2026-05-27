@@ -87,12 +87,17 @@ export function TabStock({ data, setData, showToast }: Props) {
     const s = (data.stock || {})[p.codigoRef] || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
     const actual = (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0);
     return { ...p, stock: s, actual };
-  }).filter(p => !busqueda ||
-    p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
-    (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-    ((p as any).codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-    (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase())
-  );
+  }).filter(p => {
+    if (!busqueda.trim()) return true;
+    const q = busqueda.trim().toLowerCase();
+    return (
+      (p.codigoRef || '').toLowerCase().includes(q) ||
+      (p.codigoProv || '').toLowerCase().includes(q) ||
+      (p.descripcion || '').toLowerCase().includes(q) ||
+      (p.proveedor || '').toLowerCase().includes(q) ||
+      ((p as any).codigoBarras || '').toLowerCase().includes(q)
+    );
+  });
 
   const bajoMinimo = productos.filter(p => p.stock.minimo > 0 && p.actual < p.stock.minimo);
 

@@ -174,11 +174,17 @@ export function TabPedidos({ data, setData, showToast }: Props) {
     );
   };
 
+  const q = busqueda.trim().toLowerCase();
   const filteredProvs = Object.keys(porProveedor).filter(prov =>
-    !busqueda || porProveedor[prov].some(p =>
-      (p.codigoRef || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-      (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-      (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase())));
+    !q || prov.toLowerCase().includes(q) || porProveedor[prov].some(p =>
+      (p.codigoRef || '').toLowerCase().includes(q) ||
+      (p.codigoProv || '').toLowerCase().includes(q) ||
+      (p.descripcion || '').toLowerCase().includes(q)));
+  const filteredItems = (prov: string) => !q ? porProveedor[prov] : porProveedor[prov].filter(p =>
+    prov.toLowerCase().includes(q) ||
+    (p.codigoRef || '').toLowerCase().includes(q) ||
+    (p.codigoProv || '').toLowerCase().includes(q) ||
+    (p.descripcion || '').toLowerCase().includes(q));
 
   return (
     <div>
@@ -229,7 +235,7 @@ export function TabPedidos({ data, setData, showToast }: Props) {
               <>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
                   {filteredProvs.map(prov => {
-                    const items = porProveedor[prov];
+                    const items = filteredItems(prov);
                     const total = items.reduce((s, i) => s + (i.precioCosto || 0) * (i.cantidad || 1), 0);
                     return (
                       <div key={prov} style={{ background: '#161b27', borderRadius: 14, border: '1px solid #1e2535', overflow: 'hidden' }}>
