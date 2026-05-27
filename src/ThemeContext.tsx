@@ -46,18 +46,32 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         background: ${t.inputBg} !important;
         color: ${t.text} !important;
         -webkit-text-fill-color: ${t.text} !important;
+        caret-color: ${t.text} !important;
         border-color: ${t.inputBorder} !important;
       }
-      .input-field:focus, input:focus, textarea:focus {
+      .input-field:focus, input:focus, textarea:focus,
+      .input-field:active, input:active, textarea:active {
         border-color: ${t.inputBorderFocus} !important;
         background: ${t.inputBg} !important;
+        color: ${t.text} !important;
+        -webkit-text-fill-color: ${t.text} !important;
+        caret-color: ${t.text} !important;
+        outline: none !important;
       }
       input:-webkit-autofill, input:-webkit-autofill:hover,
       input:-webkit-autofill:focus, input:-webkit-autofill:active {
         -webkit-box-shadow: 0 0 0 9999px ${t.inputBg} inset !important;
         -webkit-text-fill-color: ${t.text} !important;
+        caret-color: ${t.text} !important;
       }
-      input::placeholder, textarea::placeholder { color: ${t.textMuted}; opacity: 1; }
+      input::placeholder, textarea::placeholder { 
+        color: ${t.textMuted} !important; 
+        opacity: 1 !important; 
+      }
+      input:focus::placeholder, textarea:focus::placeholder {
+        color: ${t.textMuted} !important;
+        opacity: 0.6 !important;
+      }
       .card {
         background: ${t.card} !important;
         border-color: ${t.cardBorder} !important;
@@ -67,6 +81,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         border-color: ${t.inputBorder} !important;
         color: ${t.textSecondary} !important;
       }
+      * { color: inherit; }
+      body { color: ${t.text}; }
     `;
   }, [isDark]);
 
