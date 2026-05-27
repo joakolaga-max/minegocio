@@ -81,11 +81,14 @@ const __modules = {};
 const __require = (name) => {
   if (name === 'react') return React;
   if (name === 'react-dom' || name === 'react-dom/client') return ReactDOM;
-  const key = name.replace(/^\\.\\//,'').replace(/\\.\\.\\/[^/]+\\//g,'').replace(/\\.(tsx?|jsx?)$/,'');
+  const key = name.replace(/^(\\.\\.\\/)+/,'').replace(/^\\.\\//,'').replace(/\\.(tsx?|jsx?)$/,'');
   if (__modules[key]) return __modules[key];
+  const last = key.split('/').pop();
+  if (__modules[last]) return __modules[last];
   for (const k of Object.keys(__modules)) {
-    if (k === key || k.endsWith('/' + key) || k.endsWith(key)) return __modules[k];
+    if (k === key || k.endsWith('/' + key) || k === last || k.endsWith('/' + last)) return __modules[k];
   }
+  console.warn('Module not found:', name);
   return {};
 };
 `;
