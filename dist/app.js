@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-05-27T00:20:50.704Z
+// MiNegocio v2.0 - Built 2026-05-27T00:41:10.577Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -2301,7 +2301,7 @@ function TabPresupuestos({ data, setData, showToast, onCargarEnCalculadora }) {
                             React.createElement("button", { onClick: () => eliminar(p.id), style: { display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 10, padding: '10px 12px', cursor: 'pointer' } },
                                 React.createElement(Icon_1.Icon, { name: "trash", size: 14 })))))));
             }))),
-        verPresupuesto && (React.createElement(Presupuesto_1.Presupuesto, { items: verPresupuesto.items, total: verPresupuesto.total, onClose: () => setVerPresupuesto(null) }))));
+        verPresupuesto && (React.createElement(Presupuesto_1.Presupuesto, { items: verPresupuesto.items, total: verPresupuesto.total, onClose: () => setVerPresupuesto(null), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion }))));
 }
 
 __modules['tabs/TabPresupuestos'] = exports;
