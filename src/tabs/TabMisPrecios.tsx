@@ -3,6 +3,7 @@ import { AppData, MiProducto } from '../types';
 import { Icon } from '../components/Icon';
 import { Scanner } from '../components/Scanner';
 import { calcPrecioVenta, fmtPeso } from '../lib/utils';
+import { useTheme } from '../ThemeContext';
 
 interface Props {
   data: AppData;
@@ -22,7 +23,7 @@ function FotoDelayada({ src, style }: { src: string; style: React.CSSProperties 
     const t = setTimeout(() => setVisible(true), 150);
     return () => clearTimeout(t);
   }, []);
-  if (!visible) return <div style={{ ...style, background: '#111827', borderRadius: (style.borderRadius as any) || 8 }} />;
+  if (!visible) return <div style={{ ...style, background: T.sectionBg, borderRadius: (style.borderRadius as any) || 8 }} />;
   return <img src={src} alt="" style={style} />;
 }
 
@@ -32,7 +33,7 @@ function ProductoAcciones({ onEditar, onFoto, onEliminar }: {
   onEliminar: () => void;
 }) {
   return (
-    <div style={{ margin: '0 10px 10px', borderRadius: 10, padding: '8px', display: 'flex', gap: 8, background: '#111827', transform: 'translate3d(0,0,0)', position: 'relative', zIndex: 2 }}>
+    <div style={{ margin: '0 10px 10px', borderRadius: 10, padding: '8px', display: 'flex', gap: 8, background: T.sectionBg, transform: 'translate3d(0,0,0)', position: 'relative', zIndex: 2 }}>
       <button onClick={onEditar}
         style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 10, padding: '9px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600 }}>
         <Icon name="settings" size={14} /> Editar
@@ -50,6 +51,7 @@ function ProductoAcciones({ onEditar, onFoto, onEliminar }: {
 }
 
 export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPending }: Props) {
+  const { theme: T } = useTheme();
   const [busqueda, setBusqueda] = useState('');
   const [codigoRef, setCodigoRef] = useState('');
   const [codigoProv, setCodigoProv] = useState('');
@@ -275,12 +277,12 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
         {/* Cód. Proveedor + Cód. Barras - dos columnas */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
           <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 }}>Cód. proveedor</label>
+            <label style={{ fontSize: 12, color: T.textMuted, display: 'block', marginBottom: 6 }}>Cód. proveedor</label>
             <input className="input-field" style={{ fontSize: 13 }} value={codigoProv}
               onChange={e => setCodigoProv(e.target.value.toUpperCase())} placeholder="Ej: FC1561" />
           </div>
           <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 }}>Cód. de barras</label>
+            <label style={{ fontSize: 12, color: T.textMuted, display: 'block', marginBottom: 6 }}>Cód. de barras</label>
             <div style={{ display: 'flex', gap: 6 }}>
               <input className="input-field" style={{ flex: 1, fontSize: 13 }} value={codigoBarras}
                 onChange={e => setCodigoBarras(e.target.value)} placeholder="Para buscar en calculadora" />
@@ -303,21 +305,21 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
 
         {/* Descripcion - REF field, SECOND */}
         <div style={{ marginBottom: 10 }}>
-          <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 }}>Descripción (tu nombre interno)</label>
+          <label style={{ fontSize: 12, color: T.textMuted, display: 'block', marginBottom: 6 }}>Descripción (tu nombre interno)</label>
           <input className="input-field" value={codigoRef}
             onChange={e => setCodigoRef(e.target.value)} placeholder="Ej: Cable manguera 16mm" />
         </div>
 
         {/* Margen */}
         <div style={{ marginBottom: 10 }}>
-          <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 }}>Margen</label>
+          <label style={{ fontSize: 12, color: T.textMuted, display: 'block', marginBottom: 6 }}>Margen</label>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {Object.entries(MARGEN_LABELS).map(([k]) => (
               <button key={k} onClick={() => { setMargenSel(k); setMargenCustom(false); }} style={{
                 flex: 1, minWidth: 50, padding: '8px 4px', borderRadius: 10, border: '1px solid',
-                borderColor: margenSel === k && !margenCustom ? '#6366f1' : '#374151',
+                borderColor: margenSel === k && !margenCustom ? '#6366f1' : T.inputBorder,
                 background: margenSel === k && !margenCustom ? 'rgba(99,102,241,0.2)' : 'transparent',
-                color: margenSel === k && !margenCustom ? '#818cf8' : '#6b7280',
+                color: margenSel === k && !margenCustom ? '#818cf8' : T.textMuted,
                 cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 14,
               }}>
                 {data.margenes[k as keyof typeof data.margenes]}%
@@ -325,9 +327,9 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
             ))}
             <button onClick={() => setMargenCustom(!margenCustom)} style={{
               flex: 1, minWidth: 50, padding: '8px 4px', borderRadius: 10, border: '1px solid',
-              borderColor: margenCustom ? '#6366f1' : '#374151',
+              borderColor: margenCustom ? '#6366f1' : T.inputBorder,
               background: margenCustom ? 'rgba(99,102,241,0.2)' : 'transparent',
-              color: margenCustom ? '#818cf8' : '#6b7280',
+              color: margenCustom ? '#818cf8' : T.textMuted,
               cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13,
             }}>
               Otro %
@@ -338,7 +340,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
           {margenCustom && (
             <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 }}>% manual</label>
+                <label style={{ fontSize: 11, color: T.textMuted, display: 'block', marginBottom: 4 }}>% manual</label>
                 <input type="number" className="input-field" style={{ textAlign: 'center', fontWeight: 700, padding: '10px' }}
                   value={margenCustomVal} onChange={e => setMargenCustomVal(e.target.value)}
                   placeholder="Ej: 45" min={0} max={99} />
@@ -347,7 +349,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                 )}
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 4 }}>Dividir por</label>
+                <label style={{ fontSize: 11, color: T.textMuted, display: 'block', marginBottom: 4 }}>Dividir por</label>
                 <input type="number" min={1} className="input-field" style={{ textAlign: 'center', fontWeight: 700, padding: '10px' }}
                   value={divisor} onChange={e => setDivisor(Math.max(1, parseInt(e.target.value) || 1))} />
                 {divisor > 1 && <div style={{ fontSize: 11, color: '#22c55e', marginTop: 3 }}>÷ {divisor} c/u</div>}
@@ -365,7 +367,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
           const pv = calcPrecioVenta(found.precio, margenFinal, data.margenes);
           return (
             <div style={{ background: 'rgba(99,102,241,0.08)', borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: 13, color: '#6b7280' }}>Precio venta:</span>
+              <span style={{ fontSize: 13, color: T.textMuted }}>Precio venta:</span>
               <span style={{ fontSize: 16, fontWeight: 700, color: '#22c55e' }}>
                 {fmt(pv)}{divisor > 1 ? ` (${fmt(pv / divisor)} c/u)` : ''}
               </span>
@@ -433,7 +435,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <div>
             <div className="section-title" style={{ marginBottom: 0 }}>Mis Precios</div>
-            <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{(data.misProductos || []).length} productos</div>
+            <div style={{ fontSize: 12, color: T.textMuted, marginTop: 2 }}>{(data.misProductos || []).length} productos</div>
           </div>
           {(data.misProductos || []).length > 0 && (
             <button className="btn-ghost" style={{ padding: '8px 12px', fontSize: 13 }} onClick={exportar}>
@@ -445,7 +447,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
         {(data.misProductos || []).length > 0 && (
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             <div style={{ position: 'relative', flex: 1 }}>
-              <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }}>
+              <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: T.textMuted }}>
                 <Icon name="search" size={16} />
               </div>
               <input className="input-field" style={{ paddingLeft: 38 }}
@@ -460,9 +462,9 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
         )}
 
         {filtrados.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#374151' }}>
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: T.inputBorder }}>
             <Icon name="tag" size={40} />
-            <div style={{ marginTop: 12, fontSize: 14, color: '#6b7280' }}>
+            <div style={{ marginTop: 12, fontSize: 14, color: T.textMuted }}>
               {(data.misProductos || []).length === 0 ? 'Todavía no agregaste productos' : 'Sin resultados'}
             </div>
           </div>
@@ -479,24 +481,24 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                 const isExpanded = expandedRef === p.codigoRef;
 
                 return (
-                  <div key={p.codigoRef} style={{ background: '#1e2230', borderRadius: 12, border: `1px solid ${isExpanded ? '#6366f1' : '#1e2535'}`, marginBottom: 2 }}>
+                  <div key={p.codigoRef} style={{ background: T.card, borderRadius: 12, border: `1px solid ${isExpanded ? '#6366f1' : T.divider}`, marginBottom: 2 }}>
                     <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
                       onClick={() => setExpandedRef(isExpanded ? null : p.codigoRef)}>
                       {foto && <img src={foto} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        {codBarras && <div style={{ fontSize: 10, color: '#4b5563', fontFamily: 'monospace' }}>{codBarras}</div>}
+                        {codBarras && <div style={{ fontSize: 10, color: T.textMuted, fontFamily: 'monospace' }}>{codBarras}</div>}
                         <div style={{ fontSize: 15, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.codigoRef}</div>
-                        <div style={{ fontSize: 12, color: '#cbd5e1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>
+                        <div style={{ fontSize: 12, color: T.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>
                         <div style={{ display: 'flex', gap: 4, alignItems: 'center', marginTop: 2 }}>
-                          {p.codigoProv && <span style={{ fontSize: 10, color: '#4b5563' }}>{p.codigoProv}</span>}
+                          {p.codigoProv && <span style={{ fontSize: 10, color: T.textMuted }}>{p.codigoProv}</span>}
                           <span style={{ fontSize: 10, background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '1px 6px', borderRadius: 10 }}>{margenLabel}</span>
                         </div>
-                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>
+                        <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>
                           {fmt(p.precioCosto)} <span style={{ color: '#22c55e', fontWeight: 700 }}>→ {fmt(pv)}</span>
                           {p.divisor && p.divisor > 1 ? <span> ({fmt(pv / p.divisor)} c/u)</span> : null}
                         </div>
                       </div>
-                      <span style={{ color: '#4b5563', fontSize: 14, flexShrink: 0 }}>{isExpanded ? '▲' : '▼'}</span>
+                      <span style={{ color: T.textMuted, fontSize: 14, flexShrink: 0 }}>{isExpanded ? '▲' : '▼'}</span>
                     </div>
                     {isExpanded && (
                       <ProductoAcciones
@@ -524,20 +526,20 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
       {showActualizar && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 400, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
           onClick={() => setShowActualizar(false)}>
-          <div style={{ background: '#1e2230', borderRadius: '20px 20px 0 0', padding: 20, width: '100%', maxWidth: 600, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+          <div style={{ background: T.card, borderRadius: '20px 20px 0 0', padding: 20, width: '100%', maxWidth: 600, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div>
-                <div style={{ fontWeight: 700, fontSize: 15, color: '#f1f5f9' }}>Actualizar precios desde proveedor</div>
-                <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+                <div style={{ fontWeight: 700, fontSize: 15, color: T.text }}>Actualizar precios desde proveedor</div>
+                <div style={{ fontSize: 12, color: T.textMuted, marginTop: 2 }}>
                   {cambiosPendientes.length === 0 ? 'Todos los precios están al día' : `${cambiosPendientes.length} producto(s) con precio diferente`}
                 </div>
               </div>
               <button onClick={() => setShowActualizar(false)}
-                style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: 20 }}>✕</button>
+                style={{ background: 'none', border: 'none', color: T.textMuted, cursor: 'pointer', fontSize: 20 }}>✕</button>
             </div>
             {cambiosPendientes.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px 20px', color: '#6b7280', fontSize: 14 }}>
+              <div style={{ textAlign: 'center', padding: '30px 20px', color: T.textMuted, fontSize: 14 }}>
                 ✅ No hay cambios de precio para aplicar
               </div>
             ) : (
@@ -547,10 +549,10 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                     <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid #111827', display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 }}>{c.codigoRef}</div>
-                        <div style={{ fontSize: 12, color: '#cbd5e1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.descripcion}</div>
+                        <div style={{ fontSize: 12, color: T.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.descripcion}</div>
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: 12, color: '#6b7280', textDecoration: 'line-through' }}>{fmt(c.anterior)}</div>
+                        <div style={{ fontSize: 12, color: T.textMuted, textDecoration: 'line-through' }}>{fmt(c.anterior)}</div>
                         <div style={{ fontSize: 14, color: c.nuevo > c.anterior ? '#ef4444' : '#22c55e', fontWeight: 700 }}>
                           {fmt(c.nuevo)} {c.nuevo > c.anterior ? '▲' : '▼'}
                         </div>
@@ -580,13 +582,13 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
       {photoModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', zIndex: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
           onClick={() => setPhotoModal(null)}>
-          <div style={{ background: '#1e2230', borderRadius: 20, padding: 24, width: '100%', maxWidth: 420 }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: '#f1f5f9', marginBottom: 4 }}>{photoModal.descripcion}</div>
+          <div style={{ background: T.card, borderRadius: 20, padding: 24, width: '100%', maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>{photoModal.descripcion}</div>
             <div style={{ fontSize: 12, color: '#818cf8', fontFamily: 'monospace', marginBottom: 16 }}>{photoModal.codigoRef}</div>
             {data.fotos[photoModal.codigoRef] ? (
               <img src={data.fotos[photoModal.codigoRef]} alt="" style={{ width: '100%', borderRadius: 12, marginBottom: 16, maxHeight: 280, objectFit: 'contain', background: '#111' }} />
             ) : (
-              <div style={{ background: '#111827', borderRadius: 12, height: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: 16, color: '#6b7280', gap: 8 }}>
+              <div style={{ background: T.sectionBg, borderRadius: 12, height: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: 16, color: T.textMuted, gap: 8 }}>
                 <Icon name="camera" size={40} />
                 <div style={{ fontSize: 13 }}>Sin foto cargada</div>
               </div>

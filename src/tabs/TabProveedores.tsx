@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AppData, Proveedor, Producto } from '../types';
 import { Icon } from '../components/Icon';
+import { useTheme } from '../ThemeContext';
 
 
 interface Props {
@@ -61,6 +62,7 @@ function parseXLSX(buffer: ArrayBuffer): Producto[] {
 }
 
 export function TabProveedores({ data, setData, showToast, onNavigate }: Props) {
+  const { theme: T } = useTheme();
   const [activeTab, setActiveTab] = useState(0);
   const [busqueda, setBusqueda] = useState('');
   const [loading, setLoading] = useState(false);
@@ -152,11 +154,11 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
           <button key={i} onClick={() => { setActiveTab(i); setBusqueda(''); }}
             style={{
               padding: '7px 14px', borderRadius: 20, border: '1px solid',
-              borderColor: activeTab === i ? '#6366f1' : '#1e2535',
-              background: activeTab === i ? 'rgba(99,102,241,0.15)' : '#161b27',
+              borderColor: activeTab === i ? '#6366f1' : T.divider,
+              background: activeTab === i ? 'rgba(99,102,241,0.15)' : T.card,
               cursor: 'pointer', fontFamily: 'inherit',
             }}>
-            <span style={{ fontSize: 13, fontWeight: activeTab === i ? 700 : 500, color: activeTab === i ? '#818cf8' : '#94a3b8' }}>
+            <span style={{ fontSize: 13, fontWeight: activeTab === i ? 700 : 500, color: activeTab === i ? '#818cf8' : T.textSecondary }}>
               {p.nombre || `Proveedor ${i + 1}`}
             </span>
           </button>
@@ -166,8 +168,8 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
       {/* Active proveedor card */}
       <div className="card">
         {/* Header */}
-        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#111827', borderRadius: 12 }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: '#f1f5f9' }}>{prov.nombre || `Proveedor ${activeTab + 1}`}</span>
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: T.sectionBg, borderRadius: 12 }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{prov.nombre || `Proveedor ${activeTab + 1}`}</span>
           <span style={{ fontSize: 13, color: prov.productos.length > 0 ? '#22c55e' : '#4b5563', fontWeight: 600 }}>
             {prov.productos.length > 0 ? `${prov.productos.length} productos` : 'Sin cargar'}
           </span>
@@ -202,14 +204,14 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
         </div>
 
         {/* Format hint */}
-        <div style={{ fontSize: 11, color: '#4b5563', marginBottom: 14, padding: '8px 12px', background: '#111827', borderRadius: 8 }}>
+        <div style={{ fontSize: 11, color: T.textMuted, marginBottom: 14, padding: '8px 12px', background: T.sectionBg, borderRadius: 8 }}>
           Formato: Código | Descripción | Precio — CSV o Excel
         </div>
 
         {/* Search */}
         {prov.productos.length > 0 && (
           <div style={{ position: 'relative', marginBottom: 12 }}>
-            <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }}>
+            <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: T.textMuted }}>
               <Icon name="search" size={16} />
             </div>
             <input className="input-field" style={{ paddingLeft: 38 }}
@@ -220,9 +222,9 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
 
         {/* Products list */}
         {prov.productos.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px', color: '#374151' }}>
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: T.inputBorder }}>
             <Icon name="upload" size={40} />
-            <div style={{ marginTop: 12, fontSize: 14, color: '#6b7280' }}>
+            <div style={{ marginTop: 12, fontSize: 14, color: T.textMuted }}>
               Cargá la lista de precios del proveedor
             </div>
           </div>
@@ -233,7 +235,7 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
                 onClick={() => onNavigate && onNavigate('precios', p.codigo)}
                 style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '10px 0', borderBottom: i < productos.length - 1 ? '1px solid #1e2535' : 'none',
+                  padding: '10px 0', borderBottom: i < productos.length - 1 ? `1px solid ${T.divider}` : 'none',
                   gap: 10, cursor: onNavigate ? 'pointer' : 'default',
                 }}
                 onMouseEnter={e => { if (onNavigate) (e.currentTarget as HTMLDivElement).style.background = 'rgba(99,102,241,0.05)'; }}
@@ -242,7 +244,7 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
                   <span style={{ fontSize: 11, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700, marginRight: 8 }}>
                     {p.codigo}
                   </span>
-                  <span style={{ fontSize: 13, color: '#cbd5e1' }}>{p.descripcion}</span>
+                  <span style={{ fontSize: 13, color: T.textSecondary }}>{p.descripcion}</span>
                 </div>
                 <span style={{ fontSize: 13, color: '#22c55e', fontWeight: 600, flexShrink: 0 }}>
                   ${p.precio.toFixed(2)}
@@ -250,7 +252,7 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
               </div>
             ))}
             {productos.length > 200 && (
-              <div style={{ textAlign: 'center', padding: 8, fontSize: 12, color: '#6b7280' }}>
+              <div style={{ textAlign: 'center', padding: 8, fontSize: 12, color: T.textMuted }}>
                 Mostrando 200 de {productos.length}. Usá el buscador para filtrar.
               </div>
             )}

@@ -3,6 +3,7 @@ import { AppData } from '../types';
 import { Icon } from '../components/Icon';
 import { Presupuesto } from '../components/Presupuesto';
 import { fmtPeso } from '../lib/utils';
+import { useTheme } from '../ThemeContext';
 
 interface PresupuestoGuardado {
   id: string;
@@ -23,6 +24,7 @@ interface Props {
 const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-AR');
 
 export function TabPresupuestos({ data, setData, showToast, onCargarEnCalculadora }: Props) {
+  const { theme: T } = useTheme();
   const presupuestos: PresupuestoGuardado[] = (data as any).presupuestos || [];
   const [verPresupuesto, setVerPresupuesto] = useState<PresupuestoGuardado | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -42,8 +44,8 @@ export function TabPresupuestos({ data, setData, showToast, onCargarEnCalculador
     return (
       <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
         <Icon name="download" size={48} />
-        <div style={{ marginTop: 16, fontSize: 16, fontWeight: 600, color: '#f1f5f9' }}>Sin presupuestos guardados</div>
-        <div style={{ fontSize: 13, color: '#6b7280', marginTop: 8 }}>
+        <div style={{ marginTop: 16, fontSize: 16, fontWeight: 600, color: T.text }}>Sin presupuestos guardados</div>
+        <div style={{ fontSize: 13, color: T.textMuted, marginTop: 8 }}>
           Los presupuestos se guardan desde la Calculadora
         </div>
       </div>
@@ -58,14 +60,14 @@ export function TabPresupuestos({ data, setData, showToast, onCargarEnCalculador
           {[...presupuestos].reverse().map(p => {
             const isExpanded = expandedId === p.id;
             return (
-              <div key={p.id} style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', overflow: 'hidden' }}>
+              <div key={p.id} style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.divider}`, overflow: 'hidden' }}>
                 <div style={{ padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
                   onClick={() => setExpandedId(isExpanded ? null : p.id)}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>
                       {p.cliente || 'Sin nombre'}
                     </div>
-                    <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: T.textMuted, marginTop: 2 }}>
                       {p.fecha} · {p.hora} · {p.items.length} producto(s)
                     </div>
                     <div style={{ fontSize: 13, color: '#22c55e', fontWeight: 700, marginTop: 2 }}>
@@ -75,18 +77,18 @@ export function TabPresupuestos({ data, setData, showToast, onCargarEnCalculador
                 </div>
 
                 {isExpanded && (
-                  <div style={{ borderTop: '1px solid #111827', background: '#161b27' }}>
+                  <div style={{ borderTop: `1px solid ${T.divider}`, background: T.card }}>
                     {/* Items preview */}
                     <div style={{ padding: '10px 14px' }}>
                       {p.items.map((item, i) => (
-                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '3px 0', color: '#94a3b8' }}>
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '3px 0', color: T.textSecondary }}>
                           <span>{item.cantidad}x {item.descripcion}</span>
                           <span style={{ color: '#22c55e' }}>{fmt(item.precioVenta * item.cantidad)}</span>
                         </div>
                       ))}
                     </div>
                     {/* Actions */}
-                    <div style={{ display: 'flex', gap: 8, padding: '10px 14px', borderTop: '1px solid #111827' }}>
+                    <div style={{ display: 'flex', gap: 8, padding: '10px 14px', borderTop: `1px solid ${T.divider}` }}>
                       <button onClick={() => cargarEnCalc(p)}
                         style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, padding: '10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 13 }}>
                         <Icon name="store" size={14} /> Cargar en Calculadora

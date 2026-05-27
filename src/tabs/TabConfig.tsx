@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AppData } from '../types';
 import { Icon } from '../components/Icon';
+import { useTheme } from '../ThemeContext';
 
 interface Props {
   data: AppData;
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function TabConfig({ data, setData, showToast }: Props) {
+  const { theme: T } = useTheme();
   const [openSection, setOpenSection] = useState<string | null>('margenes');
 
   // Márgenes
@@ -56,17 +58,17 @@ export function TabConfig({ data, setData, showToast }: Props) {
       onClick={() => setOpenSection(openSection === id ? null : id)}
       style={{
         width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 16px', background: openSection === id ? 'rgba(99,102,241,0.1)' : '#111827',
+        padding: '14px 16px', background: openSection === id ? 'rgba(99,102,241,0.1)' : T.sectionBg,
         border: 'none', borderRadius: openSection === id ? '12px 12px 0 0' : 12,
         cursor: 'pointer', fontFamily: 'inherit', marginBottom: openSection === id ? 0 : 8,
-        borderBottom: openSection === id ? '1px solid #1e2535' : 'none',
+        borderBottom: openSection === id ? `1px solid ${T.divider}` : 'none',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <Icon name={icon} size={18} />
-        <span style={{ fontSize: 15, fontWeight: 700, color: openSection === id ? '#818cf8' : '#f1f5f9' }}>{label}</span>
+        <span style={{ fontSize: 15, fontWeight: 700, color: openSection === id ? '#818cf8' : T.text }}>{label}</span>
       </div>
-      <span style={{ color: '#6b7280', fontSize: 18 }}>{openSection === id ? '▲' : '▼'}</span>
+      <span style={{ color: T.textMuted, fontSize: 18 }}>{openSection === id ? '▲' : '▼'}</span>
     </button>
   );
 
@@ -75,17 +77,17 @@ export function TabConfig({ data, setData, showToast }: Props) {
       {/* MÁRGENES */}
       <SectionHeader id="margenes" label="Márgenes de ganancia" icon="tag" />
       {openSection === 'margenes' && (
-        <div style={{ background: '#161b27', borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 }}>
+        <div style={{ background: T.card, borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
             {[['% 1', m1, setM1], ['% 2', m2, setM2], ['% 3', m3, setM3], ['% 4', m4, setM4]].map(([label, val, set]) => (
-              <div key={label as string} style={{ background: '#111827', borderRadius: 12, padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#6b7280' }}>{label as string}</span>
+              <div key={label as string} style={{ background: T.sectionBg, borderRadius: 12, padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: T.textMuted }}>{label as string}</span>
                 <input
                   type="number" min={1} max={99}
                   value={val as string}
                   onChange={e => (set as Function)(e.target.value)}
                   onBlur={e => (set as Function)(String(Math.min(99, Math.max(1, parseFloat(e.target.value) || 1))))}
-                  style={{ width: '100%', background: '#1e2230', border: '1px solid #374151', borderRadius: 10, padding: '10px 6px', color: '#f1f5f9', fontSize: 22, fontWeight: 700, fontFamily: 'inherit', outline: 'none', textAlign: 'center' }}
+                  style={{ width: '100%', background: T.card, border: `1px solid ${T.inputBorder}`, borderRadius: 10, padding: '10px 6px', color: T.text, fontSize: 22, fontWeight: 700, fontFamily: 'inherit', outline: 'none', textAlign: 'center' }}
                 />
                 <span style={{ fontSize: 11, color: '#818cf8' }}>{pct(val as string)}% → {mult(pct(val as string))}</span>
               </div>
@@ -100,10 +102,10 @@ export function TabConfig({ data, setData, showToast }: Props) {
       {/* PROVEEDORES */}
       <SectionHeader id="proveedores" label="Nombres de proveedores" icon="store" />
       {openSection === 'proveedores' && (
-        <div style={{ background: '#161b27', borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 }}>
+        <div style={{ background: T.card, borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 }}>
           {(data.proveedores || []).map((p, i) => (
             <div key={i} style={{ marginBottom: 10 }}>
-              <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>
+              <label style={{ fontSize: 12, color: T.textMuted, display: 'block', marginBottom: 4 }}>
                 Proveedor {i + 1}
                 {p.productos.length > 0 && <span style={{ marginLeft: 8, color: '#22c55e', fontSize: 11 }}>({p.productos.length} productos)</span>}
               </label>
@@ -123,22 +125,22 @@ export function TabConfig({ data, setData, showToast }: Props) {
       {/* PRESUPUESTO */}
       <SectionHeader id="presupuesto" label="Datos del presupuesto" icon="download" />
       {openSection === 'presupuesto' && (
-        <div style={{ background: '#161b27', borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 }}>
+        <div style={{ background: T.card, borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 }}>
           <div style={{ marginBottom: 10 }}>
-            <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 }}>Nombre del negocio</label>
+            <label style={{ fontSize: 12, color: T.textMuted, display: 'block', marginBottom: 6 }}>Nombre del negocio</label>
             <input className="input-field" value={empresa} onChange={e => setEmpresa(e.target.value)} placeholder="Mi Negocio" />
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
             <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 }}>Teléfono</label>
+              <label style={{ fontSize: 12, color: T.textMuted, display: 'block', marginBottom: 6 }}>Teléfono</label>
               <input className="input-field" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="381 4..." />
             </div>
           </div>
           <div style={{ marginBottom: 14 }}>
-            <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 6 }}>Dirección</label>
+            <label style={{ fontSize: 12, color: T.textMuted, display: 'block', marginBottom: 6 }}>Dirección</label>
             <input className="input-field" value={direccion} onChange={e => setDireccion(e.target.value)} placeholder="Calle 123, Ciudad" />
           </div>
-          <div style={{ background: '#111827', borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: '#6b7280' }}>
+          <div style={{ background: T.sectionBg, borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: T.textMuted }}>
             Estos datos aparecen en todos los presupuestos que generes.
           </div>
           <button className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={guardarPresupuesto}>

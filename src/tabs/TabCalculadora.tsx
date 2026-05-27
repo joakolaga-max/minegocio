@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTheme } from '../ThemeContext';
 import { AppData } from '../types';
 import { calcPrecioVenta, fmtPeso } from '../lib/utils';
 import { Icon } from '../components/Icon';
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending }: Props) {
+  const { theme: T } = useTheme();
   const [items, setItems] = useState<CartItem[]>([]);
 
   // Cargar items desde presupuestos
@@ -154,7 +156,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
 
         {/* Suggestions */}
         {showSuggestions && sugerencias.length > 0 && (
-          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#1e2230', border: '1px solid #374151', borderRadius: 12, zIndex: 50, maxHeight: 300, overflowY: 'auto', marginTop: 4 }}>
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: T.card, border: `1px solid ${T.inputBorder}`, borderRadius: 12, zIndex: 50, maxHeight: 300, overflowY: 'auto', marginTop: 4 }}>
             {sugerencias.map((p, i) => {
               const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
               const s = (data.stock || {})[p.codigoRef];
@@ -162,10 +164,10 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
               const inPedido = (data.pedidos || []).find(x => x.codigoRef === p.codigoRef);
               return (
                 <div key={i} onClick={() => agregarProducto(p.codigoRef)}
-                  style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #111827', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                  style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: `1px solid ${T.divider}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 13, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 }}>{p.codigoRef}</div>
-                    <div style={{ fontSize: 12, color: '#6b7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>
+                    <div style={{ fontSize: 12, color: T.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>
                     {actual <= 0 && (
                       <span style={{ fontSize: 10, color: inPedido ? '#fbbf24' : '#ef4444', fontWeight: 700 }}>
                         {inPedido ? '● En pedido' : '● Sin stock'}
@@ -194,14 +196,14 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
               const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
               const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
               return (
-                <div key={i} style={{ background: '#111827', borderRadius: 12, padding: '10px 12px' }}>
+                <div key={i} style={{ background: T.sectionBg, borderRadius: 12, padding: '10px 12px' }}>
                   {/* Row 1: name + delete button */}
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, color: '#f1f5f9', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: 14, color: T.text, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {item.codigoRef || item.descripcion}
                       </div>
-                      <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{fmtPeso(item.precioVenta)} c/u
+                      <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>{fmtPeso(item.precioVenta)} c/u
                         {actual <= 0 && inPedido && <span style={{ color: '#fbbf24', fontWeight: 700, marginLeft: 6 }}>● En pedido</span>}
                         {actual <= 0 && !inPedido && <span style={{ color: '#ef4444', fontWeight: 700, marginLeft: 6 }}>● Sin stock</span>}
                       </div>
@@ -225,7 +227,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
                       <div style={{ width: 60, flexShrink: 0 }} />
                     )}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' }}>
-                      <button onClick={() => updateQty(i, -1)} style={{ width: 32, height: 32, borderRadius: 8, background: '#374151', border: 'none', color: '#f1f5f9', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                      <button onClick={() => updateQty(i, -1)} style={{ width: 32, height: 32, borderRadius: 8, background: T.inputBorder, border: 'none', color: T.text, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
                       <input type="number" min={1} value={item.cantidad} onChange={e => { const v = parseInt(e.target.value) || 1; setItems(next => { const n = [...next]; n[i] = { ...n[i], cantidad: Math.max(1, v) }; return n; }); }} style={{ width: 44, textAlign: "center", fontWeight: 700, fontSize: 16, color: "#f1f5f9", background: "#1e2230", border: "1px solid #374151", borderRadius: 8, padding: "4px 2px", fontFamily: "inherit", outline: "none" }} />
                       <button onClick={() => updateQty(i, 1)} style={{ width: 32, height: 32, borderRadius: 8, background: '#6366f1', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
                     </div>
@@ -287,17 +289,17 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
       {showCustom && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
           onClick={() => setShowCustom(false)}>
-          <div style={{ background: '#1e2230', borderRadius: 16, padding: 20, width: '100%', maxWidth: 400 }}
+          <div style={{ background: T.card, borderRadius: 16, padding: 20, width: '100%', maxWidth: 400 }}
             onClick={e => e.stopPropagation()}>
-            <div style={{ fontWeight: 700, fontSize: 16, color: '#f1f5f9', marginBottom: 16 }}>Agregar importe libre</div>
-            <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Descripción</label>
+            <div style={{ fontWeight: 700, fontSize: 16, color: T.text, marginBottom: 16 }}>Agregar importe libre</div>
+            <label style={{ fontSize: 12, color: T.textMuted, display: 'block', marginBottom: 4 }}>Descripción</label>
             <input className="input-field" style={{ marginBottom: 12 }}
               placeholder="Ej: Mano de obra, Flete..."
               value={customDesc}
               onChange={e => setCustomDesc(e.target.value)}
               autoFocus
             />
-            <label style={{ fontSize: 12, color: '#6b7280', display: 'block', marginBottom: 4 }}>Precio</label>
+            <label style={{ fontSize: 12, color: T.textMuted, display: 'block', marginBottom: 4 }}>Precio</label>
             <input className="input-field" style={{ marginBottom: 20 }}
               type="number" placeholder="0"
               value={customPrecio}
@@ -323,7 +325,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
             />
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setShowCustom(false)}
-                style={{ flex: 1, padding: '12px', borderRadius: 10, background: 'none', border: '1px solid #374151', color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>
+                style={{ flex: 1, padding: '12px', borderRadius: 10, background: 'none', border: `1px solid ${T.inputBorder}`, color: T.textMuted, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>
                 Cancelar
               </button>
               <button onClick={() => {

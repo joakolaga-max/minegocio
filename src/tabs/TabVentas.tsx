@@ -3,6 +3,7 @@ import { AppData } from '../types';
 import { Icon } from '../components/Icon';
 import { Presupuesto } from '../components/Presupuesto';
 import { fmtPeso } from '../lib/utils';
+import { useTheme } from '../ThemeContext';
 
 interface Props {
   data: AppData;
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function TabVentas({ data, setData, showToast }: Props) {
+  const { theme: T } = useTheme();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [presupuestoVenta, setPresupuestoVenta] = useState<typeof ventas[0] | null>(null);
   const ventas = [...(data.ventas || [])].reverse();
@@ -59,12 +61,12 @@ export function TabVentas({ data, setData, showToast }: Props) {
       <div className="card" style={{ marginBottom: 12 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <div style={{ fontSize: 13, color: '#6b7280' }}>Ventas hoy</div>
+            <div style={{ fontSize: 13, color: T.textMuted }}>Ventas hoy</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e' }}>{fmt(totalHoy())}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 13, color: '#6b7280' }}>Total registros</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: '#f1f5f9' }}>{(data.ventas || []).length}</div>
+            <div style={{ fontSize: 13, color: T.textMuted }}>Total registros</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: T.text }}>{(data.ventas || []).length}</div>
           </div>
         </div>
       </div>
@@ -87,7 +89,7 @@ export function TabVentas({ data, setData, showToast }: Props) {
         </div>
 
         {ventas.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '50px 20px', color: '#6b7280' }}>
+          <div style={{ textAlign: 'center', padding: '50px 20px', color: T.textMuted }}>
             <Icon name="download" size={44} />
             <div style={{ marginTop: 14, fontSize: 15 }}>No hay ventas registradas</div>
             <div style={{ fontSize: 13, marginTop: 6 }}>Las ventas de la Calculadora aparecen acá</div>
@@ -95,11 +97,11 @@ export function TabVentas({ data, setData, showToast }: Props) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {ventas.map(v => (
-              <div key={v.id} style={{ background: '#1e2230', borderRadius: 12, border: '1px solid #1e2535', overflow: 'hidden' }}>
+              <div key={v.id} style={{ background: T.card, borderRadius: 12, border: `1px solid ${T.divider}`, overflow: 'hidden' }}>
                 <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
                   onClick={() => setExpandedId(expandedId === v.id ? null : v.id)}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, color: '#94a3b8' }}>
+                    <div style={{ fontSize: 13, color: T.textSecondary }}>
                       {v.fecha} · {v.hora} · {v.items.length} producto(s)
                     </div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: '#22c55e', marginTop: 2 }}>{fmt(v.total)}</div>
@@ -114,10 +116,10 @@ export function TabVentas({ data, setData, showToast }: Props) {
                   </button>
                 </div>
                 {expandedId === v.id && (
-                  <div style={{ borderTop: '1px solid #111827', padding: '8px 14px 12px' }}>
+                  <div style={{ borderTop: `1px solid ${T.divider}`, padding: '8px 14px 12px' }}>
                     {v.items.map((item, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: i < v.items.length - 1 ? '1px solid #1e2535' : 'none' }}>
-                        <span style={{ color: '#94a3b8' }}>{item.cantidad}x {item.descripcion}</span>
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: i < v.items.length - 1 ? `1px solid ${T.divider}` : 'none' }}>
+                        <span style={{ color: T.textSecondary }}>{item.cantidad}x {item.descripcion}</span>
                         <span style={{ color: '#22c55e', fontWeight: 600 }}>{fmt(item.precioVenta * item.cantidad)}</span>
                       </div>
                     ))}
