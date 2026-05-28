@@ -440,9 +440,14 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
             <div style={{ fontSize: 12, color: T.textMuted, marginTop: 2 }}>{(data.misProductos || []).length} productos</div>
           </div>
           {(data.misProductos || []).length > 0 && (
-            <button className="btn-ghost" style={{ padding: '8px 12px', fontSize: 13 }} onClick={exportar}>
-              <Icon name="download" size={14} /> Excel
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn-ghost" style={{ padding: '8px 12px', fontSize: 13 }} onClick={calcularCambios}>
+                <Icon name="refresh" size={14} /> Actualizar
+              </button>
+              <button className="btn-ghost" style={{ padding: '8px 12px', fontSize: 13 }} onClick={exportar}>
+                <Icon name="download" size={14} /> Excel
+              </button>
+            </div>
           )}
         </div>
 
@@ -548,7 +553,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
               <>
                 <div style={{ overflowY: 'auto', flex: 1, marginBottom: 16 }}>
                   {cambiosPendientes.map((c, i) => (
-                    <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid #111827', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div key={i} style={{ padding: '10px 0', borderBottom: `1px solid ${T.divider}`, display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 }}>{c.codigoRef}</div>
                         <div style={{ fontSize: 12, color: T.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.descripcion}</div>

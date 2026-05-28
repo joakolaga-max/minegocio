@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-05-27T01:58:20.923Z
+// MiNegocio v2.0 - Built 2026-05-28T20:39:09.898Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -1630,9 +1630,13 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                     React.createElement("div", { style: { fontSize: 12, color: T.textMuted, marginTop: 2 } },
                         (data.misProductos || []).length,
                         " productos")),
-                (data.misProductos || []).length > 0 && (React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', fontSize: 13 }, onClick: exportar },
-                    React.createElement(Icon_1.Icon, { name: "download", size: 14 }),
-                    " Excel"))),
+                (data.misProductos || []).length > 0 && (React.createElement("div", { style: { display: 'flex', gap: 8 } },
+                    React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', fontSize: 13 }, onClick: calcularCambios },
+                        React.createElement(Icon_1.Icon, { name: "refresh", size: 14 }),
+                        " Actualizar"),
+                    React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', fontSize: 13 }, onClick: exportar },
+                        React.createElement(Icon_1.Icon, { name: "download", size: 14 }),
+                        " Excel")))),
             (data.misProductos || []).length > 0 && (React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 12 } },
                 React.createElement("div", { style: { position: 'relative', flex: 1 } },
                     React.createElement("div", { style: { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: T.textMuted } },
@@ -1687,7 +1691,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                         React.createElement("div", { style: { fontSize: 12, color: T.textMuted, marginTop: 2 } }, cambiosPendientes.length === 0 ? 'Todos los precios están al día' : `${cambiosPendientes.length} producto(s) con precio diferente`)),
                     React.createElement("button", { onClick: () => setShowActualizar(false), style: { background: 'none', border: 'none', color: T.textMuted, cursor: 'pointer', fontSize: 20 } }, "\u2715")),
                 cambiosPendientes.length === 0 ? (React.createElement("div", { style: { textAlign: 'center', padding: '30px 20px', color: T.textMuted, fontSize: 14 } }, "\u2705 No hay cambios de precio para aplicar")) : (React.createElement(React.Fragment, null,
-                    React.createElement("div", { style: { overflowY: 'auto', flex: 1, marginBottom: 16 } }, cambiosPendientes.map((c, i) => (React.createElement("div", { key: i, style: { padding: '10px 0', borderBottom: '1px solid #111827', display: 'flex', alignItems: 'center', gap: 10 } },
+                    React.createElement("div", { style: { overflowY: 'auto', flex: 1, marginBottom: 16 } }, cambiosPendientes.map((c, i) => (React.createElement("div", { key: i, style: { padding: '10px 0', borderBottom: `1px solid ${T.divider}`, display: 'flex', alignItems: 'center', gap: 10 } },
                         React.createElement("div", { style: { flex: 1, minWidth: 0 } },
                             React.createElement("div", { style: { fontSize: 13, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 } }, c.codigoRef),
                             React.createElement("div", { style: { fontSize: 12, color: T.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, c.descripcion)),
