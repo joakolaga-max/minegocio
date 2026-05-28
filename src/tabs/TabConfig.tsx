@@ -70,7 +70,7 @@ export function TabConfig({ data, setData, showToast }: Props) {
       </div>
       <span style={{ color: T.textMuted, fontSize: 18 }}>{openSection === id ? '▲' : '▼'}</span>
     </button>
-  );
+  ); };
 
   return (
     <div>
