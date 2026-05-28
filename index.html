@@ -61,12 +61,24 @@
       input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
     </style>
   <script>
-    // Unregister ALL service workers - not needed
+    // Registrar service worker para funcionamiento offline
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => {
-        for (const reg of regs) reg.unregister();
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then(reg => {
+          console.log('Service Worker registrado: la app funciona offline');
+        }).catch(err => {
+          console.log('No se pudo registrar el Service Worker:', err);
+        });
       });
     }
+    // Indicador de conexión
+    function actualizarConexion() {
+      window.__isOnline = navigator.onLine;
+      window.dispatchEvent(new Event('connectivityChange'));
+    }
+    window.addEventListener('online', actualizarConexion);
+    window.addEventListener('offline', actualizarConexion);
+    window.__isOnline = navigator.onLine;
   </script>
   <style>
     /* Force Firebase auth iframe into isolated GPU layer */

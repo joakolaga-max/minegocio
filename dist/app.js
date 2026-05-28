@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-05-28T20:53:24.153Z
+// MiNegocio v2.0 - Built 2026-05-28T21:27:58.728Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 

@@ -1,12 +1,12 @@
-const CACHE = 'minegocio-v5';
+const CACHE = 'minegocio-v6';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/dist/app.js',
-  '/manifest.json',
+  './',
+  './index.html',
+  './dist/app.js',
+  './manifest.json',
+  './icon.png',
   'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
-  'https://unpkg.com/@zxing/library@0.20.0/umd/index.min.js',
 ];
 
 self.addEventListener('install', e => {
@@ -26,12 +26,12 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Don't intercept Firebase/Google API calls
   const url = e.request.url;
+  // No interceptar Firebase/Google (necesitan red en vivo)
   if (url.includes('firebase') || url.includes('googleapis') || url.includes('gstatic')) {
     return;
   }
-
+  // Estrategia: cache primero, red como respaldo
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
@@ -42,9 +42,9 @@ self.addEventListener('fetch', e => {
         }
         return res;
       }).catch(() => {
-        // If fetch fails and not cached, return offline page
+        // Sin red y sin caché: si es navegación, devolver index
         if (e.request.mode === 'navigate') {
-          return caches.match('/index.html');
+          return caches.match('./index.html');
         }
       });
     })
