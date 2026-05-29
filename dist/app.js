@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-05-28T21:27:58.728Z
+// MiNegocio v2.0 - Built 2026-05-29T00:29:28.933Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -2004,7 +2004,7 @@ const utils_1 = __require("../lib/utils");
 const firebase_1 = __require("../lib/firebase");
 const ThemeContext_1 = __require("../ThemeContext");
 function TabPedidos({ data, setData, showToast }) {
-    const { theme: T } = (0, ThemeContext_1.useTheme)();
+    const { theme: T, isDark } = (0, ThemeContext_1.useTheme)();
     const [vistaHistorial, setVistaHistorial] = useState(false);
     const [busqueda, setBusqueda] = useState('');
     const [busqAgregar, setBusqAgregar] = useState('');
@@ -2210,7 +2210,7 @@ function TabPedidos({ data, setData, showToast }) {
                                     React.createElement("input", { type: "number", min: 1, value: p.cantidad || 1, onChange: e => { const ref = p.codigoRef || p.codigoProv; setData(d => ({ ...d, pedidos: (d.pedidos || []).map(x => (x.codigoRef || x.codigoProv) === ref ? { ...x, cantidad: Math.max(1, parseInt(e.target.value) || 1) } : x) })); }, style: { width: 44, height: 30, borderRadius: 6, background: T.card, border: `1px solid ${T.inputBorder}`, color: T.text, textAlign: 'center', fontSize: 13, fontWeight: 700, fontFamily: 'inherit' } }),
                                     React.createElement("button", { onClick: () => cambiarCant(p.codigoRef || p.codigoProv, 1), style: { width: 30, height: 30, borderRadius: 6, background: '#6366f1', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, "+"),
                                     React.createElement("div", { style: { flex: 1 } }),
-                                    React.createElement("button", { onClick: () => quitar(p.codigoRef || p.codigoProv), style: { width: 30, height: 30, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' } },
+                                    React.createElement("button", { onClick: () => quitar(p.codigoRef || p.codigoProv), style: { width: 30, height: 30, minWidth: 30, flexShrink: 0, background: isDark ? '#3a1f28' : '#fee2e2', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', WebkitTapHighlightColor: 'transparent' } },
                                         React.createElement(Icon_1.Icon, { name: "trash", size: 13 }))))))));
                     })),
                     React.createElement("div", { style: { background: 'linear-gradient(135deg,#1e3a2e,#1a3025)', borderRadius: 14, border: '1px solid #166534', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
