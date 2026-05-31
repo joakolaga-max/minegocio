@@ -3,6 +3,7 @@ import { AppData, MiProducto } from '../types';
 import { Icon } from '../components/Icon';
 import { Scanner } from '../components/Scanner';
 import { calcPrecioVenta, fmtPeso } from '../lib/utils';
+import { saveFoto, deleteFoto } from '../lib/firebase';
 import { useTheme } from '../ThemeContext';
 
 interface Props {
@@ -613,8 +614,9 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                     const max = 700; const ratio = Math.min(max / img.width, max / img.height, 1);
                     canvas.width = img.width * ratio; canvas.height = img.height * ratio;
                     canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const compressed = canvas.toDataURL('image/jpeg', 0.75);
+                    const compressed = canvas.toDataURL('image/jpeg', 0.7);
                     setData(d => ({ ...d, fotos: { ...d.fotos, [photoModal.codigoRef]: compressed } }));
+                    saveFoto(photoModal.codigoRef, compressed);
                     showToast('Foto guardada', 'success');
                   };
                   img.src = ev.target!.result as string;
@@ -624,7 +626,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
             </label>
             {data.fotos[photoModal.codigoRef] && (
               <button className="btn-danger" style={{ width: '100%', justifyContent: 'center', marginBottom: 8 }}
-                onClick={() => { if (!window.confirm('Eliminar foto?')) return; setData(d => { const f = { ...d.fotos }; delete f[photoModal.codigoRef]; return { ...d, fotos: f }; }); showToast('Foto eliminada', 'info'); }}>
+                onClick={() => { if (!window.confirm('Eliminar foto?')) return; setData(d => { const f = { ...d.fotos }; delete f[photoModal.codigoRef]; return { ...d, fotos: f }; }); deleteFoto(photoModal.codigoRef); showToast('Foto eliminada', 'info'); }}>
                 Eliminar foto
               </button>
             )}
