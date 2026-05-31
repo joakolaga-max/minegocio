@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-05-29T00:29:28.933Z
+// MiNegocio v2.0 - Built 2026-05-31T18:37:07.212Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -203,7 +203,7 @@ __modules['lib/utils'] = exports;
 (function() {
 const exports = {};
 const module = { exports };
-exports.loadFromFirebase = exports.saveToFirebase = void 0;
+exports.loadFotos = exports.deleteFoto = exports.saveFoto = exports.loadFromFirebase = exports.saveToFirebase = void 0;
 const saveToFirebase = async (path, data) => {
     const w = window;
     if (w.__fb)
@@ -217,6 +217,26 @@ const loadFromFirebase = async (path) => {
     return null;
 };
 exports.loadFromFirebase = loadFromFirebase;
+// Cada foto se guarda en su propio documento (evita el límite de 1MB de Firestore)
+const saveFoto = async (codigoRef, base64) => {
+    const w = window;
+    if (w.__fb?.saveFoto)
+        await w.__fb.saveFoto(codigoRef, base64);
+};
+exports.saveFoto = saveFoto;
+const deleteFoto = async (codigoRef) => {
+    const w = window;
+    if (w.__fb?.deleteFoto)
+        await w.__fb.deleteFoto(codigoRef);
+};
+exports.deleteFoto = deleteFoto;
+const loadFotos = async () => {
+    const w = window;
+    if (w.__fb?.loadFotos)
+        return await w.__fb.loadFotos();
+    return {};
+};
+exports.loadFotos = loadFotos;
 
 __modules['lib/firebase'] = exports;
 })();
@@ -709,7 +729,7 @@ const DEFAULT_DATA = {
     pedidos: [],
     pedidosHistorial: [],
 };
-const PATHS = ['proveedores', 'misProductos', 'config', 'stock', 'ventas', 'fotos', 'pedidos', 'pedidosHistorial', 'presupuestos'];
+const PATHS = ['proveedores', 'misProductos', 'config', 'stock', 'ventas', 'pedidos', 'pedidosHistorial', 'presupuestos'];
 function useAppData(user) {
     const [data, setData] = useState(DEFAULT_DATA);
     const [loaded, setLoaded] = useState(false);
@@ -718,7 +738,9 @@ function useAppData(user) {
     const loadAll = useCallback(async () => {
         setSyncing(true);
         try {
-            const [provData, misData, config, stockData, ventasData, fotosData, pedidosData, pedHistData, presupuestosData] = await Promise.all(PATHS.map(p => (0, firebase_1.loadFromFirebase)(p)));
+            const [provData, misData, config, stockData, ventasData, pedidosData, pedHistData, presupuestosData] = await Promise.all(PATHS.map(p => (0, firebase_1.loadFromFirebase)(p)));
+            // Las fotos se cargan por separado (cada una en su documento)
+            const fotosData = await (0, firebase_1.loadFotos)();
             setData(d => {
                 const newData = {
                     ...d,
@@ -782,8 +804,6 @@ function useAppData(user) {
                 saves.push((0, firebase_1.saveToFirebase)('stock', data.stock));
             if (s('ventas'))
                 saves.push((0, firebase_1.saveToFirebase)('ventas', data.ventas));
-            if (s('fotos'))
-                saves.push((0, firebase_1.saveToFirebase)('fotos', data.fotos));
             if (s('pedidos'))
                 saves.push((0, firebase_1.saveToFirebase)('pedidos', data.pedidos));
             if (s('pedidosHistorial'))
@@ -1247,6 +1267,7 @@ exports.TabMisPrecios = TabMisPrecios;
 const Icon_1 = __require("../components/Icon");
 const Scanner_1 = __require("../components/Scanner");
 const utils_1 = __require("../lib/utils");
+const firebase_1 = __require("../lib/firebase");
 const ThemeContext_1 = __require("../ThemeContext");
 const MARGEN_LABELS = { p1: 'p1', p2: 'p2', p3: 'p3', p4: 'p4' };
 // Muestra la foto con delay para evitar el glitch de GPU en Android
@@ -1728,8 +1749,9 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                                     canvas.width = img.width * ratio;
                                     canvas.height = img.height * ratio;
                                     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                                    const compressed = canvas.toDataURL('image/jpeg', 0.75);
+                                    const compressed = canvas.toDataURL('image/jpeg', 0.7);
                                     setData(d => ({ ...d, fotos: { ...d.fotos, [photoModal.codigoRef]: compressed } }));
+                                    (0, firebase_1.saveFoto)(photoModal.codigoRef, compressed);
                                     showToast('Foto guardada', 'success');
                                 };
                                 img.src = ev.target.result;
@@ -1737,7 +1759,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                             reader.readAsDataURL(file);
                         } })),
                 data.fotos[photoModal.codigoRef] && (React.createElement("button", { className: "btn-danger", style: { width: '100%', justifyContent: 'center', marginBottom: 8 }, onClick: () => { if (!window.confirm('Eliminar foto?'))
-                        return; setData(d => { const f = { ...d.fotos }; delete f[photoModal.codigoRef]; return { ...d, fotos: f }; }); showToast('Foto eliminada', 'info'); } }, "Eliminar foto")),
+                        return; setData(d => { const f = { ...d.fotos }; delete f[photoModal.codigoRef]; return { ...d, fotos: f }; }); (0, firebase_1.deleteFoto)(photoModal.codigoRef); showToast('Foto eliminada', 'info'); } }, "Eliminar foto")),
                 React.createElement("button", { className: "btn-ghost", style: { width: '100%', justifyContent: 'center' }, onClick: () => setPhotoModal(null) }, "Cerrar"))))));
 }
 
