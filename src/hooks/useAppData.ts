@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { AppData, Margenes } from '../types';
-import { loadFromFirebase, saveToFirebase } from '../lib/firebase';
+import { loadFromFirebase, saveToFirebase, loadFotos } from '../lib/firebase';
 
 const DEFAULT_MARGENES: Margenes = { p1: 50, p2: 40, p3: 30, p4: 20 };
 
@@ -15,7 +15,7 @@ const DEFAULT_DATA: AppData = {
   pedidosHistorial: [],
 };
 
-const PATHS = ['proveedores', 'misProductos', 'config', 'stock', 'ventas', 'fotos', 'pedidos', 'pedidosHistorial', 'presupuestos'] as const;
+const PATHS = ['proveedores', 'misProductos', 'config', 'stock', 'ventas', 'pedidos', 'pedidosHistorial', 'presupuestos'] as const;
 
 export function useAppData(user: string | null) {
   const [data, setData] = useState<AppData>(DEFAULT_DATA);
@@ -26,8 +26,10 @@ export function useAppData(user: string | null) {
   const loadAll = useCallback(async () => {
     setSyncing(true);
     try {
-      const [provData, misData, config, stockData, ventasData, fotosData, pedidosData, pedHistData, presupuestosData] =
+      const [provData, misData, config, stockData, ventasData, pedidosData, pedHistData, presupuestosData] =
         await Promise.all(PATHS.map(p => loadFromFirebase(p)));
+      // Las fotos se cargan por separado (cada una en su documento)
+      const fotosData = await loadFotos();
 
       setData(d => {
         const newData: AppData = {
@@ -86,7 +88,6 @@ export function useAppData(user: string | null) {
         }));
       if (s('stock')) saves.push(saveToFirebase('stock', data.stock));
       if (s('ventas')) saves.push(saveToFirebase('ventas', data.ventas));
-      if (s('fotos')) saves.push(saveToFirebase('fotos', data.fotos));
       if (s('pedidos')) saves.push(saveToFirebase('pedidos', data.pedidos));
       if (s('pedidosHistorial')) saves.push(saveToFirebase('pedidosHistorial', data.pedidosHistorial));
       if (s('presupuestos')) saves.push(saveToFirebase('presupuestos', data.presupuestos));
