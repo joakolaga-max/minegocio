@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-05-31T18:37:07.212Z
+// MiNegocio v2.0 - Built 2026-05-31T23:17:59.471Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -2376,6 +2376,7 @@ const module = { exports };
 exports.TabConfig = TabConfig;
 const Icon_1 = __require("../components/Icon");
 const ThemeContext_1 = __require("../ThemeContext");
+const firebase_1 = __require("../lib/firebase");
 function TabConfig({ data, setData, showToast }) {
     const { theme: T } = (0, ThemeContext_1.useTheme)();
     const [openSection, setOpenSection] = useState('margenes');
@@ -2402,6 +2403,80 @@ function TabConfig({ data, setData, showToast }) {
             proveedores: (d.proveedores || []).map((p, i) => ({ ...p, nombre: nombres[i] || p.nombre }))
         }));
         showToast('Proveedores guardados', 'success');
+    };
+    // ── Backup completo (datos + fotos) ──
+    const descargarBackup = async () => {
+        showToast('Preparando backup...', 'info');
+        try {
+            const fotos = await (0, firebase_1.loadFotos)();
+            const backup = {
+                version: 2,
+                fecha: new Date().toISOString(),
+                datos: {
+                    proveedores: data.proveedores,
+                    misProductos: data.misProductos,
+                    margenes: data.margenes,
+                    stock: data.stock,
+                    ventas: data.ventas,
+                    pedidos: data.pedidos,
+                    pedidosHistorial: data.pedidosHistorial,
+                    presupuestos: data.presupuestos || [],
+                    empresa: data.empresa || '',
+                    telefono: data.telefono || '',
+                    direccion: data.direccion || '',
+                },
+                fotos: fotos,
+            };
+            const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const fecha = new Date().toLocaleDateString('es-AR').replace(/\//g, '-');
+            a.href = url;
+            a.download = `backup_minegocio_${fecha}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            const cant = Object.keys(fotos).length;
+            showToast(`Backup descargado (${data.misProductos.length} productos, ${cant} fotos)`, 'success');
+        }
+        catch (e) {
+            showToast('Error al crear backup', 'error');
+        }
+    };
+    const restaurarBackup = (file) => {
+        if (!file)
+            return;
+        if (!window.confirm('Esto va a REEMPLAZAR todos los datos actuales con los del backup. ¿Continuar?'))
+            return;
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+            try {
+                const backup = JSON.parse(ev.target.result);
+                if (!backup.datos) {
+                    showToast('Archivo de backup inválido', 'error');
+                    return;
+                }
+                showToast('Restaurando...', 'info');
+                // Restaurar datos principales
+                setData(d => ({
+                    ...d,
+                    ...backup.datos,
+                    fotos: backup.fotos || {},
+                }));
+                // Restaurar fotos una por una en Firebase
+                if (backup.fotos) {
+                    for (const [ref, b64] of Object.entries(backup.fotos)) {
+                        await (0, firebase_1.saveFoto)(ref, b64);
+                    }
+                }
+                showToast('Backup restaurado correctamente', 'success');
+            }
+            catch (e) {
+                showToast('Error al leer el backup', 'error');
+            }
+        };
+        reader.readAsText(file);
     };
     const guardarPresupuesto = () => {
         // Save to Firebase via data
@@ -2468,7 +2543,19 @@ function TabConfig({ data, setData, showToast }) {
             React.createElement("div", { style: { background: T.sectionBg, borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: T.textMuted } }, "Estos datos aparecen en todos los presupuestos que generes."),
             React.createElement("button", { className: "btn-primary", style: { width: '100%', justifyContent: 'center' }, onClick: guardarPresupuesto },
                 React.createElement(Icon_1.Icon, { name: "check", size: 16 }),
-                " Guardar datos")))));
+                " Guardar datos"))),
+        React.createElement(SectionHeader, { id: "backup", label: "Copia de seguridad", icon: "download" }),
+        openSection === 'backup' && (React.createElement("div", { style: { background: T.card, borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 } },
+            React.createElement("div", { style: { background: T.sectionBg, borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: T.textMuted } }, "Descarg\u00E1 un archivo con TODOS tus datos y fotos. Guardalo en un lugar seguro (Drive, mail, USB). Si pasa algo, lo restaur\u00E1s en segundos."),
+            React.createElement("button", { className: "btn-primary", style: { width: '100%', justifyContent: 'center', marginBottom: 10 }, onClick: descargarBackup },
+                React.createElement(Icon_1.Icon, { name: "download", size: 16 }),
+                " Descargar backup completo"),
+            React.createElement("label", { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', background: 'transparent', border: `1px solid ${T.inputBorder}`, color: T.textSecondary, borderRadius: 12, padding: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500, fontSize: 14 } },
+                React.createElement(Icon_1.Icon, { name: "upload", size: 16 }),
+                " Restaurar desde backup",
+                React.createElement("input", { type: "file", accept: ".json", style: { display: 'none' }, onChange: e => { const f = e.target.files?.[0]; if (f)
+                        restaurarBackup(f); e.target.value = ''; } })),
+            React.createElement("div", { style: { marginTop: 12, fontSize: 11, color: T.textMuted, textAlign: 'center' } }, "Recomendado: hac\u00E9 un backup una vez por semana.")))));
 }
 
 __modules['tabs/TabConfig'] = exports;

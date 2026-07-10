@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AppData } from '../types';
 import { Icon } from '../components/Icon';
 import { useTheme } from '../ThemeContext';
+import { loadFotos, saveFoto } from '../lib/firebase';
 
 interface Props {
   data: AppData;
@@ -41,6 +42,75 @@ export function TabConfig({ data, setData, showToast }: Props) {
       proveedores: (d.proveedores || []).map((p, i) => ({ ...p, nombre: nombres[i] || p.nombre }))
     }));
     showToast('Proveedores guardados', 'success');
+  };
+
+  // ── Backup completo (datos + fotos) ──
+  const descargarBackup = async () => {
+    showToast('Preparando backup...', 'info');
+    try {
+      const fotos = await loadFotos();
+      const backup = {
+        version: 2,
+        fecha: new Date().toISOString(),
+        datos: {
+          proveedores: data.proveedores,
+          misProductos: data.misProductos,
+          margenes: data.margenes,
+          stock: data.stock,
+          ventas: data.ventas,
+          pedidos: data.pedidos,
+          pedidosHistorial: data.pedidosHistorial,
+          presupuestos: (data as any).presupuestos || [],
+          empresa: (data as any).empresa || '',
+          telefono: (data as any).telefono || '',
+          direccion: (data as any).direccion || '',
+        },
+        fotos: fotos,
+      };
+      const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const fecha = new Date().toLocaleDateString('es-AR').replace(/\//g, '-');
+      a.href = url;
+      a.download = `backup_minegocio_${fecha}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      const cant = Object.keys(fotos).length;
+      showToast(`Backup descargado (${data.misProductos.length} productos, ${cant} fotos)`, 'success');
+    } catch (e) {
+      showToast('Error al crear backup', 'error');
+    }
+  };
+
+  const restaurarBackup = (file: File) => {
+    if (!file) return;
+    if (!window.confirm('Esto va a REEMPLAZAR todos los datos actuales con los del backup. ¿Continuar?')) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const backup = JSON.parse(ev.target!.result as string);
+        if (!backup.datos) { showToast('Archivo de backup inválido', 'error'); return; }
+        showToast('Restaurando...', 'info');
+        // Restaurar datos principales
+        setData(d => ({
+          ...d,
+          ...backup.datos,
+          fotos: backup.fotos || {},
+        }));
+        // Restaurar fotos una por una en Firebase
+        if (backup.fotos) {
+          for (const [ref, b64] of Object.entries(backup.fotos)) {
+            await saveFoto(ref, b64 as string);
+          }
+        }
+        showToast('Backup restaurado correctamente', 'success');
+      } catch (e) {
+        showToast('Error al leer el backup', 'error');
+      }
+    };
+    reader.readAsText(file);
   };
 
   const guardarPresupuesto = () => {
@@ -146,6 +216,26 @@ export function TabConfig({ data, setData, showToast }: Props) {
           <button className="btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={guardarPresupuesto}>
             <Icon name="check" size={16} /> Guardar datos
           </button>
+        </div>
+      )}
+
+      {/* BACKUP */}
+      <SectionHeader id="backup" label="Copia de seguridad" icon="download" />
+      {openSection === 'backup' && (
+        <div style={{ background: T.card, borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 }}>
+          <div style={{ background: T.sectionBg, borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: T.textMuted }}>
+            Descargá un archivo con TODOS tus datos y fotos. Guardalo en un lugar seguro (Drive, mail, USB). Si pasa algo, lo restaurás en segundos.
+          </div>
+          <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginBottom: 10 }} onClick={descargarBackup}>
+            <Icon name="download" size={16} /> Descargar backup completo
+          </button>
+          <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', background: 'transparent', border: `1px solid ${T.inputBorder}`, color: T.textSecondary, borderRadius: 12, padding: 12, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500, fontSize: 14 }}>
+            <Icon name="upload" size={16} /> Restaurar desde backup
+            <input type="file" accept=".json" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) restaurarBackup(f); e.target.value = ''; }} />
+          </label>
+          <div style={{ marginTop: 12, fontSize: 11, color: T.textMuted, textAlign: 'center' }}>
+            Recomendado: hacé un backup una vez por semana.
+          </div>
         </div>
       )}
     </div>
