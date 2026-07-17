@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-17T00:51:08.604Z
+// MiNegocio v2.0 - Built 2026-07-17T01:47:21.649Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -849,14 +849,20 @@ function TabCalculadora({ data, setData, showToast }) {
     const calcTotal = () => cart.reduce((sum, c) => sum + (c.precioVenta * c.cantidad), 0);
     const vuelto = montoEfectivo ? parseFloat(montoEfectivo) - calcTotal() : 0;
     const agregarAlCarrito = (prod) => {
-        const existe = cart.findIndex(c => c.codigoRef === prod.codigoRef);
+        // Calcular precioVenta si no lo tiene (viene de misProductos)
+        const precioVenta = prod.precioVenta || (0, utils_1.calcPrecioVenta)(prod.precioCosto, prod.margen, data.margenes);
+        const cartItem = {
+            ...prod,
+            precioVenta: precioVenta
+        };
+        const existe = cart.findIndex(c => c.codigoRef === cartItem.codigoRef);
         if (existe !== -1) {
             const newCart = [...cart];
             newCart[existe].cantidad += 1;
             setCart(newCart);
         }
         else {
-            setCart([...cart, { ...prod, cantidad: 1 }]);
+            setCart([...cart, { ...cartItem, cantidad: 1 }]);
         }
         setSearch('');
     };

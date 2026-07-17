@@ -29,14 +29,21 @@ export function TabCalculadora({ data, setData, showToast }: Props) {
   const calcTotal = () => cart.reduce((sum, c) => sum + (c.precioVenta * c.cantidad), 0);
   const vuelto = montoEfectivo ? parseFloat(montoEfectivo) - calcTotal() : 0;
 
-  const agregarAlCarrito = (prod: CartItem) => {
-    const existe = cart.findIndex(c => c.codigoRef === prod.codigoRef);
+  const agregarAlCarrito = (prod: any) => {
+    // Calcular precioVenta si no lo tiene (viene de misProductos)
+    const precioVenta = prod.precioVenta || calcPrecioVenta(prod.precioCosto, prod.margen, data.margenes);
+    const cartItem: CartItem = {
+      ...prod,
+      precioVenta: precioVenta
+    };
+    
+    const existe = cart.findIndex(c => c.codigoRef === cartItem.codigoRef);
     if (existe !== -1) {
       const newCart = [...cart];
       newCart[existe].cantidad += 1;
       setCart(newCart);
     } else {
-      setCart([...cart, { ...prod, cantidad: 1 }]);
+      setCart([...cart, { ...cartItem, cantidad: 1 }]);
     }
     setSearch('');
   };
