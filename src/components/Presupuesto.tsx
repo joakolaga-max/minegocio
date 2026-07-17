@@ -7,6 +7,7 @@ interface Item {
   descripcion: string;
   cantidad: number;
   precioVenta: number;
+  codigoRef?: string;
 }
 
 interface Props {
@@ -21,6 +22,12 @@ interface Props {
 }
 
 export function Presupuesto({ items, total, onClose, onGuardar, empresaData, telefonoData, direccionData, misProductos = [] }: Props) {
+  const getDescripcion = (item: Item) => {
+    if (!item.codigoRef) return item.descripcion;
+    const prod = misProductos.find(p => p.codigoRef === item.codigoRef);
+    return prod?.descripcion || item.descripcion;
+  };
+
   const [nombreEmpresa, setNombreEmpresa] = useState(() => empresaData || localStorage.getItem('mn_empresa') || '');
   const [telefono, setTelefono] = useState(() => telefonoData || localStorage.getItem('mn_telefono') || '');
   const [direccion, setDireccion] = useState(() => direccionData || localStorage.getItem('mn_direccion') || '');

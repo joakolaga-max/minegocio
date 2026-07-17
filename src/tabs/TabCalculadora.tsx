@@ -31,6 +31,8 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
   const { theme: T } = useTheme();
   const [items, setItems] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<'transferencia' | 'efectivo'>('transferencia');
+  const [showModalEfectivo, setShowModalEfectivo] = useState(false);
+  const [montoEfectivo, setMontoEfectivo] = useState('');
 
   // Cargar items desde presupuestos
   useEffect(() => {
@@ -125,7 +127,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
     setItems(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const registrarVenta = () => {
+  const registrarVenta = (monto?: number) => {
     if (items.length === 0) return;
     const venta = {
       id: Date.now().toString(36),
@@ -134,9 +136,13 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
       items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta })),
       total,
       paymentMethod,
+      amountReceived: monto,
+      change: monto !== undefined ? monto - total : undefined,
     };
     setData(d => ({ ...d, ventas: [venta, ...(d.ventas || [])] }));
     setItems([]);
+    setShowModalEfectivo(false);
+    setMontoEfectivo('');
     showToast('Venta registrada', 'success');
   };
 
@@ -281,7 +287,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
               💳 Transferencia
             </button>
             <button
-              onClick={() => setPaymentMethod('efectivo')}
+              onClick={() => { setPaymentMethod('efectivo'); setShowModalEfectivo(true); }}
               style={{
                 flex: 1,
                 padding: 12,
@@ -307,11 +313,50 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
             <button className="btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowPresupuesto(true)}>
               <Icon name="download" size={16} /> Presupuesto
             </button>
-            <button className="btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={registrarVenta}>
+            <button className="btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { if (paymentMethod === 'efectivo') { setShowModalEfectivo(true); } else { registrarVenta(); } }}>
               <Icon name="check" size={16} /> Venta
             </button>
           </div>
         </div>
+      )}
+
+      {showModalEfectivo && (
+        <Modal onClose={() => setShowModalEfectivo(false)}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: T.text }}>💵 Pago en efectivo</div>
+            <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 14 }}>¿Con cuánto abona el cliente?</div>
+            <input
+              type="number"
+              placeholder="Ej: 7000"
+              value={montoEfectivo}
+              onChange={e => setMontoEfectivo(e.target.value)}
+              className="input-field"
+              style={{ marginBottom: 12, fontSize: 14 }}
+              autoFocus
+            />
+            <div style={{ background: T.cardHover, padding: 10, borderRadius: 8, marginBottom: 8, textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: T.textMuted }}>Total a pagar</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4 }}>{fmtPeso(total)}</div>
+            </div>
+            <div style={{ background: T.cardHover, padding: 10, borderRadius: 8, marginBottom: 14, textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: T.textMuted }}>Vuelto</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: (montoEfectivo && (parseFloat(montoEfectivo) - total) >= 0) ? '#22c55e' : '#ef4444', marginTop: 4 }}>
+                {fmtPeso(montoEfectivo ? parseFloat(montoEfectivo) - total : 0)}
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <button onClick={() => setShowModalEfectivo(false)} className="btn-ghost" style={{ justifyContent: 'center' }}>Cancelar</button>
+              <button
+                onClick={() => registrarVenta(parseFloat(montoEfectivo) || 0)}
+                disabled={!montoEfectivo}
+                className="btn-primary"
+                style={{ justifyContent: 'center', opacity: montoEfectivo ? 1 : 0.5, cursor: montoEfectivo ? 'pointer' : 'not-allowed' }}
+              >
+                ✓ Confirmar
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {showPresupuesto && (
