@@ -40,6 +40,9 @@ export interface Venta {
   hora: string;
   items: VentaItem[];
   total: number;
+  paymentMethod?: 'transferencia' | 'efectivo';
+  amountReceived?: number;
+  change?: number;
 }
 
 export interface PedidoItem {

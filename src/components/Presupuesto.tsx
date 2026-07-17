@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Icon } from './Icon';
 
+import { MiProducto } from '../types';
+
 interface Item {
   descripcion: string;
   cantidad: number;
@@ -15,9 +17,10 @@ interface Props {
   empresaData?: string;
   telefonoData?: string;
   direccionData?: string;
+  misProductos?: MiProducto[];
 }
 
-export function Presupuesto({ items, total, onClose, onGuardar, empresaData, telefonoData, direccionData }: Props) {
+export function Presupuesto({ items, total, onClose, onGuardar, empresaData, telefonoData, direccionData, misProductos = [] }: Props) {
   const [nombreEmpresa, setNombreEmpresa] = useState(() => empresaData || localStorage.getItem('mn_empresa') || '');
   const [telefono, setTelefono] = useState(() => telefonoData || localStorage.getItem('mn_telefono') || '');
   const [direccion, setDireccion] = useState(() => direccionData || localStorage.getItem('mn_direccion') || '');
@@ -92,7 +95,7 @@ export function Presupuesto({ items, total, onClose, onGuardar, empresaData, tel
     <tbody>
       ${items.map(i => `
       <tr>
-        <td>${i.descripcion}</td>
+        <td>${getDescripcion(i)}</td>
         <td style="text-align:center">${i.cantidad}</td>
         <td style="text-align:right">${fmt(i.precioVenta)}</td>
         <td style="text-align:right">${fmt(i.precioVenta * i.cantidad)}</td>
@@ -121,7 +124,7 @@ export function Presupuesto({ items, total, onClose, onGuardar, empresaData, tel
     guardarConfig();
     const msg = `*PRESUPUESTO${nombreEmpresa ? ' - ' + nombreEmpresa : ''}*\n` +
       `Fecha: ${fecha}\n${cliente ? `Cliente: ${cliente}\n` : ''}\n` +
-      items.map(i => `• ${i.descripcion} x${i.cantidad} → ${fmt(i.precioVenta * i.cantidad)}`).join('\n') +
+      items.map(i => `• ${getDescripcion(i)} x${i.cantidad} → ${fmt(i.precioVenta * i.cantidad)}`).join('\n') +
       `\n\n*TOTAL: ${fmt(totalConDesc)}*` +
       (descuento > 0 ? ` _(${descuento}% desc. aplicado)_` : '') +
       (nota ? `\n\n_${nota}_` : '');
@@ -162,7 +165,7 @@ export function Presupuesto({ items, total, onClose, onGuardar, empresaData, tel
         <div style={{ background: '#111827', borderRadius: 10, padding: '10px 12px', marginBottom: 10 }}>
           {items.map((item, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: i < items.length - 1 ? '1px solid #1e2535' : 'none' }}>
-              <span style={{ color: '#94a3b8' }}>{item.cantidad}x {item.descripcion}</span>
+              <span style={{ color: '#94a3b8' }}>{item.cantidad}x {getDescripcion(item)}</span>
               <span style={{ color: '#22c55e', fontWeight: 600 }}>{fmt(item.precioVenta * item.cantidad)}</span>
             </div>
           ))}
