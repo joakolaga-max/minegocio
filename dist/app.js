@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-17T01:47:21.649Z
+// MiNegocio v2.0 - Built 2026-07-17T22:44:02.324Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -828,143 +828,181 @@ __modules['hooks/useAppData'] = exports;
 const exports = {};
 const module = { exports };
 exports.TabCalculadora = TabCalculadora;
-const Icon_1 = __require("../components/Icon");
-const Modal_1 = __require("../components/Modal");
-const Scanner_1 = __require("../components/Scanner");
-const utils_1 = __require("../lib/utils");
 const ThemeContext_1 = __require("../ThemeContext");
-function TabCalculadora({ data, setData, showToast }) {
+const utils_1 = __require("../lib/utils");
+const Icon_1 = __require("../components/Icon");
+const Scanner_1 = __require("../components/Scanner");
+const Presupuesto_1 = __require("../components/Presupuesto");
+function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending }) {
     const { theme: T } = (0, ThemeContext_1.useTheme)();
-    const [cart, setCart] = useState([]);
+    const [items, setItems] = useState([]);
     const [paymentMethod, setPaymentMethod] = useState('transferencia');
-    const [showConfirmVacio, setShowConfirmVacio] = useState(false);
-    const [showConfirmVenta, setShowConfirmVenta] = useState(false);
-    const [showModalEfectivo, setShowModalEfectivo] = useState(false);
-    const [montoEfectivo, setMontoEfectivo] = useState('');
-    const [search, setSearch] = useState('');
+    // Cargar items desde presupuestos
+    useEffect(() => {
+        if (pendingItems && pendingItems.length > 0) {
+            setItems(pendingItems.map((p) => ({
+                codigoRef: p.codigoRef || '',
+                descripcion: p.descripcion || '',
+                precioCosto: p.precioCosto || 0,
+                precioVenta: p.precioVenta || 0,
+                margen: p.margen || 0,
+                cantidad: p.cantidad || 1,
+                proveedor: p.proveedor || '',
+            })));
+            onClearPending && onClearPending();
+        }
+    }, [pendingItems]);
+    const [busqueda, setBusqueda] = useState('');
     const [scanning, setScanning] = useState(false);
-    const [showAgregar, setShowAgregar] = useState(false);
-    const [agregarDesc, setAgregarDesc] = useState('');
-    const [agregarPrecio, setAgregarPrecio] = useState('');
-    const calcTotal = () => cart.reduce((sum, c) => sum + (c.precioVenta * c.cantidad), 0);
-    const vuelto = montoEfectivo ? parseFloat(montoEfectivo) - calcTotal() : 0;
-    const agregarAlCarrito = (prod) => {
-        // Calcular precioVenta si no lo tiene (viene de misProductos)
-        const precioVenta = prod.precioVenta || (0, utils_1.calcPrecioVenta)(prod.precioCosto, prod.margen, data.margenes);
-        const cartItem = {
-            ...prod,
-            precioVenta: precioVenta
-        };
-        const existe = cart.findIndex(c => c.codigoRef === cartItem.codigoRef);
-        if (existe !== -1) {
-            const newCart = [...cart];
-            newCart[existe].cantidad += 1;
-            setCart(newCart);
-        }
-        else {
-            setCart([...cart, { ...cartItem, cantidad: 1 }]);
-        }
-        setSearch('');
-    };
-    const cambiarCantidad = (idx, qty) => {
-        if (qty <= 0) {
-            quitar(idx);
-            return;
-        }
-        const newCart = [...cart];
-        newCart[idx].cantidad = qty;
-        setCart(newCart);
-    };
-    const quitar = (idx) => {
-        setCart(cart.filter((_, i) => i !== idx));
-    };
-    const registrarVenta = (monto) => {
-        if (!cart.length)
-            return;
-        const ventaId = (0, utils_1.genId)();
-        const total = calcTotal();
-        const venta = {
-            id: ventaId,
-            fecha: (0, utils_1.todayStr)(),
-            hora: (0, utils_1.nowStr)(),
-            items: cart.map(c => ({ codigoRef: c.codigoRef, descripcion: c.descripcion, cantidad: c.cantidad, precioVenta: c.precioVenta })),
-            total: total,
-            paymentMethod: paymentMethod,
-            amountReceived: monto,
-            change: monto ? monto - total : undefined,
-        };
-        setData(d => ({ ...d, ventas: [...d.ventas, venta] }));
-        showToast('Venta registrada', 'success');
-        setCart([]);
-        setShowConfirmVenta(false);
-        setShowModalEfectivo(false);
-        setMontoEfectivo('');
-    };
-    const suggestions = search.trim()
-        ? data.misProductos.filter(p => p.codigoRef.toUpperCase().includes(search.toUpperCase()) ||
-            p.codigoProv.toUpperCase().includes(search.toUpperCase()) ||
-            (p.codigoBarras && p.codigoBarras.includes(search)) ||
-            p.descripcion.toUpperCase().includes(search.toUpperCase())).sort((a, b) => a.descripcion.localeCompare(b.descripcion, 'es'))
-            .slice(0, 8)
+    const [showPresupuesto, setShowPresupuesto] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [showCustom, setShowCustom] = useState(false);
+    const [customDesc, setCustomDesc] = useState('');
+    const [customPrecio, setCustomPrecio] = useState('');
+    const inputRef = useRef(null);
+    const total = items.reduce((sum, i) => sum + i.precioVenta * i.cantidad, 0);
+    const sugerencias = busqueda.length > 0
+        ? (data.misProductos || []).filter(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
+            (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+            (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+            (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()))
+            .sort((a, b) => {
+            const q = busqueda.toLowerCase();
+            const aDesc = (a.descripcion || '').toLowerCase();
+            const bDesc = (b.descripcion || '').toLowerCase();
+            // Prioridad: la descripción EMPIEZA con la búsqueda
+            const aStarts = aDesc.startsWith(q) ? 0 : 1;
+            const bStarts = bDesc.startsWith(q) ? 0 : 1;
+            if (aStarts !== bStarts)
+                return aStarts - bStarts;
+            // Luego alfabético
+            return aDesc.localeCompare(bDesc, 'es');
+        })
+            .slice(0, 12)
         : [];
-    return (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
-        React.createElement("div", { style: { padding: 12, background: T.card, borderRadius: 12, marginBottom: 12 } },
+    const agregarProducto = useCallback((ref) => {
+        const p = (data.misProductos || []).find(x => x.codigoRef.toLowerCase() === ref.toLowerCase() ||
+            (x.codigoProv || '').toLowerCase() === ref.toLowerCase() ||
+            (x.codigoBarras || '').toLowerCase() === ref.toLowerCase());
+        if (!p) {
+            showToast('Producto no encontrado', 'error');
+            return;
+        }
+        const pv = (0, utils_1.calcPrecioVenta)(p.precioCosto, p.margen, data.margenes);
+        setItems(prev => {
+            const idx = prev.findIndex(i => i.codigoRef === p.codigoRef);
+            if (idx >= 0) {
+                const next = [...prev];
+                next[idx] = { ...next[idx], cantidad: next[idx].cantidad + 1 };
+                return next;
+            }
+            return [...prev, {
+                    codigoRef: p.codigoRef,
+                    descripcion: p.descripcion,
+                    codigoProv: p.codigoProv || '',
+                    precioCosto: p.precioCosto,
+                    precioVenta: pv,
+                    cantidad: 1,
+                    margen: p.margen,
+                    proveedor: p.proveedor || '',
+                    divisor: p.divisor || 1,
+                }];
+        });
+        setBusqueda('');
+        setShowSuggestions(false);
+        showToast(`${p.codigoRef} agregado`, 'success');
+    }, [data.misProductos, data.margenes, showToast]);
+    const updateQty = (idx, delta) => {
+        setItems(prev => {
+            const next = [...prev];
+            const newQty = next[idx].cantidad + delta;
+            if (newQty <= 0)
+                return next.filter((_, i) => i !== idx);
+            next[idx] = { ...next[idx], cantidad: newQty };
+            return next;
+        });
+    };
+    const removeItem = (idx) => {
+        setItems(prev => prev.filter((_, i) => i !== idx));
+    };
+    const registrarVenta = () => {
+        if (items.length === 0)
+            return;
+        const venta = {
+            id: Date.now().toString(36),
+            fecha: new Date().toLocaleDateString('es-AR'),
+            hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+            items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta })),
+            total,
+            paymentMethod,
+        };
+        setData(d => ({ ...d, ventas: [venta, ...(d.ventas || [])] }));
+        setItems([]);
+        showToast('Venta registrada', 'success');
+    };
+    return (React.createElement("div", { className: "card" },
+        React.createElement("div", { className: "section-title" }, "Calculadora"),
+        React.createElement("div", { style: { position: 'relative', marginBottom: 12 } },
             React.createElement("div", { style: { display: 'flex', gap: 8 } },
-                React.createElement("input", { type: "text", placeholder: "C\u00F3digo, descripci\u00F3n o barras", value: search, onChange: e => setSearch(e.target.value), onKeyDown: e => { if (e.key === 'Enter' && suggestions.length)
-                        agregarAlCarrito(suggestions[0]); }, className: "input-field", style: { flex: 1, fontSize: 13 } }),
-                React.createElement("button", { onClick: () => setScanning(true), className: "btn-ghost", style: { padding: 8, minWidth: 40 } },
-                    React.createElement(Icon_1.Icon, { name: "camera", size: 14 })),
-                React.createElement("button", { onClick: () => setShowAgregar(!showAgregar), className: "btn-ghost", style: { padding: 8, minWidth: 40 } },
-                    React.createElement(Icon_1.Icon, { name: "plus", size: 14 }))),
-            suggestions.length > 0 && (React.createElement("div", { style: { marginTop: 8, background: T.cardHover, borderRadius: 8, overflow: 'hidden' } }, suggestions.map((p, i) => (React.createElement("button", { key: i, onClick: () => agregarAlCarrito(p), style: {
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    width: '100%',
-                    padding: '8px 10px',
-                    background: 'transparent',
-                    border: 'none',
-                    borderBottom: i < suggestions.length - 1 ? `1px solid ${T.divider}` : 'none',
-                    color: T.text,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    fontSize: 12,
-                } },
-                React.createElement("div", null,
-                    React.createElement("div", { style: { fontWeight: 600, color: T.text } }, p.codigoRef),
-                    React.createElement("div", { style: { fontSize: 11, color: T.textMuted } }, p.descripcion)),
-                React.createElement("div", { style: { textAlign: 'right', whiteSpace: 'nowrap' } },
-                    React.createElement("div", { style: { color: '#22c55e', fontWeight: 600 } }, (0, utils_1.fmtPeso)((0, utils_1.calcPrecioVenta)(p.precioCosto, p.margen, data.margenes))),
-                    React.createElement("div", { style: { fontSize: 11, color: T.textMuted } }, data.stock?.[p.codigoRef]?.actual > 0 ? `Stock: ${data.stock[p.codigoRef].actual}` : 'Sin stock')))))))),
-        showAgregar && (React.createElement("div", { style: { padding: 12, background: T.card, borderRadius: 12, marginBottom: 12 } },
-            React.createElement("input", { type: "text", placeholder: "Descripci\u00F3n", value: agregarDesc, onChange: e => setAgregarDesc(e.target.value), className: "input-field", style: { fontSize: 13, marginBottom: 8 } }),
-            React.createElement("input", { type: "number", placeholder: "Precio", value: agregarPrecio, onChange: e => setAgregarPrecio(e.target.value), className: "input-field", style: { fontSize: 13, marginBottom: 8 } }),
-            React.createElement("button", { className: "btn-primary", onClick: () => {
-                    if (agregarDesc && agregarPrecio) {
-                        agregarAlCarrito({ codigoRef: 'LIBRE', codigoProv: '', descripcion: agregarDesc, precioCosto: 0, margen: 0, precioVenta: parseFloat(agregarPrecio), cantidad: 1 });
-                        setAgregarDesc('');
-                        setAgregarPrecio('');
-                        setShowAgregar(false);
-                    }
-                }, style: { width: '100%', justifyContent: 'center' } },
-                React.createElement(Icon_1.Icon, { name: "check", size: 14 }),
-                " Agregar"))),
-        React.createElement("div", { style: { flex: 1, overflowY: 'auto', marginBottom: 12 } }, cart.length === 0 ? (React.createElement("div", { style: { textAlign: 'center', padding: 20, color: T.textMuted, fontSize: 13 } }, "Carrito vac\u00EDo")) : (cart.map((item, idx) => (React.createElement("div", { key: idx, style: { background: T.card, borderRadius: 12, padding: 10, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 } },
-            React.createElement("div", { style: { flex: 1 } },
-                React.createElement("div", { style: { fontWeight: 600, fontSize: 13, color: T.text } }, item.descripcion),
-                React.createElement("div", { style: { fontSize: 11, color: T.textMuted } }, (0, utils_1.fmtPeso)(item.precioVenta))),
-            React.createElement("div", { style: { display: 'flex', gap: 4, alignItems: 'center' } },
-                React.createElement("button", { onClick: () => cambiarCantidad(idx, item.cantidad - 1), className: "btn-ghost", style: { padding: 6, minWidth: 28, fontSize: 12 } }, "\u2212"),
-                React.createElement("input", { type: "number", value: item.cantidad, onChange: e => cambiarCantidad(idx, parseInt(e.target.value) || 1), style: { width: 40, padding: 6, textAlign: 'center', background: T.inputBg, border: `1px solid ${T.inputBorder}`, borderRadius: 8, color: T.text, fontSize: 12 } }),
-                React.createElement("button", { onClick: () => cambiarCantidad(idx, item.cantidad + 1), className: "btn-ghost", style: { padding: 6, minWidth: 28, fontSize: 12 } }, "+"),
-                React.createElement("button", { onClick: () => quitar(idx), className: "btn-danger", style: { padding: 6, minWidth: 30 } },
-                    React.createElement(Icon_1.Icon, { name: "trash", size: 12 })))))))),
-        cart.length > 0 && (React.createElement("div", { style: { background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', padding: 14, borderRadius: 12, marginBottom: 12, textAlign: 'center' } },
-            React.createElement("div", { style: { fontSize: 11, color: 'rgba(255,255,255,0.7)' } }, "TOTAL"),
-            React.createElement("div", { style: { fontSize: 24, fontWeight: 700, color: 'white' } }, (0, utils_1.fmtPeso)(calcTotal())))),
-        cart.length > 0 && (React.createElement("div", { style: { marginBottom: 12 } },
-            React.createElement("div", { style: { fontSize: 10, fontWeight: 600, color: T.textMuted, textTransform: 'uppercase', marginBottom: 6 } }, "M\u00E9todo de pago"),
-            React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
+                React.createElement("div", { style: { position: 'relative', flex: 1 } },
+                    React.createElement("div", { style: { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' } },
+                        React.createElement(Icon_1.Icon, { name: "search", size: 16 })),
+                    React.createElement("input", { ref: inputRef, className: "input-field", style: { paddingLeft: 38 }, placeholder: "Buscar por REF, cod proveedor o c\u00F3digo de barras...", value: busqueda, onChange: e => { setBusqueda(e.target.value); setShowSuggestions(true); }, onKeyDown: e => { if (e.key === 'Enter' && sugerencias.length > 0)
+                            agregarProducto(sugerencias[0].codigoRef); } })),
+                React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', flexShrink: 0 }, onClick: () => setScanning(true) },
+                    React.createElement(Icon_1.Icon, { name: "camera", size: 18 })),
+                React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', flexShrink: 0, color: '#818cf8' }, onClick: () => { setCustomDesc(''); setCustomPrecio(''); setShowCustom(true); } },
+                    React.createElement("span", { style: { fontSize: 18, fontWeight: 700 } }, "$+"))),
+            showSuggestions && sugerencias.length > 0 && (React.createElement("div", { style: { position: 'absolute', top: '100%', left: 0, right: 0, background: T.card, border: `1px solid ${T.inputBorder}`, borderRadius: 12, zIndex: 50, maxHeight: 300, overflowY: 'auto', marginTop: 4 } }, sugerencias.map((p, i) => {
+                const pv = (0, utils_1.calcPrecioVenta)(p.precioCosto, p.margen, data.margenes);
+                const s = (data.stock || {})[p.codigoRef];
+                const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
+                const inPedido = (data.pedidos || []).find(x => x.codigoRef === p.codigoRef);
+                return (React.createElement("div", { key: i, onClick: () => agregarProducto(p.codigoRef), style: { padding: '10px 14px', cursor: 'pointer', borderBottom: `1px solid ${T.divider}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 } },
+                    React.createElement("div", { style: { minWidth: 0 } },
+                        React.createElement("div", { style: { fontSize: 13, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 } }, p.codigoRef),
+                        React.createElement("div", { style: { fontSize: 12, color: T.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, p.descripcion),
+                        actual <= 0 && (React.createElement("span", { style: { fontSize: 10, color: inPedido ? '#fbbf24' : '#ef4444', fontWeight: 700 } }, inPedido ? '● En pedido' : '● Sin stock'))),
+                    React.createElement("div", { style: { fontWeight: 700, color: '#22c55e', fontSize: 13, flexShrink: 0 } }, (0, utils_1.fmtPeso)(pv))));
+            })))),
+        items.length === 0 ? (React.createElement("div", { style: { textAlign: 'center', padding: '40px 20px', color: '#6b7280' } },
+            React.createElement(Icon_1.Icon, { name: "cart", size: 40 }),
+            React.createElement("div", { style: { marginTop: 12, fontSize: 14 } }, "Busc\u00E1 un producto para agregar"))) : (React.createElement("div", null,
+            React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 } }, items.map((item, i) => {
+                const s = (data.stock || {})[item.codigoRef || ''];
+                const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
+                const inPedido = (data.pedidos || []).find(p => p.codigoRef === item.codigoRef);
+                return (React.createElement("div", { key: i, style: { background: T.sectionBg, borderRadius: 12, padding: '10px 12px' } },
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 } },
+                        React.createElement("div", { style: { flex: 1, minWidth: 0 } },
+                            React.createElement("div", { style: { fontSize: 14, color: T.text, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, item.codigoRef || item.descripcion),
+                            React.createElement("div", { style: { fontSize: 11, color: T.textMuted, marginTop: 2 } },
+                                (0, utils_1.fmtPeso)(item.precioVenta),
+                                " c/u",
+                                actual <= 0 && inPedido && React.createElement("span", { style: { color: '#fbbf24', fontWeight: 700, marginLeft: 6 } }, "\u25CF En pedido"),
+                                actual <= 0 && !inPedido && React.createElement("span", { style: { color: '#ef4444', fontWeight: 700, marginLeft: 6 } }, "\u25CF Sin stock"))),
+                        React.createElement("button", { onClick: () => removeItem(i), style: { width: 30, height: 30, borderRadius: 8, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 } },
+                            React.createElement(Icon_1.Icon, { name: "trash", size: 13 }))),
+                    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+                        actual <= 0 && !inPedido ? (React.createElement("button", { onClick: () => {
+                                const prod = (data.misProductos || []).find(p => p.codigoRef === item.codigoRef);
+                                if (!prod)
+                                    return;
+                                setData(d => ({ ...d, pedidos: [...(d.pedidos || []), { codigoRef: prod.codigoRef, codigoProv: prod.codigoProv || '', descripcion: prod.descripcion, cantidad: 1, proveedor: prod.proveedor || '', precioCosto: prod.precioCosto || 0 }] }));
+                                showToast('Agregado a pedidos', 'success');
+                            }, style: { fontSize: 11, background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, flexShrink: 0 } }, "+ Pedir")) : (React.createElement("div", { style: { width: 60, flexShrink: 0 } })),
+                        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, flex: 1, justifyContent: 'center' } },
+                            React.createElement("button", { onClick: () => updateQty(i, -1), style: { width: 32, height: 32, borderRadius: 8, background: T.inputBorder, border: 'none', color: T.text, cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, "\u2212"),
+                            React.createElement("input", { type: "number", min: 1, value: item.cantidad, onChange: e => { const v = parseInt(e.target.value) || 1; setItems(next => { const n = [...next]; n[i] = { ...n[i], cantidad: Math.max(1, v) }; return n; }); }, style: { width: 44, textAlign: "center", fontWeight: 700, fontSize: 16, color: "#f1f5f9", background: "#1e2230", border: "1px solid #374151", borderRadius: 8, padding: "4px 2px", fontFamily: "inherit", outline: "none" } }),
+                            React.createElement("button", { onClick: () => updateQty(i, 1), style: { width: 32, height: 32, borderRadius: 8, background: '#6366f1', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, "+")),
+                        React.createElement("div", { style: { fontWeight: 700, color: '#22c55e', fontSize: 14, flexShrink: 0, minWidth: 70, textAlign: 'right' } }, (0, utils_1.fmtPeso)(item.precioVenta * item.cantidad)))));
+            })),
+            React.createElement("div", { style: { background: 'linear-gradient(135deg,#1e3a2e,#1a3025)', borderRadius: 14, border: '1px solid #166534', padding: '14px 18px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                React.createElement("div", { style: { fontSize: 13, color: '#86efac', fontWeight: 600 } }, "Total"),
+                React.createElement("div", { style: { fontSize: 24, fontWeight: 700, color: '#22c55e' } }, (0, utils_1.fmtPeso)(total))),
+            React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 12 } },
                 React.createElement("button", { onClick: () => setPaymentMethod('transferencia'), style: {
+                        flex: 1,
                         padding: 12,
                         background: paymentMethod === 'transferencia' ? '#818cf8' : T.inputBg,
                         color: paymentMethod === 'transferencia' ? 'white' : T.textSecondary,
@@ -975,7 +1013,8 @@ function TabCalculadora({ data, setData, showToast }) {
                         fontSize: 13,
                         fontFamily: 'inherit',
                     } }, "\uD83D\uDCB3 Transferencia"),
-                React.createElement("button", { onClick: () => { setPaymentMethod('efectivo'); setShowModalEfectivo(true); }, style: {
+                React.createElement("button", { onClick: () => setPaymentMethod('efectivo'), style: {
+                        flex: 1,
                         padding: 12,
                         background: paymentMethod === 'efectivo' ? '#22c55e' : T.inputBg,
                         color: paymentMethod === 'efectivo' ? 'white' : T.textSecondary,
@@ -985,62 +1024,74 @@ function TabCalculadora({ data, setData, showToast }) {
                         fontWeight: 600,
                         fontSize: 13,
                         fontFamily: 'inherit',
-                    } }, "\uD83D\uDCB5 Efectivo")))),
-        cart.length > 0 && (React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
-            React.createElement("button", { onClick: () => setShowConfirmVacio(true), className: "btn-danger", style: { justifyContent: 'center' } },
-                React.createElement(Icon_1.Icon, { name: "trash", size: 14 }),
-                " Vaciar"),
-            React.createElement("button", { onClick: () => setShowConfirmVenta(true), className: "btn-primary", style: { justifyContent: 'center' } },
-                React.createElement(Icon_1.Icon, { name: "check", size: 14 }),
-                " VENTA"))),
-        showConfirmVacio && (React.createElement(Modal_1.Modal, { onClose: () => setShowConfirmVacio(false) },
-            React.createElement("div", { style: { textAlign: 'center' } },
-                React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 8, color: T.text } }, "\uD83D\uDDD1 \u00BFVaciar carrito?"),
-                React.createElement("div", { style: { fontSize: 13, color: T.textMuted, marginBottom: 16 } },
-                    "Se borrar\u00E1n los ",
-                    cart.length,
-                    " item",
-                    cart.length > 1 ? 's' : '',
-                    ". \u00BFContinuar?"),
-                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
-                    React.createElement("button", { onClick: () => setShowConfirmVacio(false), className: "btn-ghost", style: { justifyContent: 'center' } }, "Cancelar"),
-                    React.createElement("button", { onClick: () => { setCart([]); setShowConfirmVacio(false); showToast('Carrito vaciado', 'info'); }, className: "btn-danger", style: { justifyContent: 'center' } }, "Vaciar"))))),
-        showConfirmVenta && (React.createElement(Modal_1.Modal, { onClose: () => setShowConfirmVenta(false) },
-            React.createElement("div", { style: { textAlign: 'center' } },
-                React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 8, color: T.text } }, "\u2713 Registrar venta"),
-                React.createElement("div", { style: { fontSize: 13, color: T.textMuted, marginBottom: 4 } },
-                    "Total: ",
-                    React.createElement("strong", { style: { color: '#22c55e' } }, (0, utils_1.fmtPeso)(calcTotal()))),
-                React.createElement("div", { style: { fontSize: 13, color: T.textMuted, marginBottom: 16 } },
-                    "M\u00E9todo: ",
-                    React.createElement("strong", null, paymentMethod === 'transferencia' ? 'Transferencia' : 'Efectivo')),
-                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
-                    React.createElement("button", { onClick: () => setShowConfirmVenta(false), className: "btn-ghost", style: { justifyContent: 'center' } }, "Cancelar"),
+                    } }, "\uD83D\uDCB5 Efectivo")),
+            React.createElement("div", { style: { display: 'flex', gap: 8 } },
+                React.createElement("button", { className: "btn-ghost", style: { padding: '12px 14px' }, onClick: () => setItems([]) },
+                    React.createElement(Icon_1.Icon, { name: "trash", size: 16 })),
+                React.createElement("button", { className: "btn-ghost", style: { flex: 1, justifyContent: 'center' }, onClick: () => setShowPresupuesto(true) },
+                    React.createElement(Icon_1.Icon, { name: "download", size: 16 }),
+                    " Presupuesto"),
+                React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: 'center' }, onClick: registrarVenta },
+                    React.createElement(Icon_1.Icon, { name: "check", size: 16 }),
+                    " Venta")))),
+        showPresupuesto && (React.createElement(Presupuesto_1.Presupuesto, { items: items, total: total, onClose: () => setShowPresupuesto(false), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion, onGuardar: (cliente, nota, descuento) => {
+                const pres = {
+                    id: Date.now().toString(36),
+                    fecha: new Date().toLocaleDateString('es-AR'),
+                    hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+                    cliente,
+                    items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta })),
+                    total,
+                };
+                setData(d => ({ ...d, presupuestos: [...(d.presupuestos || []), pres] }));
+                showToast('Presupuesto guardado', 'success');
+                setShowPresupuesto(false);
+            } })),
+        showCustom && (React.createElement("div", { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }, onClick: () => setShowCustom(false) },
+            React.createElement("div", { style: { background: T.card, borderRadius: 16, padding: 20, width: '100%', maxWidth: 400 }, onClick: e => e.stopPropagation() },
+                React.createElement("div", { style: { fontWeight: 700, fontSize: 16, color: T.text, marginBottom: 16 } }, "Agregar importe libre"),
+                React.createElement("label", { style: { fontSize: 12, color: T.textMuted, display: 'block', marginBottom: 4 } }, "Descripci\u00F3n"),
+                React.createElement("input", { className: "input-field", style: { marginBottom: 12 }, placeholder: "Ej: Mano de obra, Flete...", value: customDesc, onChange: e => setCustomDesc(e.target.value), autoFocus: true }),
+                React.createElement("label", { style: { fontSize: 12, color: T.textMuted, display: 'block', marginBottom: 4 } }, "Precio"),
+                React.createElement("input", { className: "input-field", style: { marginBottom: 20 }, type: "number", placeholder: "0", value: customPrecio, onChange: e => setCustomPrecio(e.target.value), onKeyDown: e => {
+                        if (e.key === 'Enter') {
+                            const precio = parseFloat(customPrecio.replace(',', '.')) || 0;
+                            if (!customDesc.trim() || precio <= 0)
+                                return;
+                            setItems(prev => [...prev, {
+                                    codigoRef: customDesc.trim(),
+                                    descripcion: customDesc.trim(),
+                                    codigoProv: '',
+                                    precioCosto: precio,
+                                    precioVenta: precio,
+                                    cantidad: 1,
+                                    margen: 0,
+                                    proveedor: '',
+                                    divisor: 1,
+                                }]);
+                            setShowCustom(false);
+                        }
+                    } }),
+                React.createElement("div", { style: { display: 'flex', gap: 8 } },
+                    React.createElement("button", { onClick: () => setShowCustom(false), style: { flex: 1, padding: '12px', borderRadius: 10, background: 'none', border: `1px solid ${T.inputBorder}`, color: T.textMuted, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 } }, "Cancelar"),
                     React.createElement("button", { onClick: () => {
-                            if (paymentMethod === 'efectivo') {
-                                setShowConfirmVenta(false);
-                                setShowModalEfectivo(true);
-                            }
-                            else {
-                                registrarVenta();
-                            }
-                        }, className: "btn-primary", style: { justifyContent: 'center' } }, "\u2713 Confirmar"))))),
-        showModalEfectivo && (React.createElement(Modal_1.Modal, { onClose: () => setShowModalEfectivo(false) },
-            React.createElement("div", null,
-                React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 8, color: T.text } }, "\uD83D\uDCB5 Pago en efectivo"),
-                React.createElement("div", { style: { fontSize: 12, color: T.textMuted, marginBottom: 14 } }, "\u00BFCon cu\u00E1nto abona el cliente?"),
-                React.createElement("input", { type: "number", placeholder: "Ej: 7000", value: montoEfectivo, onChange: e => setMontoEfectivo(e.target.value), className: "input-field", style: { marginBottom: 12, fontSize: 14 } }),
-                React.createElement("div", { style: { background: T.cardHover, padding: 10, borderRadius: 8, marginBottom: 8, textAlign: 'center' } },
-                    React.createElement("div", { style: { fontSize: 11, color: T.textMuted } }, "Total a pagar"),
-                    React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4 } }, (0, utils_1.fmtPeso)(calcTotal()))),
-                React.createElement("div", { style: { background: T.cardHover, padding: 10, borderRadius: 8, marginBottom: 14, textAlign: 'center' } },
-                    React.createElement("div", { style: { fontSize: 11, color: T.textMuted } }, "Vuelto"),
-                    React.createElement("div", { style: { fontSize: 18, fontWeight: 700, color: vuelto >= 0 ? '#22c55e' : '#ef4444', marginTop: 4 } }, (0, utils_1.fmtPeso)(vuelto))),
-                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
-                    React.createElement("button", { onClick: () => setShowModalEfectivo(false), className: "btn-ghost", style: { justifyContent: 'center' } }, "Cancelar"),
-                    React.createElement("button", { onClick: () => registrarVenta(parseFloat(montoEfectivo) || 0), disabled: !montoEfectivo, className: "btn-primary", style: { justifyContent: 'center', opacity: montoEfectivo ? 1 : 0.5, cursor: montoEfectivo ? 'pointer' : 'not-allowed' } }, "\u2713 Confirmar"))))),
-        scanning && React.createElement(Scanner_1.Scanner, { onDetect: code => { const p = data.misProductos.find(x => x.codigoBarras === code); if (p)
-                agregarAlCarrito(p); setScanning(false); }, onClose: () => setScanning(false) })));
+                            const precio = parseFloat(customPrecio.replace(',', '.')) || 0;
+                            if (!customDesc.trim() || precio <= 0)
+                                return;
+                            setItems(prev => [...prev, {
+                                    codigoRef: customDesc.trim(),
+                                    descripcion: customDesc.trim(),
+                                    codigoProv: '',
+                                    precioCosto: precio,
+                                    precioVenta: precio,
+                                    cantidad: 1,
+                                    margen: 0,
+                                    proveedor: '',
+                                    divisor: 1,
+                                }]);
+                            setShowCustom(false);
+                        }, style: { flex: 2, padding: '12px', borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700 } }, "Agregar al carrito"))))),
+        scanning && (React.createElement(Scanner_1.Scanner, { onResult: code => { setScanning(false); agregarProducto(code.toUpperCase()); }, onClose: () => setScanning(false) }))));
 }
 
 __modules['tabs/TabCalculadora'] = exports;
@@ -1497,12 +1548,12 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
         reader.readAsArrayBuffer(file);
         e.target.value = '';
     };
-    const filtrados = busqueda
+    const filtrados = (busqueda
         ? (data.misProductos || []).filter(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()))
-        : (data.misProductos || []);
+        : (data.misProductos || [])).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es'));
     const fmt = (n) => '$' + Math.round(n).toLocaleString('es-AR');
     return (React.createElement("div", null,
         React.createElement("div", { className: "card", ref: formRef },

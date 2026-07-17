@@ -251,13 +251,14 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
     e.target.value = '';
   };
 
-  const filtrados = busqueda
+  const filtrados = (busqueda
     ? (data.misProductos || []).filter(p =>
         p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
         ((p as any).codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()))
-    : (data.misProductos || []);
+    : (data.misProductos || [])
+  ).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es'));
 
   const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-AR');
 
