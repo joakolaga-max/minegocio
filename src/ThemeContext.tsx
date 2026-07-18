@@ -5,20 +5,44 @@ interface ThemeContextType {
   theme: Theme;
   isDark: boolean;
   toggleTheme: () => void;
+  customColors: Partial<Theme>;
+  setCustomColor: (key: keyof Theme, value: string) => void;
+  saveCustomColors: (colors: Partial<Theme>) => void;
+  resetCustomColors: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
   theme: darkTheme,
   isDark: true,
   toggleTheme: () => {},
+  customColors: {},
+  setCustomColor: () => {},
+  saveCustomColors: () => {},
+  resetCustomColors: () => {},
 });
+
+const customKey = (isDark: boolean) => `mn_custom_colors_${isDark ? 'dark' : 'light'}`;
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(() => {
     try { return localStorage.getItem('mn_theme') !== 'light'; } catch { return true; }
   });
 
-  const theme = isDark ? darkTheme : lightTheme;
+  const [customColors, setCustomColors] = useState<Partial<Theme>>(() => {
+    try {
+      const raw = localStorage.getItem(customKey(localStorage.getItem('mn_theme') !== 'light'));
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  });
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(customKey(isDark));
+      setCustomColors(raw ? JSON.parse(raw) : {});
+    } catch { setCustomColors({}); }
+  }, [isDark]);
+
+  const theme: Theme = { ...(isDark ? darkTheme : lightTheme), ...customColors };
 
   const toggleTheme = () => {
     setIsDark(v => {
@@ -26,6 +50,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       try { localStorage.setItem('mn_theme', next ? 'dark' : 'light'); } catch {}
       return next;
     });
+  };
+
+  const setCustomColor = (key: keyof Theme, value: string) => {
+    setCustomColors(prev => ({ ...prev, [key]: value }));
+  };
+
+  const saveCustomColors = (colors: Partial<Theme>) => {
+    setCustomColors(colors);
+    try { localStorage.setItem(customKey(isDark), JSON.stringify(colors)); } catch {}
+  };
+
+  const resetCustomColors = () => {
+    setCustomColors({});
+    try { localStorage.removeItem(customKey(isDark)); } catch {}
   };
 
   // Inject CSS variables for inputs/global styles
@@ -84,10 +122,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       * { color: inherit; }
       body { color: ${t.text}; }
     `;
-  }, [isDark]);
+  }, [isDark, customColors]);
 
   return (
-    <ThemeContext.Provider value={{ theme, isDark, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, isDark, toggleTheme, customColors, setCustomColor, saveCustomColors, resetCustomColors }}>
       {children}
     </ThemeContext.Provider>
   );

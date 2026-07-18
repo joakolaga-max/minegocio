@@ -216,7 +216,19 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
                 <div key={i} onClick={() => agregarProducto(p.codigoRef)}
                   onMouseEnter={() => setSelectedIdx(i)}
                   ref={el => { if (el && i === selectedIdx) el.scrollIntoView({ block: 'nearest' }); }}
-                  style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: `1px solid ${T.divider}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, background: i === selectedIdx ? T.cardHover : 'transparent' }}>
+                  style={{
+                    padding: '10px 14px',
+                    cursor: 'pointer',
+                    borderBottom: `1px solid ${T.divider}`,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 8,
+                    background: i === selectedIdx ? 'rgba(99,102,241,0.18)' : 'transparent',
+                    border: i === selectedIdx ? '2px solid #6366f1' : '2px solid transparent',
+                    borderRadius: i === selectedIdx ? 8 : 0,
+                    margin: i === selectedIdx ? '2px 4px' : '2px 0',
+                  }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 13, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 }}>{p.codigoRef}</div>
                     <div style={{ fontSize: 12, color: T.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>

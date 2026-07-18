@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppData } from '../types';
 import { Icon } from '../components/Icon';
 import { useTheme } from '../ThemeContext';
+import { darkTheme, lightTheme } from '../theme';
 import { loadFotos, saveFoto } from '../lib/firebase';
 
 interface Props {
@@ -11,8 +12,63 @@ interface Props {
 }
 
 export function TabConfig({ data, setData, showToast }: Props) {
-  const { theme: T } = useTheme();
+  const { theme: T, isDark, customColors, saveCustomColors, resetCustomColors } = useTheme();
   const [openSection, setOpenSection] = useState<string | null>('margenes');
+
+  // ── Colores personalizados ──
+  const colorLabels: { key: keyof import('../theme').Theme; label: string }[] = [
+    { key: 'bg', label: 'Fondo general' },
+    { key: 'card', label: 'Fondo de tarjetas' },
+    { key: 'cardBorder', label: 'Borde de tarjetas' },
+    { key: 'header', label: 'Fondo del encabezado' },
+    { key: 'menu', label: 'Fondo del menú' },
+    { key: 'text', label: 'Texto principal' },
+    { key: 'textSecondary', label: 'Texto secundario' },
+    { key: 'textMuted', label: 'Texto tenue' },
+    { key: 'inputBg', label: 'Fondo de campos' },
+    { key: 'inputBorder', label: 'Borde de campos' },
+    { key: 'inputBorderFocus', label: 'Borde de campo activo' },
+    { key: 'divider', label: 'Líneas divisorias' },
+    { key: 'sectionBg', label: 'Fondo de secciones' },
+  ];
+
+  const toHex = (c: string): string => {
+    if (!c) return '#000000';
+    if (c.startsWith('#')) return c.length === 7 ? c : '#000000';
+    const m = c.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (m) {
+      const toH = (n: string) => parseInt(n).toString(16).padStart(2, '0');
+      return `#${toH(m[1])}${toH(m[2])}${toH(m[3])}`;
+    }
+    return '#000000';
+  };
+
+  const [draftColors, setDraftColors] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    colorLabels.forEach(({ key }) => { initial[key] = toHex((customColors as any)[key] || (T as any)[key]); });
+    return initial;
+  });
+
+  useEffect(() => {
+    const initial: Record<string, string> = {};
+    colorLabels.forEach(({ key }) => { initial[key] = toHex((customColors as any)[key] || (T as any)[key]); });
+    setDraftColors(initial);
+    // eslint-disable-next-line
+  }, [isDark]);
+
+  const guardarColores = () => {
+    saveCustomColors(draftColors as any);
+    showToast('Colores guardados', 'success');
+  };
+
+  const restablecerColores = () => {
+    resetCustomColors();
+    const base = isDark ? darkTheme : lightTheme;
+    const initial: Record<string, string> = {};
+    colorLabels.forEach(({ key }) => { initial[key] = toHex((base as any)[key]); });
+    setDraftColors(initial);
+    showToast('Colores restablecidos', 'info');
+  };
 
   // Márgenes
   const [m1, setM1] = useState(String(data.margenes.p1));
@@ -235,6 +291,40 @@ export function TabConfig({ data, setData, showToast }: Props) {
           </label>
           <div style={{ marginTop: 12, fontSize: 11, color: T.textMuted, textAlign: 'center' }}>
             Recomendado: hacé un backup una vez por semana.
+          </div>
+        </div>
+      )}
+
+      {/* COLORES */}
+      <SectionHeader id="colores" label="Colores de la app" icon="settings" />
+      {openSection === 'colores' && (
+        <div style={{ background: T.card, borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 }}>
+          <div style={{ background: T.sectionBg, borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: T.textMuted }}>
+            Ajustá los colores del modo {isDark ? 'oscuro' : 'claro'} si la luz del día no te deja ver bien. Tocá el cuadrado de color para cambiarlo.
+          </div>
+
+          {colorLabels.map(({ key, label }) => (
+            <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${T.divider}` }}>
+              <div style={{ fontSize: 13, color: T.text }}>{label}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 11, color: T.textMuted, fontFamily: 'monospace' }}>{draftColors[key]}</span>
+                <input
+                  type="color"
+                  value={draftColors[key] || '#000000'}
+                  onChange={e => setDraftColors(prev => ({ ...prev, [key]: e.target.value }))}
+                  style={{ width: 40, height: 32, border: `1px solid ${T.inputBorder}`, borderRadius: 8, padding: 0, cursor: 'pointer', background: 'none' }}
+                />
+              </div>
+            </div>
+          ))}
+
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <button className="btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={restablecerColores}>
+              <Icon name="x" size={16} /> Restablecer
+            </button>
+            <button className="btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={guardarColores}>
+              <Icon name="check" size={16} /> Guardar
+            </button>
           </div>
         </div>
       )}

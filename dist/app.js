@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-18T13:25:13.645Z
+// MiNegocio v2.0 - Built 2026-07-18T14:45:12.282Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -86,7 +86,12 @@ const ThemeContext = createContext({
     theme: theme_1.darkTheme,
     isDark: true,
     toggleTheme: () => { },
+    customColors: {},
+    setCustomColor: () => { },
+    saveCustomColors: () => { },
+    resetCustomColors: () => { },
 });
+const customKey = (isDark) => `mn_custom_colors_${isDark ? 'dark' : 'light'}`;
 function ThemeProvider({ children }) {
     const [isDark, setIsDark] = useState(() => {
         try {
@@ -96,7 +101,25 @@ function ThemeProvider({ children }) {
             return true;
         }
     });
-    const theme = isDark ? theme_1.darkTheme : theme_1.lightTheme;
+    const [customColors, setCustomColors] = useState(() => {
+        try {
+            const raw = localStorage.getItem(customKey(localStorage.getItem('mn_theme') !== 'light'));
+            return raw ? JSON.parse(raw) : {};
+        }
+        catch {
+            return {};
+        }
+    });
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem(customKey(isDark));
+            setCustomColors(raw ? JSON.parse(raw) : {});
+        }
+        catch {
+            setCustomColors({});
+        }
+    }, [isDark]);
+    const theme = { ...(isDark ? theme_1.darkTheme : theme_1.lightTheme), ...customColors };
     const toggleTheme = () => {
         setIsDark(v => {
             const next = !v;
@@ -106,6 +129,23 @@ function ThemeProvider({ children }) {
             catch { }
             return next;
         });
+    };
+    const setCustomColor = (key, value) => {
+        setCustomColors(prev => ({ ...prev, [key]: value }));
+    };
+    const saveCustomColors = (colors) => {
+        setCustomColors(colors);
+        try {
+            localStorage.setItem(customKey(isDark), JSON.stringify(colors));
+        }
+        catch { }
+    };
+    const resetCustomColors = () => {
+        setCustomColors({});
+        try {
+            localStorage.removeItem(customKey(isDark));
+        }
+        catch { }
     };
     // Inject CSS variables for inputs/global styles
     useEffect(() => {
@@ -163,8 +203,8 @@ function ThemeProvider({ children }) {
       * { color: inherit; }
       body { color: ${t.text}; }
     `;
-    }, [isDark]);
-    return (React.createElement(ThemeContext.Provider, { value: { theme, isDark, toggleTheme } }, children));
+    }, [isDark, customColors]);
+    return (React.createElement(ThemeContext.Provider, { value: { theme, isDark, toggleTheme, customColors, setCustomColor, saveCustomColors, resetCustomColors } }, children));
 }
 const useTheme = () => useContext(ThemeContext);
 exports.useTheme = useTheme;
@@ -1007,7 +1047,19 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                 const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
                 const inPedido = (data.pedidos || []).find(x => x.codigoRef === p.codigoRef);
                 return (React.createElement("div", { key: i, onClick: () => agregarProducto(p.codigoRef), onMouseEnter: () => setSelectedIdx(i), ref: el => { if (el && i === selectedIdx)
-                        el.scrollIntoView({ block: 'nearest' }); }, style: { padding: '10px 14px', cursor: 'pointer', borderBottom: `1px solid ${T.divider}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, background: i === selectedIdx ? T.cardHover : 'transparent' } },
+                        el.scrollIntoView({ block: 'nearest' }); }, style: {
+                        padding: '10px 14px',
+                        cursor: 'pointer',
+                        borderBottom: `1px solid ${T.divider}`,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: 8,
+                        background: i === selectedIdx ? 'rgba(99,102,241,0.18)' : 'transparent',
+                        border: i === selectedIdx ? '2px solid #6366f1' : '2px solid transparent',
+                        borderRadius: i === selectedIdx ? 8 : 0,
+                        margin: i === selectedIdx ? '2px 4px' : '2px 0',
+                    } },
                     React.createElement("div", { style: { minWidth: 0 } },
                         React.createElement("div", { style: { fontSize: 13, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 } }, p.codigoRef),
                         React.createElement("div", { style: { fontSize: 12, color: T.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, p.descripcion),
@@ -2513,10 +2565,62 @@ const module = { exports };
 exports.TabConfig = TabConfig;
 const Icon_1 = __require("../components/Icon");
 const ThemeContext_1 = __require("../ThemeContext");
+const theme_1 = __require("../theme");
 const firebase_1 = __require("../lib/firebase");
 function TabConfig({ data, setData, showToast }) {
-    const { theme: T } = (0, ThemeContext_1.useTheme)();
+    const { theme: T, isDark, customColors, saveCustomColors, resetCustomColors } = (0, ThemeContext_1.useTheme)();
     const [openSection, setOpenSection] = useState('margenes');
+    // ── Colores personalizados ──
+    const colorLabels = [
+        { key: 'bg', label: 'Fondo general' },
+        { key: 'card', label: 'Fondo de tarjetas' },
+        { key: 'cardBorder', label: 'Borde de tarjetas' },
+        { key: 'header', label: 'Fondo del encabezado' },
+        { key: 'menu', label: 'Fondo del menú' },
+        { key: 'text', label: 'Texto principal' },
+        { key: 'textSecondary', label: 'Texto secundario' },
+        { key: 'textMuted', label: 'Texto tenue' },
+        { key: 'inputBg', label: 'Fondo de campos' },
+        { key: 'inputBorder', label: 'Borde de campos' },
+        { key: 'inputBorderFocus', label: 'Borde de campo activo' },
+        { key: 'divider', label: 'Líneas divisorias' },
+        { key: 'sectionBg', label: 'Fondo de secciones' },
+    ];
+    const toHex = (c) => {
+        if (!c)
+            return '#000000';
+        if (c.startsWith('#'))
+            return c.length === 7 ? c : '#000000';
+        const m = c.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+        if (m) {
+            const toH = (n) => parseInt(n).toString(16).padStart(2, '0');
+            return `#${toH(m[1])}${toH(m[2])}${toH(m[3])}`;
+        }
+        return '#000000';
+    };
+    const [draftColors, setDraftColors] = useState(() => {
+        const initial = {};
+        colorLabels.forEach(({ key }) => { initial[key] = toHex(customColors[key] || T[key]); });
+        return initial;
+    });
+    useEffect(() => {
+        const initial = {};
+        colorLabels.forEach(({ key }) => { initial[key] = toHex(customColors[key] || T[key]); });
+        setDraftColors(initial);
+        // eslint-disable-next-line
+    }, [isDark]);
+    const guardarColores = () => {
+        saveCustomColors(draftColors);
+        showToast('Colores guardados', 'success');
+    };
+    const restablecerColores = () => {
+        resetCustomColors();
+        const base = isDark ? theme_1.darkTheme : theme_1.lightTheme;
+        const initial = {};
+        colorLabels.forEach(({ key }) => { initial[key] = toHex(base[key]); });
+        setDraftColors(initial);
+        showToast('Colores restablecidos', 'info');
+    };
     // Márgenes
     const [m1, setM1] = useState(String(data.margenes.p1));
     const [m2, setM2] = useState(String(data.margenes.p2));
@@ -2692,7 +2796,25 @@ function TabConfig({ data, setData, showToast }) {
                 " Restaurar desde backup",
                 React.createElement("input", { type: "file", accept: ".json", style: { display: 'none' }, onChange: e => { const f = e.target.files?.[0]; if (f)
                         restaurarBackup(f); e.target.value = ''; } })),
-            React.createElement("div", { style: { marginTop: 12, fontSize: 11, color: T.textMuted, textAlign: 'center' } }, "Recomendado: hac\u00E9 un backup una vez por semana.")))));
+            React.createElement("div", { style: { marginTop: 12, fontSize: 11, color: T.textMuted, textAlign: 'center' } }, "Recomendado: hac\u00E9 un backup una vez por semana."))),
+        React.createElement(SectionHeader, { id: "colores", label: "Colores de la app", icon: "settings" }),
+        openSection === 'colores' && (React.createElement("div", { style: { background: T.card, borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 } },
+            React.createElement("div", { style: { background: T.sectionBg, borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: T.textMuted } },
+                "Ajust\u00E1 los colores del modo ",
+                isDark ? 'oscuro' : 'claro',
+                " si la luz del d\u00EDa no te deja ver bien. Toc\u00E1 el cuadrado de color para cambiarlo."),
+            colorLabels.map(({ key, label }) => (React.createElement("div", { key: key, style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: `1px solid ${T.divider}` } },
+                React.createElement("div", { style: { fontSize: 13, color: T.text } }, label),
+                React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+                    React.createElement("span", { style: { fontSize: 11, color: T.textMuted, fontFamily: 'monospace' } }, draftColors[key]),
+                    React.createElement("input", { type: "color", value: draftColors[key] || '#000000', onChange: e => setDraftColors(prev => ({ ...prev, [key]: e.target.value })), style: { width: 40, height: 32, border: `1px solid ${T.inputBorder}`, borderRadius: 8, padding: 0, cursor: 'pointer', background: 'none' } }))))),
+            React.createElement("div", { style: { display: 'flex', gap: 8, marginTop: 16 } },
+                React.createElement("button", { className: "btn-ghost", style: { flex: 1, justifyContent: 'center' }, onClick: restablecerColores },
+                    React.createElement(Icon_1.Icon, { name: "x", size: 16 }),
+                    " Restablecer"),
+                React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: 'center' }, onClick: guardarColores },
+                    React.createElement(Icon_1.Icon, { name: "check", size: 16 }),
+                    " Guardar"))))));
 }
 
 __modules['tabs/TabConfig'] = exports;
