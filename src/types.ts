@@ -43,6 +43,9 @@ export interface Venta {
   paymentMethod?: 'transferencia' | 'efectivo';
   amountReceived?: number;
   change?: number;
+  clienteNombre?: string;
+  clienteCelular?: string;
+  clienteDireccion?: string;
 }
 
 export interface PedidoItem {

@@ -33,6 +33,10 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
   const [paymentMethod, setPaymentMethod] = useState<'transferencia' | 'efectivo'>('transferencia');
   const [showModalEfectivo, setShowModalEfectivo] = useState(false);
   const [montoEfectivo, setMontoEfectivo] = useState('');
+  const [showModalTransferencia, setShowModalTransferencia] = useState(false);
+  const [refNombre, setRefNombre] = useState(() => localStorage.getItem('mn_ref_nombre') || '');
+  const [refCelular, setRefCelular] = useState(() => localStorage.getItem('mn_ref_celular') || '');
+  const [refDireccion, setRefDireccion] = useState(() => localStorage.getItem('mn_ref_direccion') || '');
 
   // Cargar items desde presupuestos
   useEffect(() => {
@@ -117,7 +121,10 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
     setItems(prev => {
       const next = [...prev];
       const newQty = next[idx].cantidad + delta;
-      if (newQty <= 0) return next.filter((_, i) => i !== idx);
+      if (newQty <= 0) {
+        if (!window.confirm(`¿Quitar "${next[idx].descripcion}" del carrito?`)) return prev;
+        return next.filter((_, i) => i !== idx);
+      }
       next[idx] = { ...next[idx], cantidad: newQty };
       return next;
     });
@@ -138,10 +145,14 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
       paymentMethod,
       amountReceived: monto,
       change: monto !== undefined ? monto - total : undefined,
+      clienteNombre: paymentMethod === 'transferencia' ? refNombre : undefined,
+      clienteCelular: paymentMethod === 'transferencia' ? refCelular : undefined,
+      clienteDireccion: paymentMethod === 'transferencia' ? refDireccion : undefined,
     };
     setData(d => ({ ...d, ventas: [venta, ...(d.ventas || [])] }));
     setItems([]);
     setShowModalEfectivo(false);
+    setShowModalTransferencia(false);
     setMontoEfectivo('');
     showToast('Venta registrada', 'success');
   };
@@ -270,7 +281,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
           {/* Método de pago */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             <button
-              onClick={() => setPaymentMethod('transferencia')}
+              onClick={() => { setPaymentMethod('transferencia'); setShowModalTransferencia(true); }}
               style={{
                 flex: 1,
                 padding: 12,
@@ -307,17 +318,72 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn-ghost" style={{ padding: '12px 14px' }} onClick={() => setItems([])}>
+            <button className="btn-ghost" style={{ padding: '12px 14px' }} onClick={() => { if (window.confirm(`¿Vaciar el carrito? Se borrarán ${items.length} item(s).`)) setItems([]); }}>
               <Icon name="trash" size={16} />
             </button>
             <button className="btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowPresupuesto(true)}>
               <Icon name="download" size={16} /> Presupuesto
             </button>
-            <button className="btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { if (paymentMethod === 'efectivo') { setShowModalEfectivo(true); } else { registrarVenta(); } }}>
+            <button className="btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={() => { if (paymentMethod === 'efectivo') { setShowModalEfectivo(true); } else { setShowModalTransferencia(true); } }}>
               <Icon name="check" size={16} /> Venta
             </button>
           </div>
         </div>
+      )}
+
+      {showModalTransferencia && (
+        <Modal onClose={() => setShowModalTransferencia(false)}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8, color: T.text }}>💳 Referencia de transferencia</div>
+            <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 14 }}>Datos opcionales para guardar como referencia del cliente</div>
+            <input
+              type="text"
+              placeholder="Nombre del cliente"
+              value={refNombre}
+              onChange={e => setRefNombre(e.target.value)}
+              className="input-field"
+              style={{ marginBottom: 8, fontSize: 14 }}
+            />
+            <input
+              type="tel"
+              placeholder="Celular"
+              value={refCelular}
+              onChange={e => setRefCelular(e.target.value)}
+              className="input-field"
+              style={{ marginBottom: 8, fontSize: 14 }}
+            />
+            <input
+              type="text"
+              placeholder="Dirección"
+              value={refDireccion}
+              onChange={e => setRefDireccion(e.target.value)}
+              className="input-field"
+              style={{ marginBottom: 14, fontSize: 14 }}
+            />
+            <div style={{ background: T.cardHover, padding: 10, borderRadius: 8, marginBottom: 14, textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: T.textMuted }}>Total a confirmar</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4 }}>{fmtPeso(total)}</div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <button onClick={() => setShowModalTransferencia(false)} className="btn-ghost" style={{ justifyContent: 'center' }}>Cancelar</button>
+              <button
+                onClick={() => {
+                  if (!window.confirm(`¿Confirmar venta de ${fmtPeso(total)} por transferencia?`)) return;
+                  try {
+                    localStorage.setItem('mn_ref_nombre', refNombre);
+                    localStorage.setItem('mn_ref_celular', refCelular);
+                    localStorage.setItem('mn_ref_direccion', refDireccion);
+                  } catch (e) {}
+                  registrarVenta();
+                }}
+                className="btn-primary"
+                style={{ justifyContent: 'center' }}
+              >
+                ✓ Confirmar
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {showModalEfectivo && (
@@ -347,7 +413,11 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <button onClick={() => setShowModalEfectivo(false)} className="btn-ghost" style={{ justifyContent: 'center' }}>Cancelar</button>
               <button
-                onClick={() => registrarVenta(parseFloat(montoEfectivo) || 0)}
+                onClick={() => {
+                  const monto = parseFloat(montoEfectivo) || 0;
+                  if (!window.confirm(`¿Confirmar venta de ${fmtPeso(total)} en efectivo?`)) return;
+                  registrarVenta(monto);
+                }}
                 disabled={!montoEfectivo}
                 className="btn-primary"
                 style={{ justifyContent: 'center', opacity: montoEfectivo ? 1 : 0.5, cursor: montoEfectivo ? 'pointer' : 'not-allowed' }}

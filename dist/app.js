@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-17T23:46:18.813Z
+// MiNegocio v2.0 - Built 2026-07-18T00:16:32.577Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -846,6 +846,10 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
     const [paymentMethod, setPaymentMethod] = useState('transferencia');
     const [showModalEfectivo, setShowModalEfectivo] = useState(false);
     const [montoEfectivo, setMontoEfectivo] = useState('');
+    const [showModalTransferencia, setShowModalTransferencia] = useState(false);
+    const [refNombre, setRefNombre] = useState(() => localStorage.getItem('mn_ref_nombre') || '');
+    const [refCelular, setRefCelular] = useState(() => localStorage.getItem('mn_ref_celular') || '');
+    const [refDireccion, setRefDireccion] = useState(() => localStorage.getItem('mn_ref_direccion') || '');
     // Cargar items desde presupuestos
     useEffect(() => {
         if (pendingItems && pendingItems.length > 0) {
@@ -925,8 +929,11 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
         setItems(prev => {
             const next = [...prev];
             const newQty = next[idx].cantidad + delta;
-            if (newQty <= 0)
+            if (newQty <= 0) {
+                if (!window.confirm(`¿Quitar "${next[idx].descripcion}" del carrito?`))
+                    return prev;
                 return next.filter((_, i) => i !== idx);
+            }
             next[idx] = { ...next[idx], cantidad: newQty };
             return next;
         });
@@ -946,10 +953,14 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
             paymentMethod,
             amountReceived: monto,
             change: monto !== undefined ? monto - total : undefined,
+            clienteNombre: paymentMethod === 'transferencia' ? refNombre : undefined,
+            clienteCelular: paymentMethod === 'transferencia' ? refCelular : undefined,
+            clienteDireccion: paymentMethod === 'transferencia' ? refDireccion : undefined,
         };
         setData(d => ({ ...d, ventas: [venta, ...(d.ventas || [])] }));
         setItems([]);
         setShowModalEfectivo(false);
+        setShowModalTransferencia(false);
         setMontoEfectivo('');
         showToast('Venta registrada', 'success');
     };
@@ -1014,7 +1025,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                 React.createElement("div", { style: { fontSize: 13, color: '#86efac', fontWeight: 600 } }, "Total"),
                 React.createElement("div", { style: { fontSize: 24, fontWeight: 700, color: '#22c55e' } }, (0, utils_1.fmtPeso)(total))),
             React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 12 } },
-                React.createElement("button", { onClick: () => setPaymentMethod('transferencia'), style: {
+                React.createElement("button", { onClick: () => { setPaymentMethod('transferencia'); setShowModalTransferencia(true); }, style: {
                         flex: 1,
                         padding: 12,
                         background: paymentMethod === 'transferencia' ? '#818cf8' : T.inputBg,
@@ -1039,7 +1050,8 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                         fontFamily: 'inherit',
                     } }, "\uD83D\uDCB5 Efectivo")),
             React.createElement("div", { style: { display: 'flex', gap: 8 } },
-                React.createElement("button", { className: "btn-ghost", style: { padding: '12px 14px' }, onClick: () => setItems([]) },
+                React.createElement("button", { className: "btn-ghost", style: { padding: '12px 14px' }, onClick: () => { if (window.confirm(`¿Vaciar el carrito? Se borrarán ${items.length} item(s).`))
+                        setItems([]); } },
                     React.createElement(Icon_1.Icon, { name: "trash", size: 16 })),
                 React.createElement("button", { className: "btn-ghost", style: { flex: 1, justifyContent: 'center' }, onClick: () => setShowPresupuesto(true) },
                     React.createElement(Icon_1.Icon, { name: "download", size: 16 }),
@@ -1048,10 +1060,33 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                         setShowModalEfectivo(true);
                     }
                     else {
-                        registrarVenta();
+                        setShowModalTransferencia(true);
                     } } },
                     React.createElement(Icon_1.Icon, { name: "check", size: 16 }),
                     " Venta")))),
+        showModalTransferencia && (React.createElement(Modal_1.Modal, { onClose: () => setShowModalTransferencia(false) },
+            React.createElement("div", null,
+                React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 8, color: T.text } }, "\uD83D\uDCB3 Referencia de transferencia"),
+                React.createElement("div", { style: { fontSize: 12, color: T.textMuted, marginBottom: 14 } }, "Datos opcionales para guardar como referencia del cliente"),
+                React.createElement("input", { type: "text", placeholder: "Nombre del cliente", value: refNombre, onChange: e => setRefNombre(e.target.value), className: "input-field", style: { marginBottom: 8, fontSize: 14 } }),
+                React.createElement("input", { type: "tel", placeholder: "Celular", value: refCelular, onChange: e => setRefCelular(e.target.value), className: "input-field", style: { marginBottom: 8, fontSize: 14 } }),
+                React.createElement("input", { type: "text", placeholder: "Direcci\u00F3n", value: refDireccion, onChange: e => setRefDireccion(e.target.value), className: "input-field", style: { marginBottom: 14, fontSize: 14 } }),
+                React.createElement("div", { style: { background: T.cardHover, padding: 10, borderRadius: 8, marginBottom: 14, textAlign: 'center' } },
+                    React.createElement("div", { style: { fontSize: 11, color: T.textMuted } }, "Total a confirmar"),
+                    React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4 } }, (0, utils_1.fmtPeso)(total))),
+                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
+                    React.createElement("button", { onClick: () => setShowModalTransferencia(false), className: "btn-ghost", style: { justifyContent: 'center' } }, "Cancelar"),
+                    React.createElement("button", { onClick: () => {
+                            if (!window.confirm(`¿Confirmar venta de ${(0, utils_1.fmtPeso)(total)} por transferencia?`))
+                                return;
+                            try {
+                                localStorage.setItem('mn_ref_nombre', refNombre);
+                                localStorage.setItem('mn_ref_celular', refCelular);
+                                localStorage.setItem('mn_ref_direccion', refDireccion);
+                            }
+                            catch (e) { }
+                            registrarVenta();
+                        }, className: "btn-primary", style: { justifyContent: 'center' } }, "\u2713 Confirmar"))))),
         showModalEfectivo && (React.createElement(Modal_1.Modal, { onClose: () => setShowModalEfectivo(false) },
             React.createElement("div", null,
                 React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 8, color: T.text } }, "\uD83D\uDCB5 Pago en efectivo"),
@@ -1065,7 +1100,12 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                     React.createElement("div", { style: { fontSize: 18, fontWeight: 700, color: (montoEfectivo && (parseFloat(montoEfectivo) - total) >= 0) ? '#22c55e' : '#ef4444', marginTop: 4 } }, (0, utils_1.fmtPeso)(montoEfectivo ? parseFloat(montoEfectivo) - total : 0))),
                 React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
                     React.createElement("button", { onClick: () => setShowModalEfectivo(false), className: "btn-ghost", style: { justifyContent: 'center' } }, "Cancelar"),
-                    React.createElement("button", { onClick: () => registrarVenta(parseFloat(montoEfectivo) || 0), disabled: !montoEfectivo, className: "btn-primary", style: { justifyContent: 'center', opacity: montoEfectivo ? 1 : 0.5, cursor: montoEfectivo ? 'pointer' : 'not-allowed' } }, "\u2713 Confirmar"))))),
+                    React.createElement("button", { onClick: () => {
+                            const monto = parseFloat(montoEfectivo) || 0;
+                            if (!window.confirm(`¿Confirmar venta de ${(0, utils_1.fmtPeso)(total)} en efectivo?`))
+                                return;
+                            registrarVenta(monto);
+                        }, disabled: !montoEfectivo, className: "btn-primary", style: { justifyContent: 'center', opacity: montoEfectivo ? 1 : 0.5, cursor: montoEfectivo ? 'pointer' : 'not-allowed' } }, "\u2713 Confirmar"))))),
         showPresupuesto && (React.createElement(Presupuesto_1.Presupuesto, { items: items, total: total, onClose: () => setShowPresupuesto(false), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion, onGuardar: (cliente, nota, descuento) => {
                 const pres = {
                     id: Date.now().toString(36),
