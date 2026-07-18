@@ -30,6 +30,7 @@ function AppInner() {
   const { data, setData, loaded, syncing } = useAppData(user);
   const [tab, setTab] = useState<TabId>(() => (localStorage.getItem('mn_lastTab') as TabId) || 'calc');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showConfirmLogout, setShowConfirmLogout] = useState(false);
   const [isOnline, setIsOnline] = useState(() => (window as any).__isOnline !== false);
   const [pendingCodProv, setPendingCodProv] = useState<string | undefined>();
   const [pendingCalcItems, setPendingCalcItems] = useState<any[] | undefined>();
@@ -89,6 +90,10 @@ function AppInner() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Acceso directo a Calculadora */}
+          <button onClick={() => switchTab('calc')} style={{ background: tab === 'calc' ? 'rgba(99,102,241,0.15)' : 'none', border: 'none', color: tab === 'calc' ? '#818cf8' : T.textMuted, cursor: 'pointer', padding: '4px 8px', borderRadius: 8, fontSize: 18 }}>
+            🛒
+          </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
             <div style={{ width: 7, height: 7, borderRadius: '50%', background: !isOnline ? '#ef4444' : syncing ? '#fbbf24' : '#22c55e' }} />
             <span style={{ color: T.textMuted }}>{!isOnline ? 'Sin conexión' : syncing ? 'Guardando...' : 'Sincronizado'}</span>
@@ -97,14 +102,14 @@ function AppInner() {
           <button onClick={toggleTheme} style={{ background: 'none', border: 'none', color: T.textMuted, cursor: 'pointer', padding: 4, fontSize: 18 }}>
             {isDark ? '☀️' : '🌙'}
           </button>
-          <button onClick={() => setMenuOpen(v => !v)} style={{ background: 'none', border: 'none', color: T.textMuted, cursor: 'pointer', padding: 4 }}>
+          <button onClick={() => setMenuOpen(v => !v)} style={{ background: menuOpen ? 'rgba(99,102,241,0.15)' : 'none', border: menuOpen ? '1px solid #6366f1' : 'none', color: menuOpen ? '#818cf8' : T.textMuted, cursor: 'pointer', padding: 4, borderRadius: 8 }}>
             <Icon name="menu" size={22} />
           </button>
         </div>
       </div>
 
       {/* Content */}
-      <div style={{ padding: '76px 12px 80px', maxWidth: 640, margin: '0 auto' }}>
+      <div style={{ padding: '76px 12px 24px', maxWidth: 640, margin: '0 auto' }}>
         {!loaded ? (
           <div style={{ textAlign: 'center', padding: '80px 20px', color: T.textMuted }}>
             <div style={{ fontSize: 40, marginBottom: 16 }}>⚡</div>
@@ -124,33 +129,37 @@ function AppInner() {
         )}
       </div>
 
-      {/* Bottom nav */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: T.bottomNav, borderTop: `1px solid ${T.headerBorder}`, display: 'flex', justifyContent: 'space-around', padding: '8px 0 12px' }}>
-        <button onClick={() => switchTab('calc')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: tab === 'calc' ? '#818cf8' : T.textMuted, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, fontSize: 10, fontFamily: 'inherit' }}>
-          <Icon name="store" size={20} /> Calculadora
-        </button>
-        <button onClick={() => setMenuOpen(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.textMuted, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, fontSize: 10, fontFamily: 'inherit' }}>
-          <Icon name="menu" size={20} /> Menú
-        </button>
-      </div>
-
-      {/* Menu */}
+      {/* Menu compacto, anclado arriba a la derecha */}
       {menuOpen && (
         <>
-          <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 150 }} />
-          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: T.menu, borderRadius: '20px 20px 0 0', zIndex: 200, padding: '8px 0 8px', borderTop: `1px solid ${T.menuBorder}` }}>
-            <div style={{ width: 40, height: 4, background: T.inputBorder, borderRadius: 2, margin: '8px auto 12px' }} />
+          <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 150, background: 'transparent' }} />
+          <div style={{ position: 'fixed', top: 64, right: 12, width: 230, maxWidth: '70vw', background: T.menu, borderRadius: 14, zIndex: 200, padding: '6px 0', border: `1px solid ${T.menuBorder}`, boxShadow: '0 12px 32px rgba(0,0,0,0.5)' }}>
             {NAV.map(item => (
-              <button key={item.id} onClick={() => switchTab(item.id)} style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '13px 20px', background: tab === item.id ? 'rgba(99,102,241,0.1)' : 'none', border: 'none', cursor: 'pointer', color: tab === item.id ? '#818cf8' : T.textSecondary, fontFamily: 'inherit', fontSize: 15, fontWeight: tab === item.id ? 600 : 400 }}>
-                <Icon name={item.icon} size={20} />
+              <button key={item.id} onClick={() => { switchTab(item.id); setMenuOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 16px', background: tab === item.id ? 'rgba(99,102,241,0.1)' : 'none', border: 'none', cursor: 'pointer', color: tab === item.id ? '#818cf8' : T.textSecondary, fontFamily: 'inherit', fontSize: 13, fontWeight: tab === item.id ? 600 : 400, textAlign: 'left' }}>
+                <Icon name={item.icon} size={17} />
                 {item.label}
                 {tab === item.id && <span style={{ marginLeft: 'auto', color: '#6366f1' }}>✓</span>}
               </button>
             ))}
-            <div style={{ height: 1, background: T.divider, margin: '8px 0' }} />
-            <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '13px 20px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontFamily: 'inherit', fontSize: 15 }}>
-              <Icon name="x" size={20} /> Salir
+            <div style={{ height: 1, background: T.divider, margin: '4px 0' }} />
+            <button onClick={() => { setMenuOpen(false); setShowConfirmLogout(true); }} style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 16px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontFamily: 'inherit', fontSize: 13, textAlign: 'left' }}>
+              <Icon name="x" size={17} /> Salir
             </button>
+          </div>
+        </>
+      )}
+
+      {/* Confirmación al salir */}
+      {showConfirmLogout && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 250 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '80%', maxWidth: 320, background: T.card, borderRadius: 16, padding: 20, zIndex: 300, textAlign: 'center' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, color: T.text }}>🚪 ¿Cerrar sesión?</div>
+            <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Vas a salir de MiNegocio. Tus datos ya están guardados en la nube.</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <button onClick={() => setShowConfirmLogout(false)} className="btn-ghost" style={{ justifyContent: 'center' }}>Cancelar</button>
+              <button onClick={() => { setShowConfirmLogout(false); logout(); }} style={{ padding: '10px', borderRadius: 10, border: 'none', background: '#ef4444', color: 'white', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Salir</button>
+            </div>
           </div>
         </>
       )}

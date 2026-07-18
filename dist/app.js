@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-18T14:45:12.282Z
+// MiNegocio v2.0 - Built 2026-07-18T21:07:29.622Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -2853,6 +2853,7 @@ function AppInner() {
     const { data, setData, loaded, syncing } = (0, useAppData_1.useAppData)(user);
     const [tab, setTab] = useState(() => localStorage.getItem('mn_lastTab') || 'calc');
     const [menuOpen, setMenuOpen] = useState(false);
+    const [showConfirmLogout, setShowConfirmLogout] = useState(false);
     const [isOnline, setIsOnline] = useState(() => window.__isOnline !== false);
     const [pendingCodProv, setPendingCodProv] = useState();
     const [pendingCalcItems, setPendingCalcItems] = useState();
@@ -2908,13 +2909,14 @@ function AppInner() {
                     React.createElement("div", { style: { fontWeight: 700, fontSize: 15, color: T.text } }, "MiNegocio"),
                     React.createElement("div", { style: { fontSize: 10, color: T.textMuted } }, "Sistema de Precios"))),
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 12 } },
+                React.createElement("button", { onClick: () => switchTab('calc'), style: { background: tab === 'calc' ? 'rgba(99,102,241,0.15)' : 'none', border: 'none', color: tab === 'calc' ? '#818cf8' : T.textMuted, cursor: 'pointer', padding: '4px 8px', borderRadius: 8, fontSize: 18 } }, "\uD83D\uDED2"),
                 React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 } },
                     React.createElement("div", { style: { width: 7, height: 7, borderRadius: '50%', background: !isOnline ? '#ef4444' : syncing ? '#fbbf24' : '#22c55e' } }),
                     React.createElement("span", { style: { color: T.textMuted } }, !isOnline ? 'Sin conexión' : syncing ? 'Guardando...' : 'Sincronizado')),
                 React.createElement("button", { onClick: toggleTheme, style: { background: 'none', border: 'none', color: T.textMuted, cursor: 'pointer', padding: 4, fontSize: 18 } }, isDark ? '☀️' : '🌙'),
-                React.createElement("button", { onClick: () => setMenuOpen(v => !v), style: { background: 'none', border: 'none', color: T.textMuted, cursor: 'pointer', padding: 4 } },
+                React.createElement("button", { onClick: () => setMenuOpen(v => !v), style: { background: menuOpen ? 'rgba(99,102,241,0.15)' : 'none', border: menuOpen ? '1px solid #6366f1' : 'none', color: menuOpen ? '#818cf8' : T.textMuted, cursor: 'pointer', padding: 4, borderRadius: 8 } },
                     React.createElement(Icon_1.Icon, { name: "menu", size: 22 })))),
-        React.createElement("div", { style: { padding: '76px 12px 80px', maxWidth: 640, margin: '0 auto' } }, !loaded ? (React.createElement("div", { style: { textAlign: 'center', padding: '80px 20px', color: T.textMuted } },
+        React.createElement("div", { style: { padding: '76px 12px 24px', maxWidth: 640, margin: '0 auto' } }, !loaded ? (React.createElement("div", { style: { textAlign: 'center', padding: '80px 20px', color: T.textMuted } },
             React.createElement("div", { style: { fontSize: 40, marginBottom: 16 } }, "\u26A1"),
             React.createElement("div", null, "Cargando datos..."))) : (React.createElement(React.Fragment, null,
             tab === 'calc' && React.createElement(TabCalculadora_1.TabCalculadora, { ...tabProps, pendingItems: pendingCalcItems, onClearPending: () => setPendingCalcItems(undefined) }),
@@ -2925,25 +2927,25 @@ function AppInner() {
             tab === 'pedidos' && React.createElement(TabPedidos_1.TabPedidos, { ...tabProps }),
             tab === 'presupuestos' && React.createElement(TabPresupuestos_1.TabPresupuestos, { ...tabProps, onCargarEnCalculadora: (items) => { setPendingCalcItems(items); switchTab('calc'); } }),
             tab === 'config' && React.createElement(TabConfig_1.TabConfig, { ...tabProps })))),
-        React.createElement("div", { style: { position: 'fixed', bottom: 0, left: 0, right: 0, background: T.bottomNav, borderTop: `1px solid ${T.headerBorder}`, display: 'flex', justifyContent: 'space-around', padding: '8px 0 12px' } },
-            React.createElement("button", { onClick: () => switchTab('calc'), style: { background: 'none', border: 'none', cursor: 'pointer', color: tab === 'calc' ? '#818cf8' : T.textMuted, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, fontSize: 10, fontFamily: 'inherit' } },
-                React.createElement(Icon_1.Icon, { name: "store", size: 20 }),
-                " Calculadora"),
-            React.createElement("button", { onClick: () => setMenuOpen(v => !v), style: { background: 'none', border: 'none', cursor: 'pointer', color: T.textMuted, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, fontSize: 10, fontFamily: 'inherit' } },
-                React.createElement(Icon_1.Icon, { name: "menu", size: 20 }),
-                " Men\u00FA")),
         menuOpen && (React.createElement(React.Fragment, null,
-            React.createElement("div", { onClick: () => setMenuOpen(false), style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 150 } }),
-            React.createElement("div", { style: { position: 'fixed', bottom: 0, left: 0, right: 0, background: T.menu, borderRadius: '20px 20px 0 0', zIndex: 200, padding: '8px 0 8px', borderTop: `1px solid ${T.menuBorder}` } },
-                React.createElement("div", { style: { width: 40, height: 4, background: T.inputBorder, borderRadius: 2, margin: '8px auto 12px' } }),
-                NAV.map(item => (React.createElement("button", { key: item.id, onClick: () => switchTab(item.id), style: { display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '13px 20px', background: tab === item.id ? 'rgba(99,102,241,0.1)' : 'none', border: 'none', cursor: 'pointer', color: tab === item.id ? '#818cf8' : T.textSecondary, fontFamily: 'inherit', fontSize: 15, fontWeight: tab === item.id ? 600 : 400 } },
-                    React.createElement(Icon_1.Icon, { name: item.icon, size: 20 }),
+            React.createElement("div", { onClick: () => setMenuOpen(false), style: { position: 'fixed', inset: 0, zIndex: 150, background: 'transparent' } }),
+            React.createElement("div", { style: { position: 'fixed', top: 64, right: 12, width: 230, maxWidth: '70vw', background: T.menu, borderRadius: 14, zIndex: 200, padding: '6px 0', border: `1px solid ${T.menuBorder}`, boxShadow: '0 12px 32px rgba(0,0,0,0.5)' } },
+                NAV.map(item => (React.createElement("button", { key: item.id, onClick: () => { switchTab(item.id); setMenuOpen(false); }, style: { display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 16px', background: tab === item.id ? 'rgba(99,102,241,0.1)' : 'none', border: 'none', cursor: 'pointer', color: tab === item.id ? '#818cf8' : T.textSecondary, fontFamily: 'inherit', fontSize: 13, fontWeight: tab === item.id ? 600 : 400, textAlign: 'left' } },
+                    React.createElement(Icon_1.Icon, { name: item.icon, size: 17 }),
                     item.label,
                     tab === item.id && React.createElement("span", { style: { marginLeft: 'auto', color: '#6366f1' } }, "\u2713")))),
-                React.createElement("div", { style: { height: 1, background: T.divider, margin: '8px 0' } }),
-                React.createElement("button", { onClick: logout, style: { display: 'flex', alignItems: 'center', gap: 14, width: '100%', padding: '13px 20px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontFamily: 'inherit', fontSize: 15 } },
-                    React.createElement(Icon_1.Icon, { name: "x", size: 20 }),
+                React.createElement("div", { style: { height: 1, background: T.divider, margin: '4px 0' } }),
+                React.createElement("button", { onClick: () => { setMenuOpen(false); setShowConfirmLogout(true); }, style: { display: 'flex', alignItems: 'center', gap: 12, width: '100%', padding: '11px 16px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontFamily: 'inherit', fontSize: 13, textAlign: 'left' } },
+                    React.createElement(Icon_1.Icon, { name: "x", size: 17 }),
                     " Salir")))),
+        showConfirmLogout && (React.createElement(React.Fragment, null,
+            React.createElement("div", { style: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 250 } }),
+            React.createElement("div", { style: { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '80%', maxWidth: 320, background: T.card, borderRadius: 16, padding: 20, zIndex: 300, textAlign: 'center' } },
+                React.createElement("div", { style: { fontSize: 15, fontWeight: 700, marginBottom: 8, color: T.text } }, "\uD83D\uDEAA \u00BFCerrar sesi\u00F3n?"),
+                React.createElement("div", { style: { fontSize: 12, color: T.textMuted, marginBottom: 16 } }, "Vas a salir de MiNegocio. Tus datos ya est\u00E1n guardados en la nube."),
+                React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
+                    React.createElement("button", { onClick: () => setShowConfirmLogout(false), className: "btn-ghost", style: { justifyContent: 'center' } }, "Cancelar"),
+                    React.createElement("button", { onClick: () => { setShowConfirmLogout(false); logout(); }, style: { padding: '10px', borderRadius: 10, border: 'none', background: '#ef4444', color: 'white', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' } }, "Salir"))))),
         React.createElement(Toast_1.Toast, { toast: toast, onClose: () => setToast(null) })));
 }
 function App() {
