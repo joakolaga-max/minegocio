@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-18T00:16:32.577Z
+// MiNegocio v2.0 - Built 2026-07-18T13:25:13.645Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -559,11 +559,9 @@ const module = { exports };
 exports.Presupuesto = Presupuesto;
 const Icon_1 = __require("./Icon");
 function Presupuesto({ items, total, onClose, onGuardar, empresaData, telefonoData, direccionData, misProductos = [] }) {
+    // Mostrar lo mismo que ve el usuario en el carrito: su código de referencia primero
     const getDescripcion = (item) => {
-        if (!item.codigoRef)
-            return item.descripcion;
-        const prod = misProductos.find(p => p.codigoRef === item.codigoRef);
-        return prod?.descripcion || item.descripcion;
+        return item.codigoRef || item.descripcion;
     };
     const [nombreEmpresa, setNombreEmpresa] = useState(() => empresaData || localStorage.getItem('mn_empresa') || '');
     const [telefono, setTelefono] = useState(() => telefonoData || localStorage.getItem('mn_telefono') || '');
@@ -869,6 +867,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
     const [scanning, setScanning] = useState(false);
     const [showPresupuesto, setShowPresupuesto] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [selectedIdx, setSelectedIdx] = useState(-1);
     const [showCustom, setShowCustom] = useState(false);
     const [customDesc, setCustomDesc] = useState('');
     const [customPrecio, setCustomPrecio] = useState('');
@@ -971,8 +970,33 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                 React.createElement("div", { style: { position: 'relative', flex: 1 } },
                     React.createElement("div", { style: { position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#6b7280' } },
                         React.createElement(Icon_1.Icon, { name: "search", size: 16 })),
-                    React.createElement("input", { ref: inputRef, className: "input-field", style: { paddingLeft: 38 }, placeholder: "Buscar por REF, cod proveedor o c\u00F3digo de barras...", value: busqueda, onChange: e => { setBusqueda(e.target.value); setShowSuggestions(true); }, onKeyDown: e => { if (e.key === 'Enter' && sugerencias.length > 0)
-                            agregarProducto(sugerencias[0].codigoRef); } })),
+                    React.createElement("input", { ref: inputRef, className: "input-field", style: { paddingLeft: 38 }, placeholder: "Buscar por REF, cod proveedor o c\u00F3digo de barras...", value: busqueda, onChange: e => { setBusqueda(e.target.value); setShowSuggestions(true); setSelectedIdx(-1); }, onKeyDown: e => {
+                            if (e.key === 'ArrowDown') {
+                                e.preventDefault();
+                                if (sugerencias.length > 0) {
+                                    setShowSuggestions(true);
+                                    setSelectedIdx(i => (i + 1) % sugerencias.length);
+                                }
+                            }
+                            else if (e.key === 'ArrowUp') {
+                                e.preventDefault();
+                                if (sugerencias.length > 0) {
+                                    setShowSuggestions(true);
+                                    setSelectedIdx(i => (i <= 0 ? sugerencias.length - 1 : i - 1));
+                                }
+                            }
+                            else if (e.key === 'Enter') {
+                                if (sugerencias.length > 0) {
+                                    const idx = selectedIdx >= 0 && selectedIdx < sugerencias.length ? selectedIdx : 0;
+                                    agregarProducto(sugerencias[idx].codigoRef);
+                                    setSelectedIdx(-1);
+                                }
+                            }
+                            else if (e.key === 'Escape') {
+                                setShowSuggestions(false);
+                                setSelectedIdx(-1);
+                            }
+                        } })),
                 React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', flexShrink: 0 }, onClick: () => setScanning(true) },
                     React.createElement(Icon_1.Icon, { name: "camera", size: 18 })),
                 React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', flexShrink: 0, color: '#818cf8' }, onClick: () => { setCustomDesc(''); setCustomPrecio(''); setShowCustom(true); } },
@@ -982,7 +1006,8 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                 const s = (data.stock || {})[p.codigoRef];
                 const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
                 const inPedido = (data.pedidos || []).find(x => x.codigoRef === p.codigoRef);
-                return (React.createElement("div", { key: i, onClick: () => agregarProducto(p.codigoRef), style: { padding: '10px 14px', cursor: 'pointer', borderBottom: `1px solid ${T.divider}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 } },
+                return (React.createElement("div", { key: i, onClick: () => agregarProducto(p.codigoRef), onMouseEnter: () => setSelectedIdx(i), ref: el => { if (el && i === selectedIdx)
+                        el.scrollIntoView({ block: 'nearest' }); }, style: { padding: '10px 14px', cursor: 'pointer', borderBottom: `1px solid ${T.divider}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, background: i === selectedIdx ? T.cardHover : 'transparent' } },
                     React.createElement("div", { style: { minWidth: 0 } },
                         React.createElement("div", { style: { fontSize: 13, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 } }, p.codigoRef),
                         React.createElement("div", { style: { fontSize: 12, color: T.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, p.descripcion),
@@ -1106,7 +1131,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                                 return;
                             registrarVenta(monto);
                         }, disabled: !montoEfectivo, className: "btn-primary", style: { justifyContent: 'center', opacity: montoEfectivo ? 1 : 0.5, cursor: montoEfectivo ? 'pointer' : 'not-allowed' } }, "\u2713 Confirmar"))))),
-        showPresupuesto && (React.createElement(Presupuesto_1.Presupuesto, { items: items, total: total, onClose: () => setShowPresupuesto(false), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion, onGuardar: (cliente, nota, descuento) => {
+        showPresupuesto && (React.createElement(Presupuesto_1.Presupuesto, { misProductos: data.misProductos, items: items, total: total, onClose: () => setShowPresupuesto(false), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion, onGuardar: (cliente, nota, descuento) => {
                 const pres = {
                     id: Date.now().toString(36),
                     fecha: new Date().toLocaleDateString('es-AR'),
@@ -2122,7 +2147,7 @@ function TabVentas({ data, setData, showToast }) {
                             "x ",
                             item.descripcion),
                         React.createElement("span", { style: { color: '#22c55e', fontWeight: 600 } }, fmt(item.precioVenta * item.cantidad)))))))))))))),
-        presupuestoVenta && (React.createElement(Presupuesto_1.Presupuesto, { items: presupuestoVenta.items, total: presupuestoVenta.total, onClose: () => setPresupuestoVenta(null), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion }))));
+        presupuestoVenta && (React.createElement(Presupuesto_1.Presupuesto, { misProductos: data.misProductos, items: presupuestoVenta.items, total: presupuestoVenta.total, onClose: () => setPresupuestoVenta(null), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion }))));
 }
 
 __modules['tabs/TabVentas'] = exports;
@@ -2475,7 +2500,7 @@ function TabPresupuestos({ data, setData, showToast, onCargarEnCalculadora }) {
                             React.createElement("button", { onClick: () => eliminar(p.id), style: { display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 10, padding: '10px 12px', cursor: 'pointer' } },
                                 React.createElement(Icon_1.Icon, { name: "trash", size: 14 })))))));
             }))),
-        verPresupuesto && (React.createElement(Presupuesto_1.Presupuesto, { items: verPresupuesto.items, total: verPresupuesto.total, onClose: () => setVerPresupuesto(null), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion }))));
+        verPresupuesto && (React.createElement(Presupuesto_1.Presupuesto, { misProductos: data.misProductos, items: verPresupuesto.items, total: verPresupuesto.total, onClose: () => setVerPresupuesto(null), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion }))));
 }
 
 __modules['tabs/TabPresupuestos'] = exports;

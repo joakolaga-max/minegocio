@@ -22,10 +22,9 @@ interface Props {
 }
 
 export function Presupuesto({ items, total, onClose, onGuardar, empresaData, telefonoData, direccionData, misProductos = [] }: Props) {
+  // Mostrar lo mismo que ve el usuario en el carrito: su código de referencia primero
   const getDescripcion = (item: Item) => {
-    if (!item.codigoRef) return item.descripcion;
-    const prod = misProductos.find(p => p.codigoRef === item.codigoRef);
-    return prod?.descripcion || item.descripcion;
+    return item.codigoRef || item.descripcion;
   };
 
   const [nombreEmpresa, setNombreEmpresa] = useState(() => empresaData || localStorage.getItem('mn_empresa') || '');

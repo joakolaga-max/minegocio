@@ -134,6 +134,7 @@ export function TabVentas({ data, setData, showToast }: Props) {
 
       {presupuestoVenta && (
         <Presupuesto
+          misProductos={data.misProductos}
           items={presupuestoVenta.items}
           total={presupuestoVenta.total}
           onClose={() => setPresupuestoVenta(null)}

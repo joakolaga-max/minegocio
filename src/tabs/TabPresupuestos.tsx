@@ -112,6 +112,7 @@ export function TabPresupuestos({ data, setData, showToast, onCargarEnCalculador
 
       {verPresupuesto && (
         <Presupuesto
+          misProductos={data.misProductos}
           items={verPresupuesto.items}
           total={verPresupuesto.total}
           onClose={() => setVerPresupuesto(null)}

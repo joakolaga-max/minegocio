@@ -57,6 +57,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
   const [scanning, setScanning] = useState(false);
   const [showPresupuesto, setShowPresupuesto] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIdx, setSelectedIdx] = useState(-1);
   const [showCustom, setShowCustom] = useState(false);
   const [customDesc, setCustomDesc] = useState('');
   const [customPrecio, setCustomPrecio] = useState('');
@@ -174,8 +175,25 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
               style={{ paddingLeft: 38 }}
               placeholder="Buscar por REF, cod proveedor o código de barras..."
               value={busqueda}
-              onChange={e => { setBusqueda(e.target.value); setShowSuggestions(true); }}
-              onKeyDown={e => { if (e.key === 'Enter' && sugerencias.length > 0) agregarProducto(sugerencias[0].codigoRef); }}
+              onChange={e => { setBusqueda(e.target.value); setShowSuggestions(true); setSelectedIdx(-1); }}
+              onKeyDown={e => {
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  if (sugerencias.length > 0) { setShowSuggestions(true); setSelectedIdx(i => (i + 1) % sugerencias.length); }
+                } else if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  if (sugerencias.length > 0) { setShowSuggestions(true); setSelectedIdx(i => (i <= 0 ? sugerencias.length - 1 : i - 1)); }
+                } else if (e.key === 'Enter') {
+                  if (sugerencias.length > 0) {
+                    const idx = selectedIdx >= 0 && selectedIdx < sugerencias.length ? selectedIdx : 0;
+                    agregarProducto(sugerencias[idx].codigoRef);
+                    setSelectedIdx(-1);
+                  }
+                } else if (e.key === 'Escape') {
+                  setShowSuggestions(false);
+                  setSelectedIdx(-1);
+                }
+              }}
             />
           </div>
           <button className="btn-ghost" style={{ padding: '8px 12px', flexShrink: 0 }} onClick={() => setScanning(true)}>
@@ -196,7 +214,9 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
               const inPedido = (data.pedidos || []).find(x => x.codigoRef === p.codigoRef);
               return (
                 <div key={i} onClick={() => agregarProducto(p.codigoRef)}
-                  style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: `1px solid ${T.divider}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                  onMouseEnter={() => setSelectedIdx(i)}
+                  ref={el => { if (el && i === selectedIdx) el.scrollIntoView({ block: 'nearest' }); }}
+                  style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: `1px solid ${T.divider}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, background: i === selectedIdx ? T.cardHover : 'transparent' }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 13, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700 }}>{p.codigoRef}</div>
                     <div style={{ fontSize: 12, color: T.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.descripcion}</div>
@@ -431,6 +451,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
 
       {showPresupuesto && (
         <Presupuesto
+          misProductos={data.misProductos}
           items={items}
           total={total}
           onClose={() => setShowPresupuesto(false)}
