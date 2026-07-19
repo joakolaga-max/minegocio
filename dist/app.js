@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-18T21:07:29.622Z
+// MiNegocio v2.0 - Built 2026-07-19T04:16:07.770Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -2909,7 +2909,8 @@ function AppInner() {
                     React.createElement("div", { style: { fontWeight: 700, fontSize: 15, color: T.text } }, "MiNegocio"),
                     React.createElement("div", { style: { fontSize: 10, color: T.textMuted } }, "Sistema de Precios"))),
             React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 12 } },
-                React.createElement("button", { onClick: () => switchTab('calc'), style: { background: tab === 'calc' ? 'rgba(99,102,241,0.15)' : 'none', border: 'none', color: tab === 'calc' ? '#818cf8' : T.textMuted, cursor: 'pointer', padding: '4px 8px', borderRadius: 8, fontSize: 18 } }, "\uD83D\uDED2"),
+                React.createElement("button", { onClick: () => switchTab('calc'), style: { display: 'flex', alignItems: 'center', justifyContent: 'center', background: tab === 'calc' ? 'rgba(99,102,241,0.15)' : 'none', border: tab === 'calc' ? '1px solid #6366f1' : '1px solid transparent', color: tab === 'calc' ? '#818cf8' : T.textMuted, cursor: 'pointer', padding: '8px 14px', borderRadius: 10, minWidth: 44 } },
+                    React.createElement(Icon_1.Icon, { name: "store", size: 20 })),
                 React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 } },
                     React.createElement("div", { style: { width: 7, height: 7, borderRadius: '50%', background: !isOnline ? '#ef4444' : syncing ? '#fbbf24' : '#22c55e' } }),
                     React.createElement("span", { style: { color: T.textMuted } }, !isOnline ? 'Sin conexión' : syncing ? 'Guardando...' : 'Sincronizado')),

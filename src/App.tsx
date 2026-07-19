@@ -91,8 +91,8 @@ function AppInner() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {/* Acceso directo a Calculadora */}
-          <button onClick={() => switchTab('calc')} style={{ background: tab === 'calc' ? 'rgba(99,102,241,0.15)' : 'none', border: 'none', color: tab === 'calc' ? '#818cf8' : T.textMuted, cursor: 'pointer', padding: '4px 8px', borderRadius: 8, fontSize: 18 }}>
-            🛒
+          <button onClick={() => switchTab('calc')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: tab === 'calc' ? 'rgba(99,102,241,0.15)' : 'none', border: tab === 'calc' ? '1px solid #6366f1' : '1px solid transparent', color: tab === 'calc' ? '#818cf8' : T.textMuted, cursor: 'pointer', padding: '8px 14px', borderRadius: 10, minWidth: 44 }}>
+            <Icon name="store" size={20} />
           </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
             <div style={{ width: 7, height: 7, borderRadius: '50%', background: !isOnline ? '#ef4444' : syncing ? '#fbbf24' : '#22c55e' }} />
