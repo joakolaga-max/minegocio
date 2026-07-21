@@ -930,7 +930,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
             // Luego alfabético
             return aDesc.localeCompare(bDesc, 'es');
         })
-            .slice(0, 12)
+            .slice(0, 20)
         : [];
     const agregarProducto = useCallback((ref) => {
         const p = (data.misProductos || []).find(x => x.codigoRef.toLowerCase() === ref.toLowerCase() ||
