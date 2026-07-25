@@ -94,13 +94,11 @@ export function TabStock({ data, setData, showToast }: Props) {
     if (!busqueda.trim()) return true;
     const q = busqueda.trim().toLowerCase();
     return (
-      (p.codigoRef || '').toLowerCase().includes(q) ||
       (p.codigoProv || '').toLowerCase().includes(q) ||
       (p.descripcion || '').toLowerCase().includes(q) ||
-      (p.proveedor || '').toLowerCase().includes(q) ||
       ((p as any).codigoBarras || '').toLowerCase().includes(q)
     );
-  });
+  }).sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es'));
 
   const bajoMinimo = productos.filter(p => p.stock.minimo > 0 && p.actual < p.stock.minimo);
 

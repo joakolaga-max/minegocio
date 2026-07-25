@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function TabVentas({ data, setData, showToast }: Props) {
-  const { theme: T } = useTheme();
+  const { theme: T, isDark } = useTheme();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [presupuestoVenta, setPresupuestoVenta] = useState<typeof ventas[0] | null>(null);
   const ventas = [...(data.ventas || [])].reverse();
@@ -107,11 +107,11 @@ export function TabVentas({ data, setData, showToast }: Props) {
                     <div style={{ fontSize: 16, fontWeight: 700, color: '#22c55e', marginTop: 2 }}>{fmt(v.total)}</div>
                   </div>
                   <button onClick={e => { e.stopPropagation(); setPresupuestoVenta(v); }}
-                    style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', marginRight: 6 }}>
+                    style={{ background: isDark ? '#1f2547' : '#e0e7ff', border: '1px solid rgba(99,102,241,0.4)', color: '#818cf8', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', marginRight: 6, flexShrink: 0, WebkitTapHighlightColor: 'transparent' }}>
                     <Icon name="download" size={13} />
                   </button>
                   <button onClick={e => { e.stopPropagation(); borrarVenta(v.id); }}
-                    style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}>
+                    style={{ background: isDark ? '#3a1f28' : '#fee2e2', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', flexShrink: 0, WebkitTapHighlightColor: 'transparent' }}>
                     <Icon name="trash" size={13} />
                   </button>
                 </div>

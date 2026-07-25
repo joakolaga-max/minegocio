@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-19T04:16:07.770Z
+// MiNegocio v2.0 - Built 2026-07-25T00:28:17.392Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -914,8 +914,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
     const inputRef = useRef(null);
     const total = items.reduce((sum, i) => sum + i.precioVenta * i.cantidad, 0);
     const sugerencias = busqueda.length > 0
-        ? (data.misProductos || []).filter(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
-            (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+        ? (data.misProductos || []).filter(p => (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()))
             .sort((a, b) => {
@@ -1307,10 +1306,10 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
     const [busqueda, setBusqueda] = useState('');
     const [loading, setLoading] = useState(false);
     const prov = (data.proveedores || [])[activeTab] || { id: activeTab, nombre: "", productos: [] };
-    const productos = busqueda
+    const productos = (busqueda
         ? prov.productos.filter(p => p.codigo.toLowerCase().includes(busqueda.toLowerCase()) ||
             p.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
-        : prov.productos;
+        : prov.productos).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es'));
     const cargarArchivo = (file) => {
         if (!file)
             return;
@@ -1698,8 +1697,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
         e.target.value = '';
     };
     const filtrados = (busqueda
-        ? (data.misProductos || []).filter(p => p.codigoRef.toLowerCase().includes(busqueda.toLowerCase()) ||
-            (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+        ? (data.misProductos || []).filter(p => (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()))
         : (data.misProductos || [])).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es'));
@@ -2018,12 +2016,10 @@ function TabStock({ data, setData, showToast }) {
         if (!busqueda.trim())
             return true;
         const q = busqueda.trim().toLowerCase();
-        return ((p.codigoRef || '').toLowerCase().includes(q) ||
-            (p.codigoProv || '').toLowerCase().includes(q) ||
+        return ((p.codigoProv || '').toLowerCase().includes(q) ||
             (p.descripcion || '').toLowerCase().includes(q) ||
-            (p.proveedor || '').toLowerCase().includes(q) ||
             (p.codigoBarras || '').toLowerCase().includes(q));
-    });
+    }).sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es'));
     const bajoMinimo = productos.filter(p => p.stock.minimo > 0 && p.actual < p.stock.minimo);
     const saveStock = (ref, vals) => {
         setData(d => ({ ...d, stock: { ...d.stock, [ref]: vals } }));
@@ -2117,7 +2113,7 @@ const Icon_1 = __require("../components/Icon");
 const Presupuesto_1 = __require("../components/Presupuesto");
 const ThemeContext_1 = __require("../ThemeContext");
 function TabVentas({ data, setData, showToast }) {
-    const { theme: T } = (0, ThemeContext_1.useTheme)();
+    const { theme: T, isDark } = (0, ThemeContext_1.useTheme)();
     const [expandedId, setExpandedId] = useState(null);
     const [presupuestoVenta, setPresupuestoVenta] = useState(null);
     const ventas = [...(data.ventas || [])].reverse();
@@ -2189,9 +2185,9 @@ function TabVentas({ data, setData, showToast }) {
                                 v.items.length,
                                 " producto(s)"),
                             React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: '#22c55e', marginTop: 2 } }, fmt(v.total))),
-                        React.createElement("button", { onClick: e => { e.stopPropagation(); setPresupuestoVenta(v); }, style: { background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', marginRight: 6 } },
+                        React.createElement("button", { onClick: e => { e.stopPropagation(); setPresupuestoVenta(v); }, style: { background: isDark ? '#1f2547' : '#e0e7ff', border: '1px solid rgba(99,102,241,0.4)', color: '#818cf8', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', marginRight: 6, flexShrink: 0, WebkitTapHighlightColor: 'transparent' } },
                             React.createElement(Icon_1.Icon, { name: "download", size: 13 })),
-                        React.createElement("button", { onClick: e => { e.stopPropagation(); borrarVenta(v.id); }, style: { background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' } },
+                        React.createElement("button", { onClick: e => { e.stopPropagation(); borrarVenta(v.id); }, style: { background: isDark ? '#3a1f28' : '#fee2e2', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', flexShrink: 0, WebkitTapHighlightColor: 'transparent' } },
                             React.createElement(Icon_1.Icon, { name: "trash", size: 13 }))),
                     expandedId === v.id && (React.createElement("div", { style: { borderTop: `1px solid ${T.divider}`, padding: '8px 14px 12px' } }, v.items.map((item, i) => (React.createElement("div", { key: i, style: { display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: i < v.items.length - 1 ? `1px solid ${T.divider}` : 'none' } },
                         React.createElement("span", { style: { color: T.textSecondary } },
@@ -2246,10 +2242,9 @@ function TabPedidos({ data, setData, showToast }) {
     });
     const resultadosAgregar = busqAgregar.length > 1 ? (() => {
         const q = busqAgregar.toLowerCase();
-        return (data.misProductos || []).filter(p => (p.codigoRef || '').toLowerCase().includes(q) ||
-            (p.codigoProv || '').toLowerCase().includes(q) ||
+        return (data.misProductos || []).filter(p => (p.codigoProv || '').toLowerCase().includes(q) ||
             (p.codigoBarras || '').toLowerCase().includes(q) ||
-            (p.descripcion || '').toLowerCase().includes(q)).slice(0, 30);
+            (p.descripcion || '').toLowerCase().includes(q)).sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es')).slice(0, 20);
     })() : [];
     const quitar = (ref) => {
         if (!window.confirm('Quitar este producto del pedido?'))
@@ -2356,13 +2351,11 @@ function TabPedidos({ data, setData, showToast }) {
                     " Confirmar y actualizar stock"))));
     };
     const q = busqueda.trim().toLowerCase();
-    const filteredProvs = Object.keys(porProveedor).filter(prov => !q || prov.toLowerCase().includes(q) || porProveedor[prov].some(p => (p.codigoRef || '').toLowerCase().includes(q) ||
-        (p.codigoProv || '').toLowerCase().includes(q) ||
+    const filteredProvs = Object.keys(porProveedor).filter(prov => !q || prov.toLowerCase().includes(q) || porProveedor[prov].some(p => (p.codigoProv || '').toLowerCase().includes(q) ||
         (p.descripcion || '').toLowerCase().includes(q)));
-    const filteredItems = (prov) => !q ? porProveedor[prov] : porProveedor[prov].filter(p => prov.toLowerCase().includes(q) ||
-        (p.codigoRef || '').toLowerCase().includes(q) ||
+    const filteredItems = (prov) => (!q ? porProveedor[prov] : porProveedor[prov].filter(p => prov.toLowerCase().includes(q) ||
         (p.codigoProv || '').toLowerCase().includes(q) ||
-        (p.descripcion || '').toLowerCase().includes(q));
+        (p.descripcion || '').toLowerCase().includes(q))).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es'));
     return (React.createElement("div", null,
         React.createElement("div", { className: "card" },
             React.createElement("div", { style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 } },

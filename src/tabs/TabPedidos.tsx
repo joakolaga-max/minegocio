@@ -46,11 +46,10 @@ export function TabPedidos({ data, setData, showToast }: Props) {
   const resultadosAgregar = busqAgregar.length > 1 ? (() => {
     const q = busqAgregar.toLowerCase();
     return (data.misProductos || []).filter(p =>
-      (p.codigoRef || '').toLowerCase().includes(q) ||
       (p.codigoProv || '').toLowerCase().includes(q) ||
       ((p as any).codigoBarras || '').toLowerCase().includes(q) ||
       (p.descripcion || '').toLowerCase().includes(q)
-    ).slice(0, 30);
+    ).sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es')).slice(0, 20);
   })() : [];
 
   const quitar = (ref: string) => {
@@ -179,14 +178,13 @@ export function TabPedidos({ data, setData, showToast }: Props) {
   const q = busqueda.trim().toLowerCase();
   const filteredProvs = Object.keys(porProveedor).filter(prov =>
     !q || prov.toLowerCase().includes(q) || porProveedor[prov].some(p =>
-      (p.codigoRef || '').toLowerCase().includes(q) ||
       (p.codigoProv || '').toLowerCase().includes(q) ||
       (p.descripcion || '').toLowerCase().includes(q)));
-  const filteredItems = (prov: string) => !q ? porProveedor[prov] : porProveedor[prov].filter(p =>
+  const filteredItems = (prov: string) => (!q ? porProveedor[prov] : porProveedor[prov].filter(p =>
     prov.toLowerCase().includes(q) ||
-    (p.codigoRef || '').toLowerCase().includes(q) ||
     (p.codigoProv || '').toLowerCase().includes(q) ||
-    (p.descripcion || '').toLowerCase().includes(q));
+    (p.descripcion || '').toLowerCase().includes(q))
+  ).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es'));
 
   return (
     <div>
