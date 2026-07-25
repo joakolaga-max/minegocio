@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-25T16:21:59.761Z
+// MiNegocio v2.0 - Built 2026-07-25T16:42:57.427Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -919,15 +919,15 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
             (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()))
             .sort((a, b) => {
             const q = busqueda.toLowerCase();
-            const aDesc = (a.descripcion || '').toLowerCase();
-            const bDesc = (b.descripcion || '').toLowerCase();
-            // Prioridad: la descripción EMPIEZA con la búsqueda
-            const aStarts = aDesc.startsWith(q) ? 0 : 1;
-            const bStarts = bDesc.startsWith(q) ? 0 : 1;
+            const aRef = (a.codigoRef || '').toLowerCase();
+            const bRef = (b.codigoRef || '').toLowerCase();
+            // Prioridad: tu Ref EMPIEZA con la búsqueda
+            const aStarts = aRef.startsWith(q) ? 0 : 1;
+            const bStarts = bRef.startsWith(q) ? 0 : 1;
             if (aStarts !== bStarts)
                 return aStarts - bStarts;
-            // Luego alfabético
-            return aDesc.localeCompare(bDesc, 'es');
+            // Luego alfabético por tu Ref
+            return aRef.localeCompare(bRef, 'es');
         })
             .slice(0, 20)
         : [];
@@ -1697,10 +1697,10 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
         e.target.value = '';
     };
     const filtrados = (busqueda
-        ? (data.misProductos || []).filter(p => (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-            (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-            (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()))
-        : (data.misProductos || [])).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es'));
+        ? (data.misProductos || []).filter(p => (p.codigoRef || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+            (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+            (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()))
+        : (data.misProductos || [])).slice().sort((a, b) => (a.codigoRef || '').localeCompare(b.codigoRef || '', 'es'));
     const fmt = (n) => '$' + Math.round(n).toLocaleString('es-AR');
     return (React.createElement("div", null,
         React.createElement("div", { className: "card", ref: formRef },
@@ -2016,10 +2016,10 @@ function TabStock({ data, setData, showToast }) {
         if (!busqueda.trim())
             return true;
         const q = busqueda.trim().toLowerCase();
-        return ((p.codigoProv || '').toLowerCase().includes(q) ||
-            (p.descripcion || '').toLowerCase().includes(q) ||
+        return ((p.codigoRef || '').toLowerCase().includes(q) ||
+            (p.codigoProv || '').toLowerCase().includes(q) ||
             (p.codigoBarras || '').toLowerCase().includes(q));
-    }).sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es'));
+    }).sort((a, b) => (a.codigoRef || '').localeCompare(b.codigoRef || '', 'es'));
     const bajoMinimo = productos.filter(p => p.stock.minimo > 0 && p.actual < p.stock.minimo);
     const saveStock = (ref, vals) => {
         setData(d => ({ ...d, stock: { ...d.stock, [ref]: vals } }));

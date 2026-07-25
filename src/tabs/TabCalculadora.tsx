@@ -73,14 +73,14 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
       )
       .sort((a, b) => {
         const q = busqueda.toLowerCase();
-        const aDesc = (a.descripcion || '').toLowerCase();
-        const bDesc = (b.descripcion || '').toLowerCase();
-        // Prioridad: la descripción EMPIEZA con la búsqueda
-        const aStarts = aDesc.startsWith(q) ? 0 : 1;
-        const bStarts = bDesc.startsWith(q) ? 0 : 1;
+        const aRef = (a.codigoRef || '').toLowerCase();
+        const bRef = (b.codigoRef || '').toLowerCase();
+        // Prioridad: tu Ref EMPIEZA con la búsqueda
+        const aStarts = aRef.startsWith(q) ? 0 : 1;
+        const bStarts = bRef.startsWith(q) ? 0 : 1;
         if (aStarts !== bStarts) return aStarts - bStarts;
-        // Luego alfabético
-        return aDesc.localeCompare(bDesc, 'es');
+        // Luego alfabético por tu Ref
+        return aRef.localeCompare(bRef, 'es');
       })
       .slice(0, 20)
     : [];
