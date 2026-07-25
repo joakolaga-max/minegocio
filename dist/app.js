@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-25T00:28:17.392Z
+// MiNegocio v2.0 - Built 2026-07-25T16:21:59.761Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -914,9 +914,9 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
     const inputRef = useRef(null);
     const total = items.reduce((sum, i) => sum + i.precioVenta * i.cantidad, 0);
     const sugerencias = busqueda.length > 0
-        ? (data.misProductos || []).filter(p => (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-            (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-            (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase()))
+        ? (data.misProductos || []).filter(p => (p.codigoRef || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+            (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+            (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()))
             .sort((a, b) => {
             const q = busqueda.toLowerCase();
             const aDesc = (a.descripcion || '').toLowerCase();

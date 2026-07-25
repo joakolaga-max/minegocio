@@ -67,9 +67,9 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
 
   const sugerencias = busqueda.length > 0
     ? (data.misProductos || []).filter(p =>
+        (p.codigoRef || '').toLowerCase().includes(busqueda.toLowerCase()) ||
         (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-        ((p as any).codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-        (p.descripcion || '').toLowerCase().includes(busqueda.toLowerCase())
+        ((p as any).codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase())
       )
       .sort((a, b) => {
         const q = busqueda.toLowerCase();
