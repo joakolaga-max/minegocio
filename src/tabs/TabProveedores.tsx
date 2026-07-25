@@ -152,7 +152,7 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
       {/* Proveedor tabs - wrap, solo nombre */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
         {(data.proveedores || []).map((p, i) => (
-          <button key={i} onClick={() => { setActiveTab(i); setBusqueda(''); }}
+          <button key={i} onClick={() => setActiveTab(i)}
             style={{
               padding: '7px 14px', borderRadius: 20, border: '1px solid',
               borderColor: activeTab === i ? '#6366f1' : T.divider,

@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-25T16:42:57.427Z
+// MiNegocio v2.0 - Built 2026-07-25T17:37:28.101Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -911,6 +911,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
     const [showCustom, setShowCustom] = useState(false);
     const [customDesc, setCustomDesc] = useState('');
     const [customPrecio, setCustomPrecio] = useState('');
+    const [esDevolucion, setEsDevolucion] = useState(false);
     const inputRef = useRef(null);
     const total = items.reduce((sum, i) => sum + i.precioVenta * i.cantidad, 0);
     const sugerencias = busqueda.length > 0
@@ -1038,9 +1039,9 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                         } })),
                 React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', flexShrink: 0 }, onClick: () => setScanning(true) },
                     React.createElement(Icon_1.Icon, { name: "camera", size: 18 })),
-                React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', flexShrink: 0, color: '#818cf8' }, onClick: () => { setCustomDesc(''); setCustomPrecio(''); setShowCustom(true); } },
+                React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', flexShrink: 0, color: '#818cf8' }, onClick: () => { setCustomDesc(''); setCustomPrecio(''); setEsDevolucion(false); setShowCustom(true); } },
                     React.createElement("span", { style: { fontSize: 18, fontWeight: 700 } }, "$+"))),
-            showSuggestions && sugerencias.length > 0 && (React.createElement("div", { style: { position: 'absolute', top: '100%', left: 0, right: 0, background: T.card, border: `1px solid ${T.inputBorder}`, borderRadius: 12, zIndex: 50, maxHeight: 300, overflowY: 'auto', marginTop: 4 } }, sugerencias.map((p, i) => {
+            showSuggestions && sugerencias.length > 0 && (React.createElement("div", { style: { position: 'absolute', top: '100%', left: 0, right: 0, background: T.card, border: `1px solid ${T.inputBorder}`, borderRadius: 12, zIndex: 50, maxHeight: 450, overflowY: 'auto', marginTop: 4 } }, sugerencias.map((p, i) => {
                 const pv = (0, utils_1.calcPrecioVenta)(p.precioCosto, p.margen, data.margenes);
                 const s = (data.stock || {})[p.codigoRef];
                 const actual = s ? (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0) : 0;
@@ -1206,38 +1207,47 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                             const precio = parseFloat(customPrecio.replace(',', '.')) || 0;
                             if (!customDesc.trim() || precio <= 0)
                                 return;
+                            const precioFinal = esDevolucion ? -Math.abs(precio) : precio;
+                            const nombre = esDevolucion ? `↩ Devolución: ${customDesc.trim()}` : customDesc.trim();
                             setItems(prev => [...prev, {
-                                    codigoRef: customDesc.trim(),
-                                    descripcion: customDesc.trim(),
+                                    codigoRef: nombre,
+                                    descripcion: nombre,
                                     codigoProv: '',
-                                    precioCosto: precio,
-                                    precioVenta: precio,
+                                    precioCosto: precioFinal,
+                                    precioVenta: precioFinal,
                                     cantidad: 1,
                                     margen: 0,
                                     proveedor: '',
                                     divisor: 1,
                                 }]);
                             setShowCustom(false);
+                            setEsDevolucion(false);
                         }
                     } }),
+                React.createElement("label", { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, cursor: 'pointer', fontSize: 13, color: T.textSecondary } },
+                    React.createElement("input", { type: "checkbox", checked: esDevolucion, onChange: e => setEsDevolucion(e.target.checked), style: { width: 18, height: 18, cursor: 'pointer', accentColor: '#ef4444' } }),
+                    "\u21A9\uFE0F Es una devoluci\u00F3n (resta del total)"),
                 React.createElement("div", { style: { display: 'flex', gap: 8 } },
-                    React.createElement("button", { onClick: () => setShowCustom(false), style: { flex: 1, padding: '12px', borderRadius: 10, background: 'none', border: `1px solid ${T.inputBorder}`, color: T.textMuted, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 } }, "Cancelar"),
+                    React.createElement("button", { onClick: () => { setShowCustom(false); setEsDevolucion(false); }, style: { flex: 1, padding: '12px', borderRadius: 10, background: 'none', border: `1px solid ${T.inputBorder}`, color: T.textMuted, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 } }, "Cancelar"),
                     React.createElement("button", { onClick: () => {
                             const precio = parseFloat(customPrecio.replace(',', '.')) || 0;
                             if (!customDesc.trim() || precio <= 0)
                                 return;
+                            const precioFinal = esDevolucion ? -Math.abs(precio) : precio;
+                            const nombre = esDevolucion ? `↩ Devolución: ${customDesc.trim()}` : customDesc.trim();
                             setItems(prev => [...prev, {
-                                    codigoRef: customDesc.trim(),
-                                    descripcion: customDesc.trim(),
+                                    codigoRef: nombre,
+                                    descripcion: nombre,
                                     codigoProv: '',
-                                    precioCosto: precio,
-                                    precioVenta: precio,
+                                    precioCosto: precioFinal,
+                                    precioVenta: precioFinal,
                                     cantidad: 1,
                                     margen: 0,
                                     proveedor: '',
                                     divisor: 1,
                                 }]);
                             setShowCustom(false);
+                            setEsDevolucion(false);
                         }, style: { flex: 2, padding: '12px', borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700 } }, "Agregar al carrito"))))),
         scanning && (React.createElement(Scanner_1.Scanner, { onResult: code => { setScanning(false); agregarProducto(code.toUpperCase()); }, onClose: () => setScanning(false) }))));
 }
@@ -1391,7 +1401,7 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
         showToast('Lista limpiada', 'info');
     };
     return (React.createElement("div", null,
-        React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 } }, (data.proveedores || []).map((p, i) => (React.createElement("button", { key: i, onClick: () => { setActiveTab(i); setBusqueda(''); }, style: {
+        React.createElement("div", { style: { display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 } }, (data.proveedores || []).map((p, i) => (React.createElement("button", { key: i, onClick: () => setActiveTab(i), style: {
                 padding: '7px 14px', borderRadius: 20, border: '1px solid',
                 borderColor: activeTab === i ? '#6366f1' : T.divider,
                 background: activeTab === i ? 'rgba(99,102,241,0.15)' : T.card,

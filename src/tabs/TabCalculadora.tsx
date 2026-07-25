@@ -61,6 +61,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
   const [showCustom, setShowCustom] = useState(false);
   const [customDesc, setCustomDesc] = useState('');
   const [customPrecio, setCustomPrecio] = useState('');
+  const [esDevolucion, setEsDevolucion] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const total = items.reduce((sum, i) => sum + i.precioVenta * i.cantidad, 0);
@@ -198,14 +199,14 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
           <button className="btn-ghost" style={{ padding: '8px 12px', flexShrink: 0 }} onClick={() => setScanning(true)}>
             <Icon name="camera" size={18} />
           </button>
-          <button className="btn-ghost" style={{ padding: '8px 12px', flexShrink: 0, color: '#818cf8' }} onClick={() => { setCustomDesc(''); setCustomPrecio(''); setShowCustom(true); }}>
+          <button className="btn-ghost" style={{ padding: '8px 12px', flexShrink: 0, color: '#818cf8' }} onClick={() => { setCustomDesc(''); setCustomPrecio(''); setEsDevolucion(false); setShowCustom(true); }}>
             <span style={{ fontSize: 18, fontWeight: 700 }}>$+</span>
           </button>
         </div>
 
         {/* Suggestions */}
         {showSuggestions && sugerencias.length > 0 && (
-          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: T.card, border: `1px solid ${T.inputBorder}`, borderRadius: 12, zIndex: 50, maxHeight: 300, overflowY: 'auto', marginTop: 4 }}>
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: T.card, border: `1px solid ${T.inputBorder}`, borderRadius: 12, zIndex: 50, maxHeight: 450, overflowY: 'auto', marginTop: 4 }}>
             {sugerencias.map((p, i) => {
               const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
               const s = (data.stock || {})[p.codigoRef];
@@ -508,41 +509,52 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
                 if (e.key === 'Enter') {
                   const precio = parseFloat(customPrecio.replace(',', '.')) || 0;
                   if (!customDesc.trim() || precio <= 0) return;
+                  const precioFinal = esDevolucion ? -Math.abs(precio) : precio;
+                  const nombre = esDevolucion ? `↩ Devolución: ${customDesc.trim()}` : customDesc.trim();
                   setItems(prev => [...prev, {
-                    codigoRef: customDesc.trim(),
-                    descripcion: customDesc.trim(),
+                    codigoRef: nombre,
+                    descripcion: nombre,
                     codigoProv: '',
-                    precioCosto: precio,
-                    precioVenta: precio,
+                    precioCosto: precioFinal,
+                    precioVenta: precioFinal,
                     cantidad: 1,
                     margen: 0,
                     proveedor: '',
                     divisor: 1,
                   }]);
                   setShowCustom(false);
+                  setEsDevolucion(false);
                 }
               }}
             />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, cursor: 'pointer', fontSize: 13, color: T.textSecondary }}>
+              <input type="checkbox" checked={esDevolucion} onChange={e => setEsDevolucion(e.target.checked)}
+                style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#ef4444' }} />
+              ↩️ Es una devolución (resta del total)
+            </label>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setShowCustom(false)}
+              <button onClick={() => { setShowCustom(false); setEsDevolucion(false); }}
                 style={{ flex: 1, padding: '12px', borderRadius: 10, background: 'none', border: `1px solid ${T.inputBorder}`, color: T.textMuted, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>
                 Cancelar
               </button>
               <button onClick={() => {
                 const precio = parseFloat(customPrecio.replace(',', '.')) || 0;
                 if (!customDesc.trim() || precio <= 0) return;
+                const precioFinal = esDevolucion ? -Math.abs(precio) : precio;
+                const nombre = esDevolucion ? `↩ Devolución: ${customDesc.trim()}` : customDesc.trim();
                 setItems(prev => [...prev, {
-                  codigoRef: customDesc.trim(),
-                  descripcion: customDesc.trim(),
+                  codigoRef: nombre,
+                  descripcion: nombre,
                   codigoProv: '',
-                  precioCosto: precio,
-                  precioVenta: precio,
+                  precioCosto: precioFinal,
+                  precioVenta: precioFinal,
                   cantidad: 1,
                   margen: 0,
                   proveedor: '',
                   divisor: 1,
                 }]);
                 setShowCustom(false);
+                setEsDevolucion(false);
               }} style={{ flex: 2, padding: '12px', borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700 }}>
                 Agregar al carrito
               </button>
