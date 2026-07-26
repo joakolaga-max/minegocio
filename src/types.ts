@@ -32,6 +32,7 @@ export interface VentaItem {
   descripcion: string;
   cantidad: number;
   precioVenta: number;
+  precioCosto?: number;
 }
 
 export interface Venta {

@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-25T17:37:28.101Z
+// MiNegocio v2.0 - Built 2026-07-25T22:24:45.632Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -987,7 +987,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
             id: Date.now().toString(36),
             fecha: new Date().toLocaleDateString('es-AR'),
             hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
-            items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta })),
+            items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta, precioCosto: i.precioCosto })),
             total,
             paymentMethod,
             amountReceived: monto,
@@ -2127,9 +2127,26 @@ function TabVentas({ data, setData, showToast }) {
     const [expandedId, setExpandedId] = useState(null);
     const [presupuestoVenta, setPresupuestoVenta] = useState(null);
     const ventas = [...(data.ventas || [])].reverse();
-    const totalHoy = () => {
-        const hoy = new Date().toLocaleDateString('es-AR');
-        return (data.ventas || []).filter(v => v.fecha === hoy).reduce((s, v) => s + v.total, 0);
+    const hoy = new Date().toLocaleDateString('es-AR');
+    const ventasHoy = () => (data.ventas || []).filter(v => v.fecha === hoy);
+    const totalHoy = () => ventasHoy().reduce((s, v) => s + v.total, 0);
+    // Costo de un item: usa el guardado en la venta; si es viejo y no lo tiene, busca el costo actual en Mis Precios
+    const costoDeItem = (item) => {
+        if (item.precioCosto !== undefined && item.precioCosto !== null)
+            return item.precioCosto;
+        const prod = (data.misProductos || []).find(p => p.codigoRef === item.codigoRef);
+        return prod ? prod.precioCosto : 0;
+    };
+    const gananciaDeVenta = (venta) => venta.items.reduce((s, i) => s + (i.precioVenta - costoDeItem(i)) * i.cantidad, 0);
+    const gananciaHoy = () => ventasHoy().reduce((s, v) => s + gananciaDeVenta(v), 0);
+    const resumenPagoHoy = () => {
+        const vh = ventasHoy();
+        const transferencia = vh.filter(v => v.paymentMethod === 'transferencia');
+        const efectivo = vh.filter(v => v.paymentMethod === 'efectivo');
+        return {
+            transferencia: { total: transferencia.reduce((s, v) => s + v.total, 0), cant: transferencia.length },
+            efectivo: { total: efectivo.reduce((s, v) => s + v.total, 0), cant: efectivo.length },
+        };
     };
     const borrarVenta = (id) => {
         if (!window.confirm('Borrar esta venta?'))
@@ -2165,13 +2182,29 @@ function TabVentas({ data, setData, showToast }) {
     return (React.createElement(React.Fragment, null,
         React.createElement("div", null,
             React.createElement("div", { className: "card", style: { marginBottom: 12 } },
-                React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 } },
                     React.createElement("div", null,
                         React.createElement("div", { style: { fontSize: 13, color: T.textMuted } }, "Ventas hoy"),
                         React.createElement("div", { style: { fontSize: 28, fontWeight: 700, color: '#22c55e' } }, fmt(totalHoy()))),
                     React.createElement("div", { style: { textAlign: 'right' } },
-                        React.createElement("div", { style: { fontSize: 13, color: T.textMuted } }, "Total registros"),
-                        React.createElement("div", { style: { fontSize: 22, fontWeight: 700, color: T.text } }, (data.ventas || []).length)))),
+                        React.createElement("div", { style: { fontSize: 13, color: T.textMuted } }, "Ganancia neta hoy"),
+                        React.createElement("div", { style: { fontSize: 22, fontWeight: 700, color: gananciaHoy() >= 0 ? '#818cf8' : '#ef4444' } }, fmt(gananciaHoy())))),
+                React.createElement("div", { style: { display: 'flex', gap: 8, paddingTop: 12, borderTop: `1px solid ${T.divider}` } },
+                    React.createElement("div", { style: { flex: 1, background: T.sectionBg, borderRadius: 10, padding: '8px 12px' } },
+                        React.createElement("div", { style: { fontSize: 11, color: T.textMuted } }, "\uD83D\uDCB3 Transferencia"),
+                        React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: T.text } }, fmt(resumenPagoHoy().transferencia.total)),
+                        React.createElement("div", { style: { fontSize: 10, color: T.textMuted } },
+                            resumenPagoHoy().transferencia.cant,
+                            " venta(s)")),
+                    React.createElement("div", { style: { flex: 1, background: T.sectionBg, borderRadius: 10, padding: '8px 12px' } },
+                        React.createElement("div", { style: { fontSize: 11, color: T.textMuted } }, "\uD83D\uDCB5 Efectivo"),
+                        React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: T.text } }, fmt(resumenPagoHoy().efectivo.total)),
+                        React.createElement("div", { style: { fontSize: 10, color: T.textMuted } },
+                            resumenPagoHoy().efectivo.cant,
+                            " venta(s)")),
+                    React.createElement("div", { style: { flex: 1, background: T.sectionBg, borderRadius: 10, padding: '8px 12px', textAlign: 'right' } },
+                        React.createElement("div", { style: { fontSize: 11, color: T.textMuted } }, "Registros"),
+                        React.createElement("div", { style: { fontSize: 15, fontWeight: 700, color: T.text } }, (data.ventas || []).length)))),
             React.createElement("div", { className: "card" },
                 React.createElement("div", { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 } },
                     React.createElement("div", { className: "section-title", style: { marginBottom: 0 } }, "Historial de ventas"),
@@ -2187,24 +2220,29 @@ function TabVentas({ data, setData, showToast }) {
                     React.createElement("div", { style: { fontSize: 13, marginTop: 6 } }, "Las ventas de la Calculadora aparecen ac\u00E1"))) : (React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 8 } }, ventas.map(v => (React.createElement("div", { key: v.id, style: { background: T.card, borderRadius: 12, border: `1px solid ${T.divider}`, overflow: 'hidden' } },
                     React.createElement("div", { style: { padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }, onClick: () => setExpandedId(expandedId === v.id ? null : v.id) },
                         React.createElement("div", { style: { flex: 1 } },
-                            React.createElement("div", { style: { fontSize: 13, color: T.textSecondary } },
+                            React.createElement("div", { style: { fontSize: 13, color: T.textSecondary, display: 'flex', alignItems: 'center', gap: 6 } },
                                 v.fecha,
                                 " \u00B7 ",
                                 v.hora,
                                 " \u00B7 ",
                                 v.items.length,
-                                " producto(s)"),
+                                " producto(s)",
+                                v.paymentMethod && React.createElement("span", { style: { fontSize: 11 } }, v.paymentMethod === 'efectivo' ? '💵' : '💳')),
                             React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: '#22c55e', marginTop: 2 } }, fmt(v.total))),
                         React.createElement("button", { onClick: e => { e.stopPropagation(); setPresupuestoVenta(v); }, style: { background: isDark ? '#1f2547' : '#e0e7ff', border: '1px solid rgba(99,102,241,0.4)', color: '#818cf8', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', marginRight: 6, flexShrink: 0, WebkitTapHighlightColor: 'transparent' } },
                             React.createElement(Icon_1.Icon, { name: "download", size: 13 })),
                         React.createElement("button", { onClick: e => { e.stopPropagation(); borrarVenta(v.id); }, style: { background: isDark ? '#3a1f28' : '#fee2e2', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', flexShrink: 0, WebkitTapHighlightColor: 'transparent' } },
                             React.createElement(Icon_1.Icon, { name: "trash", size: 13 }))),
-                    expandedId === v.id && (React.createElement("div", { style: { borderTop: `1px solid ${T.divider}`, padding: '8px 14px 12px' } }, v.items.map((item, i) => (React.createElement("div", { key: i, style: { display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: i < v.items.length - 1 ? `1px solid ${T.divider}` : 'none' } },
-                        React.createElement("span", { style: { color: T.textSecondary } },
-                            item.cantidad,
-                            "x ",
-                            item.descripcion),
-                        React.createElement("span", { style: { color: '#22c55e', fontWeight: 600 } }, fmt(item.precioVenta * item.cantidad)))))))))))))),
+                    expandedId === v.id && (React.createElement("div", { style: { borderTop: `1px solid ${T.divider}`, padding: '8px 14px 12px' } },
+                        v.items.map((item, i) => (React.createElement("div", { key: i, style: { display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: `1px solid ${T.divider}` } },
+                            React.createElement("span", { style: { color: T.textSecondary } },
+                                item.cantidad,
+                                "x ",
+                                item.descripcion),
+                            React.createElement("span", { style: { color: '#22c55e', fontWeight: 600 } }, fmt(item.precioVenta * item.cantidad))))),
+                        React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', fontSize: 12, paddingTop: 8, marginTop: 4 } },
+                            React.createElement("span", { style: { color: T.textMuted } }, "Ganancia neta de esta venta"),
+                            React.createElement("span", { style: { color: gananciaDeVenta(v) >= 0 ? '#818cf8' : '#ef4444', fontWeight: 700 } }, fmt(gananciaDeVenta(v))))))))))))),
         presupuestoVenta && (React.createElement(Presupuesto_1.Presupuesto, { misProductos: data.misProductos, items: presupuestoVenta.items, total: presupuestoVenta.total, onClose: () => setPresupuestoVenta(null), empresaData: data.empresa, telefonoData: data.telefono, direccionData: data.direccion }))));
 }
 

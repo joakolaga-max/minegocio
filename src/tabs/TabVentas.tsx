@@ -17,9 +17,31 @@ export function TabVentas({ data, setData, showToast }: Props) {
   const [presupuestoVenta, setPresupuestoVenta] = useState<typeof ventas[0] | null>(null);
   const ventas = [...(data.ventas || [])].reverse();
 
-  const totalHoy = () => {
-    const hoy = new Date().toLocaleDateString('es-AR');
-    return (data.ventas || []).filter(v => v.fecha === hoy).reduce((s, v) => s + v.total, 0);
+  const hoy = new Date().toLocaleDateString('es-AR');
+  const ventasHoy = () => (data.ventas || []).filter(v => v.fecha === hoy);
+
+  const totalHoy = () => ventasHoy().reduce((s, v) => s + v.total, 0);
+
+  // Costo de un item: usa el guardado en la venta; si es viejo y no lo tiene, busca el costo actual en Mis Precios
+  const costoDeItem = (item: any) => {
+    if (item.precioCosto !== undefined && item.precioCosto !== null) return item.precioCosto;
+    const prod = (data.misProductos || []).find(p => p.codigoRef === item.codigoRef);
+    return prod ? prod.precioCosto : 0;
+  };
+
+  const gananciaDeVenta = (venta: any) =>
+    venta.items.reduce((s: number, i: any) => s + (i.precioVenta - costoDeItem(i)) * i.cantidad, 0);
+
+  const gananciaHoy = () => ventasHoy().reduce((s, v) => s + gananciaDeVenta(v), 0);
+
+  const resumenPagoHoy = () => {
+    const vh = ventasHoy();
+    const transferencia = vh.filter(v => (v as any).paymentMethod === 'transferencia');
+    const efectivo = vh.filter(v => (v as any).paymentMethod === 'efectivo');
+    return {
+      transferencia: { total: transferencia.reduce((s, v) => s + v.total, 0), cant: transferencia.length },
+      efectivo: { total: efectivo.reduce((s, v) => s + v.total, 0), cant: efectivo.length },
+    };
   };
 
   const borrarVenta = (id: string) => {
@@ -59,14 +81,30 @@ export function TabVentas({ data, setData, showToast }: Props) {
     <div>
       {/* Summary card */}
       <div className="card" style={{ marginBottom: 12 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <div>
             <div style={{ fontSize: 13, color: T.textMuted }}>Ventas hoy</div>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#22c55e' }}>{fmt(totalHoy())}</div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 13, color: T.textMuted }}>Total registros</div>
-            <div style={{ fontSize: 22, fontWeight: 700, color: T.text }}>{(data.ventas || []).length}</div>
+            <div style={{ fontSize: 13, color: T.textMuted }}>Ganancia neta hoy</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: gananciaHoy() >= 0 ? '#818cf8' : '#ef4444' }}>{fmt(gananciaHoy())}</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, paddingTop: 12, borderTop: `1px solid ${T.divider}` }}>
+          <div style={{ flex: 1, background: T.sectionBg, borderRadius: 10, padding: '8px 12px' }}>
+            <div style={{ fontSize: 11, color: T.textMuted }}>💳 Transferencia</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{fmt(resumenPagoHoy().transferencia.total)}</div>
+            <div style={{ fontSize: 10, color: T.textMuted }}>{resumenPagoHoy().transferencia.cant} venta(s)</div>
+          </div>
+          <div style={{ flex: 1, background: T.sectionBg, borderRadius: 10, padding: '8px 12px' }}>
+            <div style={{ fontSize: 11, color: T.textMuted }}>💵 Efectivo</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{fmt(resumenPagoHoy().efectivo.total)}</div>
+            <div style={{ fontSize: 10, color: T.textMuted }}>{resumenPagoHoy().efectivo.cant} venta(s)</div>
+          </div>
+          <div style={{ flex: 1, background: T.sectionBg, borderRadius: 10, padding: '8px 12px', textAlign: 'right' }}>
+            <div style={{ fontSize: 11, color: T.textMuted }}>Registros</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{(data.ventas || []).length}</div>
           </div>
         </div>
       </div>
@@ -101,8 +139,9 @@ export function TabVentas({ data, setData, showToast }: Props) {
                 <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
                   onClick={() => setExpandedId(expandedId === v.id ? null : v.id)}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, color: T.textSecondary }}>
+                    <div style={{ fontSize: 13, color: T.textSecondary, display: 'flex', alignItems: 'center', gap: 6 }}>
                       {v.fecha} · {v.hora} · {v.items.length} producto(s)
+                      {(v as any).paymentMethod && <span style={{ fontSize: 11 }}>{(v as any).paymentMethod === 'efectivo' ? '💵' : '💳'}</span>}
                     </div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: '#22c55e', marginTop: 2 }}>{fmt(v.total)}</div>
                   </div>
@@ -118,11 +157,15 @@ export function TabVentas({ data, setData, showToast }: Props) {
                 {expandedId === v.id && (
                   <div style={{ borderTop: `1px solid ${T.divider}`, padding: '8px 14px 12px' }}>
                     {v.items.map((item, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: i < v.items.length - 1 ? `1px solid ${T.divider}` : 'none' }}>
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: `1px solid ${T.divider}` }}>
                         <span style={{ color: T.textSecondary }}>{item.cantidad}x {item.descripcion}</span>
                         <span style={{ color: '#22c55e', fontWeight: 600 }}>{fmt(item.precioVenta * item.cantidad)}</span>
                       </div>
                     ))}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, paddingTop: 8, marginTop: 4 }}>
+                      <span style={{ color: T.textMuted }}>Ganancia neta de esta venta</span>
+                      <span style={{ color: gananciaDeVenta(v) >= 0 ? '#818cf8' : '#ef4444', fontWeight: 700 }}>{fmt(gananciaDeVenta(v))}</span>
+                    </div>
                   </div>
                 )}
               </div>

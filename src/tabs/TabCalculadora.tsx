@@ -141,7 +141,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
       id: Date.now().toString(36),
       fecha: new Date().toLocaleDateString('es-AR'),
       hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
-      items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta })),
+      items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta, precioCosto: i.precioCosto })),
       total,
       paymentMethod,
       amountReceived: monto,
