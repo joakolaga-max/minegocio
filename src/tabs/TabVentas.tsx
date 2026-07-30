@@ -15,7 +15,8 @@ export function TabVentas({ data, setData, showToast }: Props) {
   const { theme: T, isDark } = useTheme();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [presupuestoVenta, setPresupuestoVenta] = useState<typeof ventas[0] | null>(null);
-  const ventas = [...(data.ventas || [])].reverse();
+  // Orden por fecha de creación real (el id es un timestamp), así la última venta queda siempre arriba
+  const ventas = [...(data.ventas || [])].sort((a, b) => parseInt(b.id, 36) - parseInt(a.id, 36));
 
   const hoy = new Date().toLocaleDateString('es-AR');
   const ventasHoy = () => (data.ventas || []).filter(v => v.fecha === hoy);

@@ -17,6 +17,7 @@ interface CartItem {
   margen: number | string;
   proveedor: string;
   divisor: number;
+  devolucionRef?: string;
 }
 
 interface Props {
@@ -62,6 +63,15 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
   const [customDesc, setCustomDesc] = useState('');
   const [customPrecio, setCustomPrecio] = useState('');
   const [esDevolucion, setEsDevolucion] = useState(false);
+  const [devBusqueda, setDevBusqueda] = useState('');
+  const [devProducto, setDevProducto] = useState<any>(null);
+  const [devCantidad, setDevCantidad] = useState('1');
+  const [devolucionProducto, setDevolucionProducto] = useState<any>(null);
+  const [devolucionBusqueda, setDevolucionBusqueda] = useState('');
+  const [devolucionCantidad, setDevolucionCantidad] = useState('1');
+  const [devBusqueda, setDevBusqueda] = useState('');
+  const [devProducto, setDevProducto] = useState<any>(null);
+  const [devCantidad, setDevCantidad] = useState('1');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const total = items.reduce((sum, i) => sum + i.precioVenta * i.cantidad, 0);
@@ -150,7 +160,26 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
       clienteCelular: paymentMethod === 'transferencia' ? refCelular : undefined,
       clienteDireccion: paymentMethod === 'transferencia' ? refDireccion : undefined,
     };
-    setData(d => ({ ...d, ventas: [venta, ...(d.ventas || [])] }));
+    setData(d => {
+      const stockActualizado = { ...(d.stock || {}) };
+      items.forEach(item => {
+        if ((item as any).devolucionRef) {
+          // Devolución vinculada a un producto: repone stock (nunca resta)
+          const ref = (item as any).devolucionRef;
+          const s = stockActualizado[ref] || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
+          stockActualizado[ref] = { ...s, entradas: (s.entradas || 0) + item.cantidad };
+          return;
+        }
+        if (!item.codigoRef) return;
+        const existe = (d.misProductos || []).some(p => p.codigoRef === item.codigoRef);
+        if (!existe) return; // items libres no tienen stock que descontar
+        const s = stockActualizado[item.codigoRef] || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
+        const actualAntes = (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0);
+        const descuento = Math.min(item.cantidad, Math.max(actualAntes, 0));
+        stockActualizado[item.codigoRef] = { ...s, salidas: (s.salidas || 0) + descuento };
+      });
+      return { ...d, ventas: [venta, ...(d.ventas || [])], stock: stockActualizado };
+    });
     setItems([]);
     setShowModalEfectivo(false);
     setShowModalTransferencia(false);
@@ -199,7 +228,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
           <button className="btn-ghost" style={{ padding: '8px 12px', flexShrink: 0 }} onClick={() => setScanning(true)}>
             <Icon name="camera" size={18} />
           </button>
-          <button className="btn-ghost" style={{ padding: '8px 12px', flexShrink: 0, color: '#818cf8' }} onClick={() => { setCustomDesc(''); setCustomPrecio(''); setEsDevolucion(false); setShowCustom(true); }}>
+          <button className="btn-ghost" style={{ padding: '8px 12px', flexShrink: 0, color: '#818cf8' }} onClick={() => { setCustomDesc(''); setCustomPrecio(''); setEsDevolucion(false); setDevProducto(null); setDevBusqueda(''); setDevCantidad('1'); setShowCustom(true); }}>
             <span style={{ fontSize: 18, fontWeight: 700 }}>$+</span>
           </button>
         </div>
@@ -511,27 +540,90 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
                   if (!customDesc.trim() || precio <= 0) return;
                   const precioFinal = esDevolucion ? -Math.abs(precio) : precio;
                   const nombre = esDevolucion ? `↩ Devolución: ${customDesc.trim()}` : customDesc.trim();
+                  const cant = esDevolucion ? (parseInt(devCantidad) || 1) : 1;
                   setItems(prev => [...prev, {
                     codigoRef: nombre,
                     descripcion: nombre,
                     codigoProv: '',
                     precioCosto: precioFinal,
                     precioVenta: precioFinal,
-                    cantidad: 1,
+                    cantidad: cant,
                     margen: 0,
                     proveedor: '',
                     divisor: 1,
+                    devolucionRef: devProducto ? devProducto.codigoRef : undefined,
                   }]);
                   setShowCustom(false);
                   setEsDevolucion(false);
+                  setDevProducto(null);
+                  setDevBusqueda('');
+                  setDevCantidad('1');
                 }
               }}
             />
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, cursor: 'pointer', fontSize: 13, color: T.textSecondary }}>
-              <input type="checkbox" checked={esDevolucion} onChange={e => setEsDevolucion(e.target.checked)}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: esDevolucion ? 12 : 20, cursor: 'pointer', fontSize: 13, color: T.textSecondary }}>
+              <input type="checkbox" checked={esDevolucion} onChange={e => {
+                setEsDevolucion(e.target.checked);
+                if (!e.target.checked) { setDevBusqueda(''); setDevProducto(null); setDevCantidad('1'); }
+              }}
                 style={{ width: 18, height: 18, cursor: 'pointer', accentColor: '#ef4444' }} />
               ↩️ Es una devolución (resta del total)
             </label>
+
+            {esDevolucion && (
+              <div style={{ background: T.sectionBg, borderRadius: 10, padding: 12, marginBottom: 20 }}>
+                {devProducto ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: 12, color: T.text }}>
+                      ✓ Vinculado a: <strong>{devProducto.codigoRef}</strong>
+                      <div style={{ fontSize: 11, color: T.textMuted }}>Repone {devCantidad || 1} unidad(es) al stock al confirmar</div>
+                    </div>
+                    <button onClick={() => { setDevProducto(null); setDevBusqueda(''); }}
+                      style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 12 }}>Quitar</button>
+                  </div>
+                ) : (
+                  <>
+                    <label style={{ fontSize: 11, color: T.textMuted, display: 'block', marginBottom: 4 }}>
+                      Vincular a un producto real (opcional, así repone stock)
+                    </label>
+                    <input className="input-field" style={{ fontSize: 13 }}
+                      placeholder="Buscar por Ref..."
+                      value={devBusqueda}
+                      onChange={e => setDevBusqueda(e.target.value)}
+                    />
+                    {devBusqueda.trim().length > 0 && (
+                      <div style={{ marginTop: 6, maxHeight: 140, overflowY: 'auto', border: `1px solid ${T.inputBorder}`, borderRadius: 8 }}>
+                        {(data.misProductos || [])
+                          .filter(p => (p.codigoRef || '').toLowerCase().includes(devBusqueda.toLowerCase()))
+                          .slice(0, 6)
+                          .map((p, i) => (
+                            <div key={i} onClick={() => {
+                              const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
+                              setDevProducto(p);
+                              setCustomDesc(p.codigoRef);
+                              setCustomPrecio(String(Math.round(pv)));
+                              setDevBusqueda('');
+                            }}
+                              style={{ padding: '8px 10px', cursor: 'pointer', fontSize: 12, color: T.text, borderBottom: `1px solid ${T.divider}` }}>
+                              {p.codigoRef}
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </>
+                )}
+                {devProducto && (
+                  <div style={{ marginTop: 10 }}>
+                    <label style={{ fontSize: 11, color: T.textMuted, display: 'block', marginBottom: 4 }}>Cantidad devuelta</label>
+                    <input className="input-field" style={{ fontSize: 13 }}
+                      type="number" min={1} value={devCantidad}
+                      onChange={e => setDevCantidad(e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => { setShowCustom(false); setEsDevolucion(false); }}
                 style={{ flex: 1, padding: '12px', borderRadius: 10, background: 'none', border: `1px solid ${T.inputBorder}`, color: T.textMuted, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>
@@ -542,19 +634,24 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
                 if (!customDesc.trim() || precio <= 0) return;
                 const precioFinal = esDevolucion ? -Math.abs(precio) : precio;
                 const nombre = esDevolucion ? `↩ Devolución: ${customDesc.trim()}` : customDesc.trim();
+                const cant = esDevolucion ? (parseInt(devCantidad) || 1) : 1;
                 setItems(prev => [...prev, {
                   codigoRef: nombre,
                   descripcion: nombre,
                   codigoProv: '',
                   precioCosto: precioFinal,
                   precioVenta: precioFinal,
-                  cantidad: 1,
+                  cantidad: cant,
                   margen: 0,
                   proveedor: '',
                   divisor: 1,
+                  devolucionRef: devProducto ? devProducto.codigoRef : undefined,
                 }]);
                 setShowCustom(false);
                 setEsDevolucion(false);
+                setDevProducto(null);
+                setDevBusqueda('');
+                setDevCantidad('1');
               }} style={{ flex: 2, padding: '12px', borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700 }}>
                 Agregar al carrito
               </button>

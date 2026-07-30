@@ -19,35 +19,41 @@ function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }: {
   inPedido: boolean;
 }) {
   const { theme: T } = useTheme();
-  // Use strings so user can type freely (including clearing the field)
-  const [inicial, setInicial] = useState(String(stock.inicial || 0));
-  const [entradas, setEntradas] = useState(String(stock.entradas || 0));
-  const [salidas, setSalidas] = useState(String(stock.salidas || 0));
+  // Entradas y Salidas son campos de carga RÁPIDA: siempre arrancan en 0.
+  // Lo que escribas se SUMA (o resta) al stock actual; no reemplaza nada.
+  const [entradas, setEntradas] = useState('0');
+  const [salidas, setSalidas] = useState('0');
   const [minimo, setMinimo] = useState(String(stock.minimo || 0));
 
   const numVal = (s: string) => parseInt(s) || 0;
-  const actual = numVal(inicial) + numVal(entradas) - numVal(salidas);
+  const actualGuardado = (stock.inicial || 0) + (stock.entradas || 0) - (stock.salidas || 0);
+  const actualPreview = actualGuardado + numVal(entradas) - numVal(salidas);
 
   const guardar = () => {
     onSave({
-      inicial: numVal(inicial),
-      entradas: numVal(entradas),
-      salidas: numVal(salidas),
+      inicial: stock.inicial || 0,
+      entradas: (stock.entradas || 0) + numVal(entradas),
+      salidas: (stock.salidas || 0) + numVal(salidas),
       minimo: numVal(minimo),
     });
+    // Se limpian para la próxima carga; el mínimo queda como está
+    setEntradas('0');
+    setSalidas('0');
   };
 
   const campos = [
-    { label: 'Inicial', value: inicial, set: setInicial },
-    { label: 'Entradas', value: entradas, set: setEntradas },
-    { label: 'Salidas', value: salidas, set: setSalidas },
-    { label: 'Mínimo', value: minimo, set: setMinimo },
+    { label: 'Entran ahora', value: entradas, set: setEntradas, color: '#22c55e' },
+    { label: 'Salen ahora', value: salidas, set: setSalidas, color: '#ef4444' },
+    { label: 'Mínimo', value: minimo, set: setMinimo, color: '#6366f1' },
   ];
 
   return (
     <div style={{ borderTop: `1px solid ${T.divider}`, padding: '12px 14px', background: T.card }}>
+      <div style={{ textAlign: 'center', marginBottom: 10, fontSize: 13, color: T.textSecondary }}>
+        Stock actual: <strong style={{ fontSize: 20, color: actualPreview < numVal(minimo) && numVal(minimo) > 0 ? '#ef4444' : '#22c55e' }}>{actualPreview}</strong>
+      </div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-        {campos.map(({ label, value, set }) => (
+        {campos.map(({ label, value, set, color }) => (
           <div key={label} style={{ textAlign: 'center' }}>
             <label style={{ fontSize: 10, color: T.textMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase' }}>{label}</label>
             <input
@@ -56,7 +62,7 @@ function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }: {
               onChange={e => set(e.target.value)}
               style={{
                 width: '100%', height: 44, borderRadius: 8,
-                background: T.card, border: '1px solid #6366f1',
+                background: T.card, border: `1px solid ${color}`,
                 color: T.text, textAlign: 'center',
                 fontSize: 18, fontWeight: 700, fontFamily: 'inherit', outline: 'none',
               }}
@@ -64,8 +70,8 @@ function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }: {
           </div>
         ))}
       </div>
-      <div style={{ textAlign: 'center', marginBottom: 8, fontSize: 13, color: T.textSecondary }}>
-        Actual: <strong style={{ fontSize: 18, color: actual < numVal(minimo) && numVal(minimo) > 0 ? '#ef4444' : '#22c55e' }}>{actual}</strong>
+      <div style={{ fontSize: 11, color: T.textMuted, textAlign: 'center', marginBottom: 10 }}>
+        Cargá solo lo que entra o sale AHORA — se suma solo, no hace falta escribir el total.
       </div>
       <button onClick={guardar}
         style={{ width: '100%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
@@ -104,8 +110,8 @@ export function TabStock({ data, setData, showToast }: Props) {
 
   const saveStock = (ref: string, vals: { inicial: number; entradas: number; salidas: number; minimo: number }) => {
     setData(d => ({ ...d, stock: { ...d.stock, [ref]: vals } }));
-    showToast('Stock guardado', 'success');
-    setEditRef(null);
+    showToast('Stock actualizado', 'success');
+    // No cerramos el editor: así podés seguir cargando más entradas/salidas sin reabrir
   };
 
   const agregarAPedido = (p: typeof productos[0]) => {

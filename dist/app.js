@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-25T22:24:45.632Z
+// MiNegocio v2.0 - Built 2026-07-30T01:26:15.413Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -912,6 +912,15 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
     const [customDesc, setCustomDesc] = useState('');
     const [customPrecio, setCustomPrecio] = useState('');
     const [esDevolucion, setEsDevolucion] = useState(false);
+    const [devBusqueda, setDevBusqueda] = useState('');
+    const [devProducto, setDevProducto] = useState(null);
+    const [devCantidad, setDevCantidad] = useState('1');
+    const [devolucionProducto, setDevolucionProducto] = useState(null);
+    const [devolucionBusqueda, setDevolucionBusqueda] = useState('');
+    const [devolucionCantidad, setDevolucionCantidad] = useState('1');
+    const [devBusqueda, setDevBusqueda] = useState('');
+    const [devProducto, setDevProducto] = useState(null);
+    const [devCantidad, setDevCantidad] = useState('1');
     const inputRef = useRef(null);
     const total = items.reduce((sum, i) => sum + i.precioVenta * i.cantidad, 0);
     const sugerencias = busqueda.length > 0
@@ -996,7 +1005,28 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
             clienteCelular: paymentMethod === 'transferencia' ? refCelular : undefined,
             clienteDireccion: paymentMethod === 'transferencia' ? refDireccion : undefined,
         };
-        setData(d => ({ ...d, ventas: [venta, ...(d.ventas || [])] }));
+        setData(d => {
+            const stockActualizado = { ...(d.stock || {}) };
+            items.forEach(item => {
+                if (item.devolucionRef) {
+                    // Devolución vinculada a un producto: repone stock (nunca resta)
+                    const ref = item.devolucionRef;
+                    const s = stockActualizado[ref] || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
+                    stockActualizado[ref] = { ...s, entradas: (s.entradas || 0) + item.cantidad };
+                    return;
+                }
+                if (!item.codigoRef)
+                    return;
+                const existe = (d.misProductos || []).some(p => p.codigoRef === item.codigoRef);
+                if (!existe)
+                    return; // items libres no tienen stock que descontar
+                const s = stockActualizado[item.codigoRef] || { inicial: 0, entradas: 0, salidas: 0, minimo: 0 };
+                const actualAntes = (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0);
+                const descuento = Math.min(item.cantidad, Math.max(actualAntes, 0));
+                stockActualizado[item.codigoRef] = { ...s, salidas: (s.salidas || 0) + descuento };
+            });
+            return { ...d, ventas: [venta, ...(d.ventas || [])], stock: stockActualizado };
+        });
         setItems([]);
         setShowModalEfectivo(false);
         setShowModalTransferencia(false);
@@ -1039,7 +1069,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                         } })),
                 React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', flexShrink: 0 }, onClick: () => setScanning(true) },
                     React.createElement(Icon_1.Icon, { name: "camera", size: 18 })),
-                React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', flexShrink: 0, color: '#818cf8' }, onClick: () => { setCustomDesc(''); setCustomPrecio(''); setEsDevolucion(false); setShowCustom(true); } },
+                React.createElement("button", { className: "btn-ghost", style: { padding: '8px 12px', flexShrink: 0, color: '#818cf8' }, onClick: () => { setCustomDesc(''); setCustomPrecio(''); setEsDevolucion(false); setDevProducto(null); setDevBusqueda(''); setDevCantidad('1'); setShowCustom(true); } },
                     React.createElement("span", { style: { fontSize: 18, fontWeight: 700 } }, "$+"))),
             showSuggestions && sugerencias.length > 0 && (React.createElement("div", { style: { position: 'absolute', top: '100%', left: 0, right: 0, background: T.card, border: `1px solid ${T.inputBorder}`, borderRadius: 12, zIndex: 50, maxHeight: 450, overflowY: 'auto', marginTop: 4 } }, sugerencias.map((p, i) => {
                 const pv = (0, utils_1.calcPrecioVenta)(p.precioCosto, p.margen, data.margenes);
@@ -1209,24 +1239,61 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                                 return;
                             const precioFinal = esDevolucion ? -Math.abs(precio) : precio;
                             const nombre = esDevolucion ? `↩ Devolución: ${customDesc.trim()}` : customDesc.trim();
+                            const cant = esDevolucion ? (parseInt(devCantidad) || 1) : 1;
                             setItems(prev => [...prev, {
                                     codigoRef: nombre,
                                     descripcion: nombre,
                                     codigoProv: '',
                                     precioCosto: precioFinal,
                                     precioVenta: precioFinal,
-                                    cantidad: 1,
+                                    cantidad: cant,
                                     margen: 0,
                                     proveedor: '',
                                     divisor: 1,
+                                    devolucionRef: devProducto ? devProducto.codigoRef : undefined,
                                 }]);
                             setShowCustom(false);
                             setEsDevolucion(false);
+                            setDevProducto(null);
+                            setDevBusqueda('');
+                            setDevCantidad('1');
                         }
                     } }),
-                React.createElement("label", { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, cursor: 'pointer', fontSize: 13, color: T.textSecondary } },
-                    React.createElement("input", { type: "checkbox", checked: esDevolucion, onChange: e => setEsDevolucion(e.target.checked), style: { width: 18, height: 18, cursor: 'pointer', accentColor: '#ef4444' } }),
+                React.createElement("label", { style: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: esDevolucion ? 12 : 20, cursor: 'pointer', fontSize: 13, color: T.textSecondary } },
+                    React.createElement("input", { type: "checkbox", checked: esDevolucion, onChange: e => {
+                            setEsDevolucion(e.target.checked);
+                            if (!e.target.checked) {
+                                setDevBusqueda('');
+                                setDevProducto(null);
+                                setDevCantidad('1');
+                            }
+                        }, style: { width: 18, height: 18, cursor: 'pointer', accentColor: '#ef4444' } }),
                     "\u21A9\uFE0F Es una devoluci\u00F3n (resta del total)"),
+                esDevolucion && (React.createElement("div", { style: { background: T.sectionBg, borderRadius: 10, padding: 12, marginBottom: 20 } },
+                    devProducto ? (React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                        React.createElement("div", { style: { fontSize: 12, color: T.text } },
+                            "\u2713 Vinculado a: ",
+                            React.createElement("strong", null, devProducto.codigoRef),
+                            React.createElement("div", { style: { fontSize: 11, color: T.textMuted } },
+                                "Repone ",
+                                devCantidad || 1,
+                                " unidad(es) al stock al confirmar")),
+                        React.createElement("button", { onClick: () => { setDevProducto(null); setDevBusqueda(''); }, style: { background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 12 } }, "Quitar"))) : (React.createElement(React.Fragment, null,
+                        React.createElement("label", { style: { fontSize: 11, color: T.textMuted, display: 'block', marginBottom: 4 } }, "Vincular a un producto real (opcional, as\u00ED repone stock)"),
+                        React.createElement("input", { className: "input-field", style: { fontSize: 13 }, placeholder: "Buscar por Ref...", value: devBusqueda, onChange: e => setDevBusqueda(e.target.value) }),
+                        devBusqueda.trim().length > 0 && (React.createElement("div", { style: { marginTop: 6, maxHeight: 140, overflowY: 'auto', border: `1px solid ${T.inputBorder}`, borderRadius: 8 } }, (data.misProductos || [])
+                            .filter(p => (p.codigoRef || '').toLowerCase().includes(devBusqueda.toLowerCase()))
+                            .slice(0, 6)
+                            .map((p, i) => (React.createElement("div", { key: i, onClick: () => {
+                                const pv = (0, utils_1.calcPrecioVenta)(p.precioCosto, p.margen, data.margenes);
+                                setDevProducto(p);
+                                setCustomDesc(p.codigoRef);
+                                setCustomPrecio(String(Math.round(pv)));
+                                setDevBusqueda('');
+                            }, style: { padding: '8px 10px', cursor: 'pointer', fontSize: 12, color: T.text, borderBottom: `1px solid ${T.divider}` } }, p.codigoRef))))))),
+                    devProducto && (React.createElement("div", { style: { marginTop: 10 } },
+                        React.createElement("label", { style: { fontSize: 11, color: T.textMuted, display: 'block', marginBottom: 4 } }, "Cantidad devuelta"),
+                        React.createElement("input", { className: "input-field", style: { fontSize: 13 }, type: "number", min: 1, value: devCantidad, onChange: e => setDevCantidad(e.target.value) }))))),
                 React.createElement("div", { style: { display: 'flex', gap: 8 } },
                     React.createElement("button", { onClick: () => { setShowCustom(false); setEsDevolucion(false); }, style: { flex: 1, padding: '12px', borderRadius: 10, background: 'none', border: `1px solid ${T.inputBorder}`, color: T.textMuted, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 } }, "Cancelar"),
                     React.createElement("button", { onClick: () => {
@@ -1235,19 +1302,24 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                                 return;
                             const precioFinal = esDevolucion ? -Math.abs(precio) : precio;
                             const nombre = esDevolucion ? `↩ Devolución: ${customDesc.trim()}` : customDesc.trim();
+                            const cant = esDevolucion ? (parseInt(devCantidad) || 1) : 1;
                             setItems(prev => [...prev, {
                                     codigoRef: nombre,
                                     descripcion: nombre,
                                     codigoProv: '',
                                     precioCosto: precioFinal,
                                     precioVenta: precioFinal,
-                                    cantidad: 1,
+                                    cantidad: cant,
                                     margen: 0,
                                     proveedor: '',
                                     divisor: 1,
+                                    devolucionRef: devProducto ? devProducto.codigoRef : undefined,
                                 }]);
                             setShowCustom(false);
                             setEsDevolucion(false);
+                            setDevProducto(null);
+                            setDevBusqueda('');
+                            setDevCantidad('1');
                         }, style: { flex: 2, padding: '12px', borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700 } }, "Agregar al carrito"))))),
         scanning && (React.createElement(Scanner_1.Scanner, { onResult: code => { setScanning(false); agregarProducto(code.toUpperCase()); }, onClose: () => setScanning(false) }))));
 }
@@ -1974,39 +2046,43 @@ const ThemeContext_1 = __require("../ThemeContext");
 // Subcomponente con estado local para los inputs
 function StockEditor({ codigoRef, stock, onSave, onPedir, inPedido }) {
     const { theme: T } = (0, ThemeContext_1.useTheme)();
-    // Use strings so user can type freely (including clearing the field)
-    const [inicial, setInicial] = useState(String(stock.inicial || 0));
-    const [entradas, setEntradas] = useState(String(stock.entradas || 0));
-    const [salidas, setSalidas] = useState(String(stock.salidas || 0));
+    // Entradas y Salidas son campos de carga RÁPIDA: siempre arrancan en 0.
+    // Lo que escribas se SUMA (o resta) al stock actual; no reemplaza nada.
+    const [entradas, setEntradas] = useState('0');
+    const [salidas, setSalidas] = useState('0');
     const [minimo, setMinimo] = useState(String(stock.minimo || 0));
     const numVal = (s) => parseInt(s) || 0;
-    const actual = numVal(inicial) + numVal(entradas) - numVal(salidas);
+    const actualGuardado = (stock.inicial || 0) + (stock.entradas || 0) - (stock.salidas || 0);
+    const actualPreview = actualGuardado + numVal(entradas) - numVal(salidas);
     const guardar = () => {
         onSave({
-            inicial: numVal(inicial),
-            entradas: numVal(entradas),
-            salidas: numVal(salidas),
+            inicial: stock.inicial || 0,
+            entradas: (stock.entradas || 0) + numVal(entradas),
+            salidas: (stock.salidas || 0) + numVal(salidas),
             minimo: numVal(minimo),
         });
+        // Se limpian para la próxima carga; el mínimo queda como está
+        setEntradas('0');
+        setSalidas('0');
     };
     const campos = [
-        { label: 'Inicial', value: inicial, set: setInicial },
-        { label: 'Entradas', value: entradas, set: setEntradas },
-        { label: 'Salidas', value: salidas, set: setSalidas },
-        { label: 'Mínimo', value: minimo, set: setMinimo },
+        { label: 'Entran ahora', value: entradas, set: setEntradas, color: '#22c55e' },
+        { label: 'Salen ahora', value: salidas, set: setSalidas, color: '#ef4444' },
+        { label: 'Mínimo', value: minimo, set: setMinimo, color: '#6366f1' },
     ];
     return (React.createElement("div", { style: { borderTop: `1px solid ${T.divider}`, padding: '12px 14px', background: T.card } },
-        React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 10 } }, campos.map(({ label, value, set }) => (React.createElement("div", { key: label, style: { textAlign: 'center' } },
+        React.createElement("div", { style: { textAlign: 'center', marginBottom: 10, fontSize: 13, color: T.textSecondary } },
+            "Stock actual: ",
+            React.createElement("strong", { style: { fontSize: 20, color: actualPreview < numVal(minimo) && numVal(minimo) > 0 ? '#ef4444' : '#22c55e' } }, actualPreview)),
+        React.createElement("div", { style: { display: 'flex', gap: 6, marginBottom: 10 } }, campos.map(({ label, value, set, color }) => (React.createElement("div", { key: label, style: { textAlign: 'center' } },
             React.createElement("label", { style: { fontSize: 10, color: T.textMuted, display: 'block', marginBottom: 4, textTransform: 'uppercase' } }, label),
             React.createElement("input", { type: "number", min: 0, value: value, onChange: e => set(e.target.value), style: {
                     width: '100%', height: 44, borderRadius: 8,
-                    background: T.card, border: '1px solid #6366f1',
+                    background: T.card, border: `1px solid ${color}`,
                     color: T.text, textAlign: 'center',
                     fontSize: 18, fontWeight: 700, fontFamily: 'inherit', outline: 'none',
                 } }))))),
-        React.createElement("div", { style: { textAlign: 'center', marginBottom: 8, fontSize: 13, color: T.textSecondary } },
-            "Actual: ",
-            React.createElement("strong", { style: { fontSize: 18, color: actual < numVal(minimo) && numVal(minimo) > 0 ? '#ef4444' : '#22c55e' } }, actual)),
+        React.createElement("div", { style: { fontSize: 11, color: T.textMuted, textAlign: 'center', marginBottom: 10 } }, "Carg\u00E1 solo lo que entra o sale AHORA \u2014 se suma solo, no hace falta escribir el total."),
         React.createElement("button", { onClick: guardar, style: { width: '100%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', border: 'none', borderRadius: 10, padding: '12px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 } },
             React.createElement(Icon_1.Icon, { name: "check", size: 16 }),
             " Guardar cambios"),
@@ -2033,8 +2109,8 @@ function TabStock({ data, setData, showToast }) {
     const bajoMinimo = productos.filter(p => p.stock.minimo > 0 && p.actual < p.stock.minimo);
     const saveStock = (ref, vals) => {
         setData(d => ({ ...d, stock: { ...d.stock, [ref]: vals } }));
-        showToast('Stock guardado', 'success');
-        setEditRef(null);
+        showToast('Stock actualizado', 'success');
+        // No cerramos el editor: así podés seguir cargando más entradas/salidas sin reabrir
     };
     const agregarAPedido = (p) => {
         if ((data.pedidos || []).find(x => x.codigoRef === p.codigoRef)) {
@@ -2126,7 +2202,8 @@ function TabVentas({ data, setData, showToast }) {
     const { theme: T, isDark } = (0, ThemeContext_1.useTheme)();
     const [expandedId, setExpandedId] = useState(null);
     const [presupuestoVenta, setPresupuestoVenta] = useState(null);
-    const ventas = [...(data.ventas || [])].reverse();
+    // Orden por fecha de creación real (el id es un timestamp), así la última venta queda siempre arriba
+    const ventas = [...(data.ventas || [])].sort((a, b) => parseInt(b.id, 36) - parseInt(a.id, 36));
     const hoy = new Date().toLocaleDateString('es-AR');
     const ventasHoy = () => (data.ventas || []).filter(v => v.fecha === hoy);
     const totalHoy = () => ventasHoy().reduce((s, v) => s + v.total, 0);
