@@ -66,12 +66,6 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
   const [devBusqueda, setDevBusqueda] = useState('');
   const [devProducto, setDevProducto] = useState<any>(null);
   const [devCantidad, setDevCantidad] = useState('1');
-  const [devolucionProducto, setDevolucionProducto] = useState<any>(null);
-  const [devolucionBusqueda, setDevolucionBusqueda] = useState('');
-  const [devolucionCantidad, setDevolucionCantidad] = useState('1');
-  const [devBusqueda, setDevBusqueda] = useState('');
-  const [devProducto, setDevProducto] = useState<any>(null);
-  const [devCantidad, setDevCantidad] = useState('1');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const total = items.reduce((sum, i) => sum + i.precioVenta * i.cantidad, 0);

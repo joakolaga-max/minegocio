@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-30T01:26:15.413Z
+// MiNegocio v2.0 - Built 2026-07-30T23:01:00.493Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -912,12 +912,6 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
     const [customDesc, setCustomDesc] = useState('');
     const [customPrecio, setCustomPrecio] = useState('');
     const [esDevolucion, setEsDevolucion] = useState(false);
-    const [devBusqueda, setDevBusqueda] = useState('');
-    const [devProducto, setDevProducto] = useState(null);
-    const [devCantidad, setDevCantidad] = useState('1');
-    const [devolucionProducto, setDevolucionProducto] = useState(null);
-    const [devolucionBusqueda, setDevolucionBusqueda] = useState('');
-    const [devolucionCantidad, setDevolucionCantidad] = useState('1');
     const [devBusqueda, setDevBusqueda] = useState('');
     const [devProducto, setDevProducto] = useState(null);
     const [devCantidad, setDevCantidad] = useState('1');
