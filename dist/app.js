@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-08-06T00:54:34.636Z
+// MiNegocio v2.0 - Built 2026-08-08T21:23:55.597Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -1345,36 +1345,7 @@ function parseCSV(text) {
         codigo: (cols[0] || '').toUpperCase(),
         descripcion: cols[1] || '',
         precio: (() => { const s = String(cols[2] || '0').trim().replace(/\.(?=\d{3})/g, '').replace(',', '.'); return parseFloat(s) || 0; })(),
-    })).filter(p => p.codigo && p.descripcion);
-}
-function parseXLSX(buffer) {
-    const w = window;
-    if (!w.XLSX)
-        return [];
-    const wb = w.XLSX.read(new Uint8Array(buffer), { type: 'array' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = w.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-    const productos = [];
-    for (const cols of rows) {
-        const cod = String(cols[0] ?? '').trim();
-        const desc = String(cols[1] ?? '').trim();
-        // Skip empty rows and header rows
-        if (!cod || !desc)
-            continue;
-        if (cod.toUpperCase() === 'CODIGO' || cod.toUpperCase() === 'COD')
-            continue;
-        // If Excel already parsed it as number, use it directly (avoid string conversion bug)
-        const priceRaw = cols[2];
-        const precio = (typeof priceRaw === 'number')
-            ? Math.round(priceRaw * 100) / 100
-            : parsePrecio(String(priceRaw ?? '0'));
-        productos.push({
-            codigo: cod.toUpperCase(),
-            descripcion: desc,
-            precio: precio,
-        });
-    }
-    return productos;
+    })).filter(p => p.codigo && p.descripcion && p.precio >= 0 && p.precio <= 50000000);
 }
 function TabProveedores({ data, setData, showToast, onNavigate }) {
     const { theme: T } = (0, ThemeContext_1.useTheme)();
@@ -1408,6 +1379,7 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
                     const ws = wb.Sheets[wb.SheetNames[0]];
                     const rows = w.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
                     productos = [];
+                    let descartados = 0;
                     for (const cols of rows) {
                         const cod = String(cols[0] ?? '').trim();
                         const desc = String(cols[1] ?? '').trim();
@@ -1415,9 +1387,25 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
                             continue;
                         if (cod.toUpperCase() === 'CODIGO' || cod.toUpperCase() === 'COD')
                             continue;
-                        const priceStr = String(cols[2] ?? '0').trim().replace(/\.(?=\d{3})/g, '').replace(',', '.');
-                        const precio = parseFloat(priceStr) || 0;
+                        let precio;
+                        const raw = cols[2];
+                        if (typeof raw === 'number') {
+                            // Ya es un número real: usarlo tal cual, sin tocar el formato de texto
+                            precio = raw;
+                        }
+                        else {
+                            const priceStr = String(raw ?? '0').trim().replace(/\.(?=\d{3})/g, '').replace(',', '.');
+                            precio = parseFloat(priceStr) || 0;
+                        }
+                        // Filtro de seguridad: un precio disparatado casi siempre es error de lectura del archivo
+                        if (precio < 0 || precio > 50000000) {
+                            descartados++;
+                            continue;
+                        }
                         productos.push({ codigo: cod.toUpperCase(), descripcion: desc, precio });
+                    }
+                    if (descartados > 0) {
+                        showToast(`${descartados} fila(s) con precio inválido fueron descartadas`, 'info');
                     }
                 }
                 else {
