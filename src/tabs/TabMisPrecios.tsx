@@ -212,45 +212,6 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
     showToast('Excel exportado', 'success');
   };
 
-  const importarExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const w = window as any;
-    if (!w.XLSX) { showToast('XLSX no disponible', 'error'); return; }
-    const reader = new FileReader();
-    reader.onload = ev => {
-      try {
-        const wb = w.XLSX.read(new Uint8Array(ev.target!.result as ArrayBuffer), { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows: any[][] = w.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-        // Skip header row (Ref, Cod Proveedor, Descripcion, Precio Compra, Precio Venta, Margen %)
-        const start = (String(rows[0]?.[0] || '').toLowerCase().includes('ref') || String(rows[0]?.[0] || '').toLowerCase().includes('cod') || String(rows[0]?.[1] || '').toLowerCase().includes('ref')) ? 1 : 0;
-        const nuevos: any[] = [];
-        rows.slice(start).forEach((cols: any[]) => {
-          const ref = String(cols[0] || '').trim().toUpperCase();
-          const codProv = String(cols[1] || '').trim().toUpperCase();
-          const desc = String(cols[2] || '').trim();
-          const costo = parseFloat(String(cols[3] || '0').replace(',', '.')) || 0;
-          const margenVal = parseFloat(String(cols[5] || '50').replace(',', '.')) || 50;
-          if (!ref || !codProv) return;
-          nuevos.push({ codigoRef: ref, codigoProv: codProv, descripcion: desc, precioCosto: costo, margen: margenVal, proveedor: '', divisor: 1 });
-        });
-        if (nuevos.length === 0) { showToast('No se encontraron productos', 'error'); return; }
-        if (!window.confirm(`Importar ${nuevos.length} productos? Esto reemplazará los existentes con el mismo REF.`)) return;
-        setData(d => {
-          const existingRefs = new Set(nuevos.map((p: any) => p.codigoRef));
-          const filtered = (d.misProductos || []).filter((p: any) => !existingRefs.has(p.codigoRef));
-          return { ...d, misProductos: [...filtered, ...nuevos] };
-        });
-        showToast(`${nuevos.length} productos importados`, 'success');
-      } catch(err) {
-        showToast('Error al leer el archivo', 'error');
-      }
-    };
-    reader.readAsArrayBuffer(file);
-    e.target.value = '';
-  };
-
   const filtrados = (busqueda
     ? (data.misProductos || []).filter(p =>
         (p.codigoRef || '').toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -492,7 +453,7 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
                   <div key={p.codigoRef} style={{ background: T.card, borderRadius: 12, border: `1px solid ${isExpanded ? '#6366f1' : T.divider}`, marginBottom: 2 }}>
                     <div style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
                       onClick={() => setExpandedRef(isExpanded ? null : p.codigoRef)}>
-                      {foto && <img src={foto} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
+                      {foto && <FotoDelayada src={foto} style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         {codBarras && <div style={{ fontSize: 10, color: T.textMuted, fontFamily: 'monospace' }}>{codBarras}</div>}
                         <div style={{ fontSize: 15, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.codigoRef}</div>

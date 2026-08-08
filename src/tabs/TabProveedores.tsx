@@ -116,12 +116,6 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
     else reader.readAsText(file);
   };
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) cargarArchivo(file);
-    e.target.value = '';
-  };
-
   const limpiar = () => {
     if (!window.confirm(`Limpiar todos los productos de ${prov.nombre}?`)) return;
     setData(d => {

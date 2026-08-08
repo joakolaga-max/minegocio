@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-08-08T21:38:18.714Z
+// MiNegocio v2.0 - Built 2026-08-08T22:03:13.992Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -1439,12 +1439,6 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
         else
             reader.readAsText(file);
     };
-    const handleFile = (e) => {
-        const file = e.target.files?.[0];
-        if (file)
-            cargarArchivo(file);
-        e.target.value = '';
-    };
     const limpiar = () => {
         if (!window.confirm(`Limpiar todos los productos de ${prov.nombre}?`))
             return;
@@ -1714,54 +1708,6 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
         w.XLSX.writeFile(wb, 'mis_precios.xlsx');
         showToast('Excel exportado', 'success');
     };
-    const importarExcel = (e) => {
-        const file = e.target.files?.[0];
-        if (!file)
-            return;
-        const w = window;
-        if (!w.XLSX) {
-            showToast('XLSX no disponible', 'error');
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = ev => {
-            try {
-                const wb = w.XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
-                const ws = wb.Sheets[wb.SheetNames[0]];
-                const rows = w.XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
-                // Skip header row (Ref, Cod Proveedor, Descripcion, Precio Compra, Precio Venta, Margen %)
-                const start = (String(rows[0]?.[0] || '').toLowerCase().includes('ref') || String(rows[0]?.[0] || '').toLowerCase().includes('cod') || String(rows[0]?.[1] || '').toLowerCase().includes('ref')) ? 1 : 0;
-                const nuevos = [];
-                rows.slice(start).forEach((cols) => {
-                    const ref = String(cols[0] || '').trim().toUpperCase();
-                    const codProv = String(cols[1] || '').trim().toUpperCase();
-                    const desc = String(cols[2] || '').trim();
-                    const costo = parseFloat(String(cols[3] || '0').replace(',', '.')) || 0;
-                    const margenVal = parseFloat(String(cols[5] || '50').replace(',', '.')) || 50;
-                    if (!ref || !codProv)
-                        return;
-                    nuevos.push({ codigoRef: ref, codigoProv: codProv, descripcion: desc, precioCosto: costo, margen: margenVal, proveedor: '', divisor: 1 });
-                });
-                if (nuevos.length === 0) {
-                    showToast('No se encontraron productos', 'error');
-                    return;
-                }
-                if (!window.confirm(`Importar ${nuevos.length} productos? Esto reemplazará los existentes con el mismo REF.`))
-                    return;
-                setData(d => {
-                    const existingRefs = new Set(nuevos.map((p) => p.codigoRef));
-                    const filtered = (d.misProductos || []).filter((p) => !existingRefs.has(p.codigoRef));
-                    return { ...d, misProductos: [...filtered, ...nuevos] };
-                });
-                showToast(`${nuevos.length} productos importados`, 'success');
-            }
-            catch (err) {
-                showToast('Error al leer el archivo', 'error');
-            }
-        };
-        reader.readAsArrayBuffer(file);
-        e.target.value = '';
-    };
     const filtrados = (busqueda
         ? (data.misProductos || []).filter(p => (p.codigoRef || '').toLowerCase().includes(busqueda.toLowerCase()) ||
             (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -1932,7 +1878,7 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
                     const isExpanded = expandedRef === p.codigoRef;
                     return (React.createElement("div", { key: p.codigoRef, style: { background: T.card, borderRadius: 12, border: `1px solid ${isExpanded ? '#6366f1' : T.divider}`, marginBottom: 2 } },
                         React.createElement("div", { style: { padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }, onClick: () => setExpandedRef(isExpanded ? null : p.codigoRef) },
-                            foto && React.createElement("img", { src: foto, alt: "", style: { width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 } }),
+                            foto && React.createElement(FotoDelayada, { src: foto, style: { width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 } }),
                             React.createElement("div", { style: { flex: 1, minWidth: 0 } },
                                 codBarras && React.createElement("div", { style: { fontSize: 10, color: T.textMuted, fontFamily: 'monospace' } }, codBarras),
                                 React.createElement("div", { style: { fontSize: 15, color: '#818cf8', fontFamily: 'monospace', fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, p.codigoRef),
