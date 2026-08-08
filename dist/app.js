@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-08-08T21:23:55.597Z
+// MiNegocio v2.0 - Built 2026-08-08T21:38:18.714Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -1328,6 +1328,7 @@ const module = { exports };
 exports.TabProveedores = TabProveedores;
 const Icon_1 = __require("../components/Icon");
 const ThemeContext_1 = __require("../ThemeContext");
+const utils_1 = __require("../lib/utils");
 const parsePrecio = (s) => {
     const clean = String(s || '0').trim().replace(/\.(?=\d{3})/g, '').replace(',', '.');
     return parseFloat(clean) || 0;
@@ -1502,9 +1503,7 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
                     React.createElement("div", { style: { flex: 1, minWidth: 0 } },
                         React.createElement("span", { style: { fontSize: 11, color: '#818cf8', fontFamily: 'monospace', fontWeight: 700, marginRight: 8 } }, p.codigo),
                         React.createElement("span", { style: { fontSize: 13, color: T.textSecondary } }, p.descripcion)),
-                    React.createElement("span", { style: { fontSize: 13, color: '#22c55e', fontWeight: 600, flexShrink: 0 } },
-                        "$",
-                        p.precio.toFixed(2))))),
+                    React.createElement("span", { style: { fontSize: 13, color: '#22c55e', fontWeight: 600, flexShrink: 0 } }, (0, utils_1.fmtPeso)(p.precio))))),
                 productos.length > 200 && (React.createElement("div", { style: { textAlign: 'center', padding: 8, fontSize: 12, color: T.textMuted } },
                     "Mostrando 200 de ",
                     productos.length,

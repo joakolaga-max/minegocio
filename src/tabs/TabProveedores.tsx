@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AppData, Proveedor, Producto } from '../types';
 import { Icon } from '../components/Icon';
 import { useTheme } from '../ThemeContext';
+import { fmtPeso } from '../lib/utils';
 
 
 interface Props {
@@ -239,7 +240,7 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
                   <span style={{ fontSize: 13, color: T.textSecondary }}>{p.descripcion}</span>
                 </div>
                 <span style={{ fontSize: 13, color: '#22c55e', fontWeight: 600, flexShrink: 0 }}>
-                  ${p.precio.toFixed(2)}
+                  {fmtPeso(p.precio)}
                 </span>
               </div>
             ))}
