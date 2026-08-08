@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-07-30T23:01:00.493Z
+// MiNegocio v2.0 - Built 2026-08-06T00:54:34.636Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -1430,7 +1430,7 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
                 }
                 setData(d => {
                     const provs = [...d.proveedores];
-                    provs[activeTab] = { ...provs[activeTab], productos };
+                    provs[activeTab] = { ...provs[activeTab], productos, archivo: file.name };
                     return { ...d, proveedores: provs };
                 });
                 showToast(`${productos.length} productos cargados`, 'success');
@@ -1461,7 +1461,7 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
             return;
         setData(d => {
             const provs = [...d.proveedores];
-            provs[activeTab] = { ...provs[activeTab], productos: [] };
+            provs[activeTab] = { ...provs[activeTab], productos: [], archivo: undefined };
             return { ...d, proveedores: provs };
         });
         showToast('Lista limpiada', 'info');
@@ -1475,9 +1475,12 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
             } },
             React.createElement("span", { style: { fontSize: 13, fontWeight: activeTab === i ? 700 : 500, color: activeTab === i ? '#818cf8' : T.textSecondary } }, p.nombre || `Proveedor ${i + 1}`))))),
         React.createElement("div", { className: "card" },
-            React.createElement("div", { style: { marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: T.sectionBg, borderRadius: 12 } },
-                React.createElement("span", { style: { fontSize: 16, fontWeight: 700, color: T.text } }, prov.nombre || `Proveedor ${activeTab + 1}`),
-                React.createElement("span", { style: { fontSize: 13, color: prov.productos.length > 0 ? '#22c55e' : '#4b5563', fontWeight: 600 } }, prov.productos.length > 0 ? `${prov.productos.length} productos` : 'Sin cargar')),
+            React.createElement("div", { style: { marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: T.sectionBg, borderRadius: 12, gap: 10 } },
+                React.createElement("span", { style: { fontSize: 16, fontWeight: 700, color: T.text, flexShrink: 0 } }, prov.nombre || `Proveedor ${activeTab + 1}`),
+                prov.archivo && (React.createElement("span", { style: { fontSize: 12, color: T.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, textAlign: 'center' }, title: prov.archivo },
+                    "\uD83D\uDCC4 ",
+                    prov.archivo)),
+                React.createElement("span", { style: { fontSize: 13, color: prov.productos.length > 0 ? '#22c55e' : '#4b5563', fontWeight: 600, flexShrink: 0 } }, prov.productos.length > 0 ? `${prov.productos.length} productos` : 'Sin cargar')),
             React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 14 } },
                 React.createElement("button", { className: "btn-primary", style: { flex: 1, justifyContent: 'center' }, onClick: () => {
                         const inp = document.createElement('input');

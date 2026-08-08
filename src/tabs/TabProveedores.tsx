@@ -111,7 +111,7 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
         }
         setData(d => {
           const provs = [...d.proveedores];
-          provs[activeTab] = { ...provs[activeTab], productos };
+          provs[activeTab] = { ...provs[activeTab], productos, archivo: file.name };
           return { ...d, proveedores: provs };
         });
         showToast(`${productos.length} productos cargados`, 'success');
@@ -139,7 +139,7 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
     if (!window.confirm(`Limpiar todos los productos de ${prov.nombre}?`)) return;
     setData(d => {
       const provs = [...d.proveedores];
-      provs[activeTab] = { ...provs[activeTab], productos: [] };
+      provs[activeTab] = { ...provs[activeTab], productos: [], archivo: undefined };
       return { ...d, proveedores: provs };
     });
     showToast('Lista limpiada', 'info');
@@ -169,9 +169,14 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
       {/* Active proveedor card */}
       <div className="card">
         {/* Header */}
-        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: T.sectionBg, borderRadius: 12 }}>
-          <span style={{ fontSize: 16, fontWeight: 700, color: T.text }}>{prov.nombre || `Proveedor ${activeTab + 1}`}</span>
-          <span style={{ fontSize: 13, color: prov.productos.length > 0 ? '#22c55e' : '#4b5563', fontWeight: 600 }}>
+        <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: T.sectionBg, borderRadius: 12, gap: 10 }}>
+          <span style={{ fontSize: 16, fontWeight: 700, color: T.text, flexShrink: 0 }}>{prov.nombre || `Proveedor ${activeTab + 1}`}</span>
+          {(prov as any).archivo && (
+            <span style={{ fontSize: 12, color: T.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, textAlign: 'center' }} title={(prov as any).archivo}>
+              📄 {(prov as any).archivo}
+            </span>
+          )}
+          <span style={{ fontSize: 13, color: prov.productos.length > 0 ? '#22c55e' : '#4b5563', fontWeight: 600, flexShrink: 0 }}>
             {prov.productos.length > 0 ? `${prov.productos.length} productos` : 'Sin cargar'}
           </span>
         </div>

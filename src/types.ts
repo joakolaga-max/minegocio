@@ -8,6 +8,7 @@ export interface Proveedor {
   id: number;
   nombre: string;
   productos: Producto[];
+  archivo?: string;
 }
 
 export interface MiProducto {
