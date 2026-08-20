@@ -92,6 +92,7 @@ export function LoginScreen({ onLogin }: Props) {
                 placeholder="Email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handle(mode)}
                 style={{ marginBottom: 12 }}
               />
               <input

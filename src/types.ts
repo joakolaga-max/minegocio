@@ -78,6 +78,15 @@ export interface Margenes {
   p4: number;
 }
 
+export interface PresupuestoGuardado {
+  id: string;
+  fecha: string;
+  hora: string;
+  cliente: string;
+  items: { descripcion: string; cantidad: number; precioVenta: number; codigoRef?: string }[];
+  total: number;
+}
+
 export interface AppData {
   proveedores: Proveedor[];
   misProductos: MiProducto[];
@@ -87,6 +96,10 @@ export interface AppData {
   fotos: Record<string, string>;
   pedidos: PedidoItem[];
   pedidosHistorial: Orden[];
+  presupuestos: PresupuestoGuardado[];
+  empresa: string;
+  telefono: string;
+  direccion: string;
 }
 
 export type TabId = 'calc' | 'proveedores' | 'precios' | 'stock' | 'ventas' | 'pedidos' | 'presupuestos' | 'config';

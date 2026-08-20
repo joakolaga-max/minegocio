@@ -13,6 +13,10 @@ const DEFAULT_DATA: AppData = {
   fotos: {},
   pedidos: [],
   pedidosHistorial: [],
+  presupuestos: [],
+  empresa: '',
+  telefono: '',
+  direccion: '',
 };
 
 const PATHS = ['proveedores', 'misProductos', 'config', 'stock', 'ventas', 'pedidos', 'pedidosHistorial', 'presupuestos'] as const;
@@ -37,9 +41,9 @@ export function useAppData(user: string | null) {
           proveedores: (provData as any)?.length ? provData as any : d.proveedores,
           misProductos: (misData as any) ?? d.misProductos,
           margenes: (config as any)?.margenes ?? d.margenes,
-          empresa: (config as any)?.empresa ?? (d as any).empresa ?? '',
-          telefono: (config as any)?.telefono ?? (d as any).telefono ?? '',
-          direccion: (config as any)?.direccion ?? (d as any).direccion ?? '',
+          empresa: (config as any)?.empresa ?? d.empresa ?? '',
+          telefono: (config as any)?.telefono ?? d.telefono ?? '',
+          direccion: (config as any)?.direccion ?? d.direccion ?? '',
           stock: (stockData as any) ?? d.stock,
           ventas: (ventasData as any) ?? d.ventas,
           fotos: (fotosData as any) ?? d.fotos,
@@ -82,9 +86,9 @@ export function useAppData(user: string | null) {
       if (s('margenes') || s('misProductos') || sAny('empresa') || sAny('telefono') || sAny('direccion'))
         saves.push(saveToFirebase('config', {
           margenes: data.margenes,
-          empresa: (data as any).empresa ?? '',
-          telefono: (data as any).telefono ?? '',
-          direccion: (data as any).direccion ?? '',
+          empresa: data.empresa ?? '',
+          telefono: data.telefono ?? '',
+          direccion: data.direccion ?? '',
         }));
       if (s('stock')) saves.push(saveToFirebase('stock', data.stock));
       if (s('ventas')) saves.push(saveToFirebase('ventas', data.ventas));

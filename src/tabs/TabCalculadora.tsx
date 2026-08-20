@@ -181,6 +181,16 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
     showToast('Venta registrada', 'success');
   };
 
+  const confirmarTransferencia = () => {
+    if (!window.confirm(`¿Confirmar venta de ${fmtPeso(total)} por transferencia?`)) return;
+    try {
+      localStorage.setItem('mn_ref_nombre', refNombre);
+      localStorage.setItem('mn_ref_celular', refCelular);
+      localStorage.setItem('mn_ref_direccion', refDireccion);
+    } catch (e) {}
+    registrarVenta();
+  };
+
   return (
     <div className="card">
       <div className="section-title">Calculadora</div>
@@ -396,6 +406,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
               placeholder="Nombre del cliente"
               value={refNombre}
               onChange={e => setRefNombre(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') confirmarTransferencia(); }}
               className="input-field"
               style={{ marginBottom: 8, fontSize: 14 }}
             />
@@ -404,6 +415,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
               placeholder="Celular"
               value={refCelular}
               onChange={e => setRefCelular(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') confirmarTransferencia(); }}
               className="input-field"
               style={{ marginBottom: 8, fontSize: 14 }}
             />
@@ -412,6 +424,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
               placeholder="Dirección"
               value={refDireccion}
               onChange={e => setRefDireccion(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') confirmarTransferencia(); }}
               className="input-field"
               style={{ marginBottom: 14, fontSize: 14 }}
             />
@@ -421,16 +434,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <button onClick={() => setShowModalTransferencia(false)} className="btn-ghost" style={{ justifyContent: 'center' }}>Cancelar</button>
-              <button
-                onClick={() => {
-                  if (!window.confirm(`¿Confirmar venta de ${fmtPeso(total)} por transferencia?`)) return;
-                  try {
-                    localStorage.setItem('mn_ref_nombre', refNombre);
-                    localStorage.setItem('mn_ref_celular', refCelular);
-                    localStorage.setItem('mn_ref_direccion', refDireccion);
-                  } catch (e) {}
-                  registrarVenta();
-                }}
+              <button onClick={confirmarTransferencia}
                 className="btn-primary"
                 style={{ justifyContent: 'center' }}
               >
@@ -451,6 +455,13 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
               placeholder="Ej: 7000"
               value={montoEfectivo}
               onChange={e => setMontoEfectivo(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && montoEfectivo) {
+                  const monto = parseFloat(montoEfectivo) || 0;
+                  if (!window.confirm(`¿Confirmar venta de ${fmtPeso(total)} en efectivo?`)) return;
+                  registrarVenta(monto);
+                }
+              }}
               className="input-field"
               style={{ marginBottom: 12, fontSize: 14 }}
               autoFocus
@@ -490,9 +501,9 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
           items={items}
           total={total}
           onClose={() => setShowPresupuesto(false)}
-          empresaData={(data as any).empresa}
-          telefonoData={(data as any).telefono}
-          direccionData={(data as any).direccion}
+          empresaData={data.empresa}
+          telefonoData={data.telefono}
+          direccionData={data.direccion}
           onGuardar={(cliente, nota, descuento) => {
             const pres = {
               id: Date.now().toString(36),

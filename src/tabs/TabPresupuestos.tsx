@@ -1,18 +1,9 @@
 import React, { useState } from 'react';
-import { AppData } from '../types';
+import { AppData, PresupuestoGuardado } from '../types';
 import { Icon } from '../components/Icon';
 import { Presupuesto } from '../components/Presupuesto';
 import { fmtPeso } from '../lib/utils';
 import { useTheme } from '../ThemeContext';
-
-interface PresupuestoGuardado {
-  id: string;
-  fecha: string;
-  hora: string;
-  cliente: string;
-  items: { descripcion: string; cantidad: number; precioVenta: number; codigoRef?: string }[];
-  total: number;
-}
 
 interface Props {
   data: AppData;
@@ -25,7 +16,7 @@ const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-AR');
 
 export function TabPresupuestos({ data, setData, showToast, onCargarEnCalculadora }: Props) {
   const { theme: T } = useTheme();
-  const presupuestos: PresupuestoGuardado[] = (data as any).presupuestos || [];
+  const presupuestos: PresupuestoGuardado[] = data.presupuestos || [];
   const [verPresupuesto, setVerPresupuesto] = useState<PresupuestoGuardado | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -116,9 +107,9 @@ export function TabPresupuestos({ data, setData, showToast, onCargarEnCalculador
           items={verPresupuesto.items}
           total={verPresupuesto.total}
           onClose={() => setVerPresupuesto(null)}
-          empresaData={(data as any).empresa}
-          telefonoData={(data as any).telefono}
-          direccionData={(data as any).direccion}
+          empresaData={data.empresa}
+          telefonoData={data.telefono}
+          direccionData={data.direccion}
         />
       )}
     </div>

@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-08-10T23:30:14.279Z
+// MiNegocio v2.0 - Built 2026-08-20T22:14:29.595Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -578,7 +578,7 @@ function LoginScreen({ onLogin }) {
             React.createElement("div", { style: { background: '#161b27', borderRadius: 20, border: '1px solid #1e2535', padding: 28 } },
                 React.createElement("div", { style: { fontSize: 18, fontWeight: 700, color: '#f1f5f9', marginBottom: 20 } }, mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'),
                 resetSent ? (React.createElement("div", { style: { background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 12, padding: 16, color: '#22c55e', fontSize: 14, textAlign: 'center', marginBottom: 16 } }, "\u2705 Te enviamos un email para restablecer tu contrase\u00F1a.")) : (React.createElement(React.Fragment, null,
-                    React.createElement("input", { className: "input-field", type: "email", placeholder: "Email", value: email, onChange: e => setEmail(e.target.value), style: { marginBottom: 12 } }),
+                    React.createElement("input", { className: "input-field", type: "email", placeholder: "Email", value: email, onChange: e => setEmail(e.target.value), onKeyDown: e => e.key === 'Enter' && handle(mode), style: { marginBottom: 12 } }),
                     React.createElement("input", { className: "input-field", type: "password", placeholder: "Contrase\u00F1a", value: password, onChange: e => setPassword(e.target.value), onKeyDown: e => e.key === 'Enter' && handle(mode), style: { marginBottom: 16 } }),
                     error && (React.createElement("div", { style: { color: '#ef4444', fontSize: 13, marginBottom: 12, padding: '8px 12px', background: 'rgba(239,68,68,0.1)', borderRadius: 8 } }, error)),
                     React.createElement("button", { className: "btn-primary", style: { width: '100%', justifyContent: 'center', marginBottom: 12, opacity: loading ? 0.7 : 1 }, onClick: () => handle(mode), disabled: loading }, loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Registrarse'),
@@ -772,6 +772,10 @@ const DEFAULT_DATA = {
     fotos: {},
     pedidos: [],
     pedidosHistorial: [],
+    presupuestos: [],
+    empresa: '',
+    telefono: '',
+    direccion: '',
 };
 const PATHS = ['proveedores', 'misProductos', 'config', 'stock', 'ventas', 'pedidos', 'pedidosHistorial', 'presupuestos'];
 function useAppData(user) {
@@ -1027,6 +1031,17 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
         setMontoEfectivo('');
         showToast('Venta registrada', 'success');
     };
+    const confirmarTransferencia = () => {
+        if (!window.confirm(`¿Confirmar venta de ${(0, utils_1.fmtPeso)(total)} por transferencia?`))
+            return;
+        try {
+            localStorage.setItem('mn_ref_nombre', refNombre);
+            localStorage.setItem('mn_ref_celular', refCelular);
+            localStorage.setItem('mn_ref_direccion', refDireccion);
+        }
+        catch (e) { }
+        registrarVenta();
+    };
     return (React.createElement("div", { className: "card" },
         React.createElement("div", { className: "section-title" }, "Calculadora"),
         React.createElement("div", { style: { position: 'relative', marginBottom: 12 } },
@@ -1169,30 +1184,30 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
             React.createElement("div", null,
                 React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 8, color: T.text } }, "\uD83D\uDCB3 Referencia de transferencia"),
                 React.createElement("div", { style: { fontSize: 12, color: T.textMuted, marginBottom: 14 } }, "Datos opcionales para guardar como referencia del cliente"),
-                React.createElement("input", { type: "text", placeholder: "Nombre del cliente", value: refNombre, onChange: e => setRefNombre(e.target.value), className: "input-field", style: { marginBottom: 8, fontSize: 14 } }),
-                React.createElement("input", { type: "tel", placeholder: "Celular", value: refCelular, onChange: e => setRefCelular(e.target.value), className: "input-field", style: { marginBottom: 8, fontSize: 14 } }),
-                React.createElement("input", { type: "text", placeholder: "Direcci\u00F3n", value: refDireccion, onChange: e => setRefDireccion(e.target.value), className: "input-field", style: { marginBottom: 14, fontSize: 14 } }),
+                React.createElement("input", { type: "text", placeholder: "Nombre del cliente", value: refNombre, onChange: e => setRefNombre(e.target.value), onKeyDown: e => { if (e.key === 'Enter')
+                        confirmarTransferencia(); }, className: "input-field", style: { marginBottom: 8, fontSize: 14 } }),
+                React.createElement("input", { type: "tel", placeholder: "Celular", value: refCelular, onChange: e => setRefCelular(e.target.value), onKeyDown: e => { if (e.key === 'Enter')
+                        confirmarTransferencia(); }, className: "input-field", style: { marginBottom: 8, fontSize: 14 } }),
+                React.createElement("input", { type: "text", placeholder: "Direcci\u00F3n", value: refDireccion, onChange: e => setRefDireccion(e.target.value), onKeyDown: e => { if (e.key === 'Enter')
+                        confirmarTransferencia(); }, className: "input-field", style: { marginBottom: 14, fontSize: 14 } }),
                 React.createElement("div", { style: { background: T.cardHover, padding: 10, borderRadius: 8, marginBottom: 14, textAlign: 'center' } },
                     React.createElement("div", { style: { fontSize: 11, color: T.textMuted } }, "Total a confirmar"),
                     React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4 } }, (0, utils_1.fmtPeso)(total))),
                 React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
                     React.createElement("button", { onClick: () => setShowModalTransferencia(false), className: "btn-ghost", style: { justifyContent: 'center' } }, "Cancelar"),
-                    React.createElement("button", { onClick: () => {
-                            if (!window.confirm(`¿Confirmar venta de ${(0, utils_1.fmtPeso)(total)} por transferencia?`))
-                                return;
-                            try {
-                                localStorage.setItem('mn_ref_nombre', refNombre);
-                                localStorage.setItem('mn_ref_celular', refCelular);
-                                localStorage.setItem('mn_ref_direccion', refDireccion);
-                            }
-                            catch (e) { }
-                            registrarVenta();
-                        }, className: "btn-primary", style: { justifyContent: 'center' } }, "\u2713 Confirmar"))))),
+                    React.createElement("button", { onClick: confirmarTransferencia, className: "btn-primary", style: { justifyContent: 'center' } }, "\u2713 Confirmar"))))),
         showModalEfectivo && (React.createElement(Modal_1.Modal, { onClose: () => setShowModalEfectivo(false) },
             React.createElement("div", null,
                 React.createElement("div", { style: { fontSize: 16, fontWeight: 700, marginBottom: 8, color: T.text } }, "\uD83D\uDCB5 Pago en efectivo"),
                 React.createElement("div", { style: { fontSize: 12, color: T.textMuted, marginBottom: 14 } }, "\u00BFCon cu\u00E1nto abona el cliente?"),
-                React.createElement("input", { type: "number", placeholder: "Ej: 7000", value: montoEfectivo, onChange: e => setMontoEfectivo(e.target.value), className: "input-field", style: { marginBottom: 12, fontSize: 14 }, autoFocus: true }),
+                React.createElement("input", { type: "number", placeholder: "Ej: 7000", value: montoEfectivo, onChange: e => setMontoEfectivo(e.target.value), onKeyDown: e => {
+                        if (e.key === 'Enter' && montoEfectivo) {
+                            const monto = parseFloat(montoEfectivo) || 0;
+                            if (!window.confirm(`¿Confirmar venta de ${(0, utils_1.fmtPeso)(total)} en efectivo?`))
+                                return;
+                            registrarVenta(monto);
+                        }
+                    }, className: "input-field", style: { marginBottom: 12, fontSize: 14 }, autoFocus: true }),
                 React.createElement("div", { style: { background: T.cardHover, padding: 10, borderRadius: 8, marginBottom: 8, textAlign: 'center' } },
                     React.createElement("div", { style: { fontSize: 11, color: T.textMuted } }, "Total a pagar"),
                     React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4 } }, (0, utils_1.fmtPeso)(total))),

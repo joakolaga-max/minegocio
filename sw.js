@@ -1,4 +1,4 @@
-const CACHE = 'minegocio-v38';
+const CACHE = 'minegocio-v40';
 const ASSETS = [
   './',
   './index.html',

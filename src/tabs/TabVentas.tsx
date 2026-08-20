@@ -247,9 +247,9 @@ export function TabVentas({ data, setData, showToast }: Props) {
           items={presupuestoVenta.items}
           total={presupuestoVenta.total}
           onClose={() => setPresupuestoVenta(null)}
-          empresaData={(data as any).empresa}
-          telefonoData={(data as any).telefono}
-          direccionData={(data as any).direccion}
+          empresaData={data.empresa}
+          telefonoData={data.telefono}
+          direccionData={data.direccion}
         />
       )}
     </>

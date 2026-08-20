@@ -80,9 +80,9 @@ export function TabConfig({ data, setData, showToast }: Props) {
   const [nombres, setNombres] = useState((data.proveedores || []).map(p => p.nombre));
 
   // Presupuesto - read from data (Firebase synced)
-  const [empresa, setEmpresa] = useState(() => (data as any).empresa || localStorage.getItem('mn_empresa') || '');
-  const [telefono, setTelefono] = useState(() => (data as any).telefono || localStorage.getItem('mn_telefono') || '');
-  const [direccion, setDireccion] = useState(() => (data as any).direccion || localStorage.getItem('mn_direccion') || '');
+  const [empresa, setEmpresa] = useState(() => data.empresa || localStorage.getItem('mn_empresa') || '');
+  const [telefono, setTelefono] = useState(() => data.telefono || localStorage.getItem('mn_telefono') || '');
+  const [direccion, setDireccion] = useState(() => data.direccion || localStorage.getItem('mn_direccion') || '');
 
   const mult = (pct: number) => pct >= 100 ? '∞' : (100 / (100 - pct)).toFixed(2) + 'x';
   const pct = (s: string) => Math.min(99, Math.max(1, parseFloat(s) || 1));
@@ -116,10 +116,10 @@ export function TabConfig({ data, setData, showToast }: Props) {
           ventas: data.ventas,
           pedidos: data.pedidos,
           pedidosHistorial: data.pedidosHistorial,
-          presupuestos: (data as any).presupuestos || [],
-          empresa: (data as any).empresa || '',
-          telefono: (data as any).telefono || '',
-          direccion: (data as any).direccion || '',
+          presupuestos: data.presupuestos || [],
+          empresa: data.empresa || '',
+          telefono: data.telefono || '',
+          direccion: data.direccion || '',
         },
         fotos: fotos,
       };
