@@ -32,6 +32,8 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
   const { theme: T } = useTheme();
   const [items, setItems] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<'transferencia' | 'efectivo'>('transferencia');
+  const [descuentoPct, setDescuentoPct] = useState(0);
+  const [descuentoCustom, setDescuentoCustom] = useState('');
   const [showModalEfectivo, setShowModalEfectivo] = useState(false);
   const [montoEfectivo, setMontoEfectivo] = useState('');
   const [showModalTransferencia, setShowModalTransferencia] = useState(false);
@@ -69,15 +71,17 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
   const inputRef = useRef<HTMLInputElement>(null);
 
   const total = items.reduce((sum, i) => sum + i.precioVenta * i.cantidad, 0);
+  const totalConDescuento = total * (1 - descuentoPct / 100);
 
-  const sugerencias = busqueda.length > 0
+  const busquedaNorm = busqueda.trim().toLowerCase().replace(/\s+/g, ' ');
+  const sugerencias = busquedaNorm.length > 0
     ? (data.misProductos || []).filter(p =>
-        (p.codigoRef || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-        (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-        ((p as any).codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase())
+        (p.codigoRef || '').toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm) ||
+        (p.codigoProv || '').toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm) ||
+        ((p as any).codigoBarras || '').toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm)
       )
       .sort((a, b) => {
-        const q = busqueda.toLowerCase();
+        const q = busquedaNorm;
         const aRef = (a.codigoRef || '').toLowerCase();
         const bRef = (b.codigoRef || '').toLowerCase();
         // Prioridad: tu Ref EMPIEZA con la búsqueda
@@ -85,7 +89,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
         const bStarts = bRef.startsWith(q) ? 0 : 1;
         if (aStarts !== bStarts) return aStarts - bStarts;
         // Luego alfabético por tu Ref
-        return aRef.localeCompare(bRef, 'es');
+        return aRef.localeCompare(bRef, 'es', { numeric: true });
       })
       .slice(0, 20)
     : [];
@@ -141,15 +145,17 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
 
   const registrarVenta = (monto?: number) => {
     if (items.length === 0) return;
+    const factorDescuento = 1 - descuentoPct / 100;
     const venta = {
       id: Date.now().toString(36),
       fecha: new Date().toLocaleDateString('es-AR'),
       hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
-      items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta, precioCosto: i.precioCosto })),
-      total,
+      items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta * factorDescuento, precioCosto: i.precioCosto })),
+      total: totalConDescuento,
+      descuentoPct: descuentoPct > 0 ? descuentoPct : undefined,
       paymentMethod,
       amountReceived: monto,
-      change: monto !== undefined ? monto - total : undefined,
+      change: monto !== undefined ? monto - totalConDescuento : undefined,
       clienteNombre: paymentMethod === 'transferencia' ? refNombre : undefined,
       clienteCelular: paymentMethod === 'transferencia' ? refCelular : undefined,
       clienteDireccion: paymentMethod === 'transferencia' ? refDireccion : undefined,
@@ -178,11 +184,13 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
     setShowModalEfectivo(false);
     setShowModalTransferencia(false);
     setMontoEfectivo('');
+    setDescuentoPct(0);
+    setDescuentoCustom('');
     showToast('Venta registrada', 'success');
   };
 
   const confirmarTransferencia = () => {
-    if (!window.confirm(`¿Confirmar venta de ${fmtPeso(total)} por transferencia?`)) return;
+    if (!window.confirm(`¿Confirmar venta de ${fmtPeso(totalConDescuento)} por transferencia?`)) return;
     try {
       localStorage.setItem('mn_ref_nombre', refNombre);
       localStorage.setItem('mn_ref_celular', refCelular);
@@ -338,9 +346,46 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
           </div>
 
           {/* Total */}
-          <div style={{ background: 'linear-gradient(135deg,#1e3a2e,#1a3025)', borderRadius: 14, border: '1px solid #166534', padding: '14px 18px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: 13, color: '#86efac', fontWeight: 600 }}>Total</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: '#22c55e' }}>{fmtPeso(total)}</div>
+          <div style={{ background: 'linear-gradient(135deg,#1e3a2e,#1a3025)', borderRadius: 14, border: '1px solid #166534', padding: '14px 18px', marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 13, color: '#86efac', fontWeight: 600 }}>Total</div>
+              <div style={{ textAlign: 'right' }}>
+                {descuentoPct > 0 && (
+                  <div style={{ fontSize: 12, color: '#86efac', textDecoration: 'line-through', opacity: 0.7 }}>{fmtPeso(total)}</div>
+                )}
+                <div style={{ fontSize: 24, fontWeight: 700, color: '#22c55e' }}>{fmtPeso(totalConDescuento)}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Descuento */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: T.textMuted, textTransform: 'uppercase', marginBottom: 6 }}>Descuento</div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {[0, 5, 10, 15].map(pct => (
+                <button key={pct}
+                  onClick={() => { setDescuentoPct(pct); setDescuentoCustom(''); }}
+                  style={{
+                    flex: 1, padding: '10px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                    fontFamily: 'inherit', fontWeight: 600, fontSize: 13,
+                    background: descuentoPct === pct && descuentoCustom === '' ? '#ef4444' : T.inputBg,
+                    color: descuentoPct === pct && descuentoCustom === '' ? 'white' : T.textSecondary,
+                  }}>
+                  {pct === 0 ? 'Sin desc.' : `${pct}%`}
+                </button>
+              ))}
+              <input
+                type="number" min={0} max={100}
+                placeholder="Otro"
+                value={descuentoCustom}
+                onChange={e => {
+                  setDescuentoCustom(e.target.value);
+                  const v = parseFloat(e.target.value);
+                  setDescuentoPct(isNaN(v) ? 0 : Math.min(Math.max(v, 0), 100));
+                }}
+                style={{ width: 56, padding: '10px 4px', borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.text, textAlign: 'center', fontFamily: 'inherit', fontSize: 13 }}
+              />
+            </div>
           </div>
 
           {/* Método de pago */}
@@ -430,7 +475,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
             />
             <div style={{ background: T.cardHover, padding: 10, borderRadius: 8, marginBottom: 14, textAlign: 'center' }}>
               <div style={{ fontSize: 11, color: T.textMuted }}>Total a confirmar</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4 }}>{fmtPeso(total)}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4 }}>{fmtPeso(totalConDescuento)}</div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <button onClick={() => setShowModalTransferencia(false)} className="btn-ghost" style={{ justifyContent: 'center' }}>Cancelar</button>
@@ -458,7 +503,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
               onKeyDown={e => {
                 if (e.key === 'Enter' && montoEfectivo) {
                   const monto = parseFloat(montoEfectivo) || 0;
-                  if (!window.confirm(`¿Confirmar venta de ${fmtPeso(total)} en efectivo?`)) return;
+                  if (!window.confirm(`¿Confirmar venta de ${fmtPeso(totalConDescuento)} en efectivo?`)) return;
                   registrarVenta(monto);
                 }
               }}
@@ -468,12 +513,12 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
             />
             <div style={{ background: T.cardHover, padding: 10, borderRadius: 8, marginBottom: 8, textAlign: 'center' }}>
               <div style={{ fontSize: 11, color: T.textMuted }}>Total a pagar</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4 }}>{fmtPeso(total)}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4 }}>{fmtPeso(totalConDescuento)}</div>
             </div>
             <div style={{ background: T.cardHover, padding: 10, borderRadius: 8, marginBottom: 14, textAlign: 'center' }}>
               <div style={{ fontSize: 11, color: T.textMuted }}>Vuelto</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: (montoEfectivo && (parseFloat(montoEfectivo) - total) >= 0) ? '#22c55e' : '#ef4444', marginTop: 4 }}>
-                {fmtPeso(montoEfectivo ? parseFloat(montoEfectivo) - total : 0)}
+              <div style={{ fontSize: 18, fontWeight: 700, color: (montoEfectivo && (parseFloat(montoEfectivo) - totalConDescuento) >= 0) ? '#22c55e' : '#ef4444', marginTop: 4 }}>
+                {fmtPeso(montoEfectivo ? parseFloat(montoEfectivo) - totalConDescuento : 0)}
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -481,7 +526,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
               <button
                 onClick={() => {
                   const monto = parseFloat(montoEfectivo) || 0;
-                  if (!window.confirm(`¿Confirmar venta de ${fmtPeso(total)} en efectivo?`)) return;
+                  if (!window.confirm(`¿Confirmar venta de ${fmtPeso(totalConDescuento)} en efectivo?`)) return;
                   registrarVenta(monto);
                 }}
                 disabled={!montoEfectivo}

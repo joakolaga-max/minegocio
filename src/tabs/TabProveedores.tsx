@@ -42,12 +42,13 @@ export function TabProveedores({ data, setData, showToast, onNavigate }: Props) 
   const [loading, setLoading] = useState(false);
 
   const prov = (data.proveedores || [])[activeTab] || { id: activeTab, nombre: "", productos: [] };
-  const productos = (busqueda
+  const busquedaNorm = busqueda.trim().toLowerCase().replace(/\s+/g, ' ');
+  const productos = (busquedaNorm
     ? prov.productos.filter(p =>
-        p.codigo.toLowerCase().includes(busqueda.toLowerCase()) ||
-        p.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
+        p.codigo.toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm) ||
+        p.descripcion.toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm))
     : prov.productos
-  ).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es'));
+  ).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es', { numeric: true }));
 
   const cargarArchivo = (file: File) => {
     if (!file) return;

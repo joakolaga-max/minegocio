@@ -3,7 +3,7 @@ import { AppData } from '../types';
 import { Icon } from '../components/Icon';
 import { useTheme } from '../ThemeContext';
 import { darkTheme, lightTheme } from '../theme';
-import { loadFotos, saveFoto } from '../lib/firebase';
+import { loadFotos, saveFoto, deleteFoto } from '../lib/firebase';
 
 interface Props {
   data: AppData;
@@ -169,6 +169,48 @@ export function TabConfig({ data, setData, showToast }: Props) {
     reader.readAsText(file);
   };
 
+  // ── Limpieza de datos huérfanos (fotos y stock de productos que ya no existen) ──
+  const [revisando, setRevisando] = useState(false);
+  const [huerfanos, setHuerfanos] = useState<{ fotos: string[]; stock: string[] } | null>(null);
+
+  const revisarHuerfanos = async () => {
+    setRevisando(true);
+    try {
+      const refsValidos = new Set((data.misProductos || []).map(p => p.codigoRef));
+      const todasLasFotos = await loadFotos();
+      const fotosHuerfanas = Object.keys(todasLasFotos).filter(ref => !refsValidos.has(ref));
+      const stockHuerfano = Object.keys(data.stock || {}).filter(ref => !refsValidos.has(ref));
+      setHuerfanos({ fotos: fotosHuerfanas, stock: stockHuerfano });
+      if (fotosHuerfanas.length === 0 && stockHuerfano.length === 0) {
+        showToast('No se encontraron datos huérfanos', 'success');
+      }
+    } catch (e) {
+      showToast('Error al revisar', 'error');
+    }
+    setRevisando(false);
+  };
+
+  const confirmarLimpieza = async () => {
+    if (!huerfanos) return;
+    if (!window.confirm(`Se van a eliminar ${huerfanos.fotos.length} foto(s) y ${huerfanos.stock.length} entrada(s) de stock huérfanas. ¿Confirmar?`)) return;
+
+    // Borrar fotos huérfanas (de Firebase y del estado local)
+    for (const ref of huerfanos.fotos) {
+      await deleteFoto(ref);
+    }
+    // Borrar stock huérfano
+    setData(d => {
+      const nuevoStock = { ...(d.stock || {}) };
+      huerfanos.stock.forEach(ref => delete nuevoStock[ref]);
+      const nuevasFotos = { ...(d.fotos || {}) };
+      huerfanos.fotos.forEach(ref => delete nuevasFotos[ref]);
+      return { ...d, stock: nuevoStock, fotos: nuevasFotos };
+    });
+
+    showToast('Datos huérfanos eliminados', 'success');
+    setHuerfanos(null);
+  };
+
   const guardarPresupuesto = () => {
     // Save to Firebase via data
     setData(d => ({ ...d, empresa, telefono, direccion } as any));
@@ -292,6 +334,63 @@ export function TabConfig({ data, setData, showToast }: Props) {
           <div style={{ marginTop: 12, fontSize: 11, color: T.textMuted, textAlign: 'center' }}>
             Recomendado: hacé un backup una vez por semana.
           </div>
+        </div>
+      )}
+
+      {/* LIMPIEZA DE DATOS */}
+      <SectionHeader id="limpieza" label="Limpieza de datos" icon="trash" />
+      {openSection === 'limpieza' && (
+        <div style={{ background: T.card, borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 }}>
+          <div style={{ background: T.sectionBg, borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: T.textMuted }}>
+            Cuando borrás un producto de Mis Precios, a veces quedan fotos y datos de stock "huérfanos" dando vueltas sin usarse. Acá los podés revisar y borrar, viendo antes exactamente qué se va a eliminar.
+          </div>
+
+          <button className="btn-primary" style={{ width: '100%', justifyContent: 'center', marginBottom: 12 }} onClick={revisarHuerfanos} disabled={revisando}>
+            <Icon name="refresh" size={16} /> {revisando ? 'Revisando...' : 'Revisar datos huérfanos'}
+          </button>
+
+          {huerfanos && (huerfanos.fotos.length > 0 || huerfanos.stock.length > 0) && (
+            <div style={{ background: T.sectionBg, borderRadius: 10, padding: 14, marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 10 }}>
+                Se encontró esto para eliminar:
+              </div>
+
+              {huerfanos.fotos.length > 0 && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#ef4444', marginBottom: 6 }}>
+                    📷 {huerfanos.fotos.length} foto(s) sin producto:
+                  </div>
+                  <div style={{ maxHeight: 120, overflowY: 'auto', background: T.card, borderRadius: 8, padding: 8 }}>
+                    {huerfanos.fotos.map(ref => (
+                      <div key={ref} style={{ fontSize: 11, color: T.textSecondary, padding: '3px 0', borderBottom: `1px solid ${T.divider}` }}>{ref}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {huerfanos.stock.length > 0 && (
+                <div style={{ marginBottom: 4 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#ef4444', marginBottom: 6 }}>
+                    📦 {huerfanos.stock.length} entrada(s) de stock sin producto:
+                  </div>
+                  <div style={{ maxHeight: 120, overflowY: 'auto', background: T.card, borderRadius: 8, padding: 8 }}>
+                    {huerfanos.stock.map(ref => (
+                      <div key={ref} style={{ fontSize: 11, color: T.textSecondary, padding: '3px 0', borderBottom: `1px solid ${T.divider}` }}>{ref}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                <button className="btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setHuerfanos(null)}>
+                  Cancelar
+                </button>
+                <button className="btn-danger" style={{ flex: 1, justifyContent: 'center' }} onClick={confirmarLimpieza}>
+                  <Icon name="trash" size={16} /> Eliminar todo esto
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

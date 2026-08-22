@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-08-20T22:14:29.595Z
+// MiNegocio v2.0 - Built 2026-08-22T16:35:16.529Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -886,6 +886,8 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
     const { theme: T } = (0, ThemeContext_1.useTheme)();
     const [items, setItems] = useState([]);
     const [paymentMethod, setPaymentMethod] = useState('transferencia');
+    const [descuentoPct, setDescuentoPct] = useState(0);
+    const [descuentoCustom, setDescuentoCustom] = useState('');
     const [showModalEfectivo, setShowModalEfectivo] = useState(false);
     const [montoEfectivo, setMontoEfectivo] = useState('');
     const [showModalTransferencia, setShowModalTransferencia] = useState(false);
@@ -921,12 +923,14 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
     const [devCantidad, setDevCantidad] = useState('1');
     const inputRef = useRef(null);
     const total = items.reduce((sum, i) => sum + i.precioVenta * i.cantidad, 0);
-    const sugerencias = busqueda.length > 0
-        ? (data.misProductos || []).filter(p => (p.codigoRef || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-            (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-            (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()))
+    const totalConDescuento = total * (1 - descuentoPct / 100);
+    const busquedaNorm = busqueda.trim().toLowerCase().replace(/\s+/g, ' ');
+    const sugerencias = busquedaNorm.length > 0
+        ? (data.misProductos || []).filter(p => (p.codigoRef || '').toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm) ||
+            (p.codigoProv || '').toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm) ||
+            (p.codigoBarras || '').toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm))
             .sort((a, b) => {
-            const q = busqueda.toLowerCase();
+            const q = busquedaNorm;
             const aRef = (a.codigoRef || '').toLowerCase();
             const bRef = (b.codigoRef || '').toLowerCase();
             // Prioridad: tu Ref EMPIEZA con la búsqueda
@@ -935,7 +939,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
             if (aStarts !== bStarts)
                 return aStarts - bStarts;
             // Luego alfabético por tu Ref
-            return aRef.localeCompare(bRef, 'es');
+            return aRef.localeCompare(bRef, 'es', { numeric: true });
         })
             .slice(0, 20)
         : [];
@@ -990,15 +994,17 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
     const registrarVenta = (monto) => {
         if (items.length === 0)
             return;
+        const factorDescuento = 1 - descuentoPct / 100;
         const venta = {
             id: Date.now().toString(36),
             fecha: new Date().toLocaleDateString('es-AR'),
             hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
-            items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta, precioCosto: i.precioCosto })),
-            total,
+            items: items.map(i => ({ codigoRef: i.codigoRef, descripcion: i.descripcion, cantidad: i.cantidad, precioVenta: i.precioVenta * factorDescuento, precioCosto: i.precioCosto })),
+            total: totalConDescuento,
+            descuentoPct: descuentoPct > 0 ? descuentoPct : undefined,
             paymentMethod,
             amountReceived: monto,
-            change: monto !== undefined ? monto - total : undefined,
+            change: monto !== undefined ? monto - totalConDescuento : undefined,
             clienteNombre: paymentMethod === 'transferencia' ? refNombre : undefined,
             clienteCelular: paymentMethod === 'transferencia' ? refCelular : undefined,
             clienteDireccion: paymentMethod === 'transferencia' ? refDireccion : undefined,
@@ -1029,10 +1035,12 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
         setShowModalEfectivo(false);
         setShowModalTransferencia(false);
         setMontoEfectivo('');
+        setDescuentoPct(0);
+        setDescuentoCustom('');
         showToast('Venta registrada', 'success');
     };
     const confirmarTransferencia = () => {
-        if (!window.confirm(`¿Confirmar venta de ${(0, utils_1.fmtPeso)(total)} por transferencia?`))
+        if (!window.confirm(`¿Confirmar venta de ${(0, utils_1.fmtPeso)(totalConDescuento)} por transferencia?`))
             return;
         try {
             localStorage.setItem('mn_ref_nombre', refNombre);
@@ -1137,9 +1145,26 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                             React.createElement("button", { onClick: () => updateQty(i, 1), style: { width: 32, height: 32, borderRadius: 8, background: '#6366f1', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' } }, "+")),
                         React.createElement("div", { style: { fontWeight: 700, color: '#22c55e', fontSize: 14, flexShrink: 0, minWidth: 70, textAlign: 'right' } }, (0, utils_1.fmtPeso)(item.precioVenta * item.cantidad)))));
             })),
-            React.createElement("div", { style: { background: 'linear-gradient(135deg,#1e3a2e,#1a3025)', borderRadius: 14, border: '1px solid #166534', padding: '14px 18px', marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
-                React.createElement("div", { style: { fontSize: 13, color: '#86efac', fontWeight: 600 } }, "Total"),
-                React.createElement("div", { style: { fontSize: 24, fontWeight: 700, color: '#22c55e' } }, (0, utils_1.fmtPeso)(total))),
+            React.createElement("div", { style: { background: 'linear-gradient(135deg,#1e3a2e,#1a3025)', borderRadius: 14, border: '1px solid #166534', padding: '14px 18px', marginBottom: 12 } },
+                React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                    React.createElement("div", { style: { fontSize: 13, color: '#86efac', fontWeight: 600 } }, "Total"),
+                    React.createElement("div", { style: { textAlign: 'right' } },
+                        descuentoPct > 0 && (React.createElement("div", { style: { fontSize: 12, color: '#86efac', textDecoration: 'line-through', opacity: 0.7 } }, (0, utils_1.fmtPeso)(total))),
+                        React.createElement("div", { style: { fontSize: 24, fontWeight: 700, color: '#22c55e' } }, (0, utils_1.fmtPeso)(totalConDescuento))))),
+            React.createElement("div", { style: { marginBottom: 12 } },
+                React.createElement("div", { style: { fontSize: 10, fontWeight: 600, color: T.textMuted, textTransform: 'uppercase', marginBottom: 6 } }, "Descuento"),
+                React.createElement("div", { style: { display: 'flex', gap: 6 } },
+                    [0, 5, 10, 15].map(pct => (React.createElement("button", { key: pct, onClick: () => { setDescuentoPct(pct); setDescuentoCustom(''); }, style: {
+                            flex: 1, padding: '10px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                            fontFamily: 'inherit', fontWeight: 600, fontSize: 13,
+                            background: descuentoPct === pct && descuentoCustom === '' ? '#ef4444' : T.inputBg,
+                            color: descuentoPct === pct && descuentoCustom === '' ? 'white' : T.textSecondary,
+                        } }, pct === 0 ? 'Sin desc.' : `${pct}%`))),
+                    React.createElement("input", { type: "number", min: 0, max: 100, placeholder: "Otro", value: descuentoCustom, onChange: e => {
+                            setDescuentoCustom(e.target.value);
+                            const v = parseFloat(e.target.value);
+                            setDescuentoPct(isNaN(v) ? 0 : Math.min(Math.max(v, 0), 100));
+                        }, style: { width: 56, padding: '10px 4px', borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.text, textAlign: 'center', fontFamily: 'inherit', fontSize: 13 } }))),
             React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 12 } },
                 React.createElement("button", { onClick: () => { setPaymentMethod('transferencia'); setShowModalTransferencia(true); }, style: {
                         flex: 1,
@@ -1192,7 +1217,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                         confirmarTransferencia(); }, className: "input-field", style: { marginBottom: 14, fontSize: 14 } }),
                 React.createElement("div", { style: { background: T.cardHover, padding: 10, borderRadius: 8, marginBottom: 14, textAlign: 'center' } },
                     React.createElement("div", { style: { fontSize: 11, color: T.textMuted } }, "Total a confirmar"),
-                    React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4 } }, (0, utils_1.fmtPeso)(total))),
+                    React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4 } }, (0, utils_1.fmtPeso)(totalConDescuento))),
                 React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
                     React.createElement("button", { onClick: () => setShowModalTransferencia(false), className: "btn-ghost", style: { justifyContent: 'center' } }, "Cancelar"),
                     React.createElement("button", { onClick: confirmarTransferencia, className: "btn-primary", style: { justifyContent: 'center' } }, "\u2713 Confirmar"))))),
@@ -1203,22 +1228,22 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                 React.createElement("input", { type: "number", placeholder: "Ej: 7000", value: montoEfectivo, onChange: e => setMontoEfectivo(e.target.value), onKeyDown: e => {
                         if (e.key === 'Enter' && montoEfectivo) {
                             const monto = parseFloat(montoEfectivo) || 0;
-                            if (!window.confirm(`¿Confirmar venta de ${(0, utils_1.fmtPeso)(total)} en efectivo?`))
+                            if (!window.confirm(`¿Confirmar venta de ${(0, utils_1.fmtPeso)(totalConDescuento)} en efectivo?`))
                                 return;
                             registrarVenta(monto);
                         }
                     }, className: "input-field", style: { marginBottom: 12, fontSize: 14 }, autoFocus: true }),
                 React.createElement("div", { style: { background: T.cardHover, padding: 10, borderRadius: 8, marginBottom: 8, textAlign: 'center' } },
                     React.createElement("div", { style: { fontSize: 11, color: T.textMuted } }, "Total a pagar"),
-                    React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4 } }, (0, utils_1.fmtPeso)(total))),
+                    React.createElement("div", { style: { fontSize: 16, fontWeight: 700, color: T.text, marginTop: 4 } }, (0, utils_1.fmtPeso)(totalConDescuento))),
                 React.createElement("div", { style: { background: T.cardHover, padding: 10, borderRadius: 8, marginBottom: 14, textAlign: 'center' } },
                     React.createElement("div", { style: { fontSize: 11, color: T.textMuted } }, "Vuelto"),
-                    React.createElement("div", { style: { fontSize: 18, fontWeight: 700, color: (montoEfectivo && (parseFloat(montoEfectivo) - total) >= 0) ? '#22c55e' : '#ef4444', marginTop: 4 } }, (0, utils_1.fmtPeso)(montoEfectivo ? parseFloat(montoEfectivo) - total : 0))),
+                    React.createElement("div", { style: { fontSize: 18, fontWeight: 700, color: (montoEfectivo && (parseFloat(montoEfectivo) - totalConDescuento) >= 0) ? '#22c55e' : '#ef4444', marginTop: 4 } }, (0, utils_1.fmtPeso)(montoEfectivo ? parseFloat(montoEfectivo) - totalConDescuento : 0))),
                 React.createElement("div", { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 } },
                     React.createElement("button", { onClick: () => setShowModalEfectivo(false), className: "btn-ghost", style: { justifyContent: 'center' } }, "Cancelar"),
                     React.createElement("button", { onClick: () => {
                             const monto = parseFloat(montoEfectivo) || 0;
-                            if (!window.confirm(`¿Confirmar venta de ${(0, utils_1.fmtPeso)(total)} en efectivo?`))
+                            if (!window.confirm(`¿Confirmar venta de ${(0, utils_1.fmtPeso)(totalConDescuento)} en efectivo?`))
                                 return;
                             registrarVenta(monto);
                         }, disabled: !montoEfectivo, className: "btn-primary", style: { justifyContent: 'center', opacity: montoEfectivo ? 1 : 0.5, cursor: montoEfectivo ? 'pointer' : 'not-allowed' } }, "\u2713 Confirmar"))))),
@@ -1369,10 +1394,11 @@ function TabProveedores({ data, setData, showToast, onNavigate }) {
     const [busqueda, setBusqueda] = useState('');
     const [loading, setLoading] = useState(false);
     const prov = (data.proveedores || [])[activeTab] || { id: activeTab, nombre: "", productos: [] };
-    const productos = (busqueda
-        ? prov.productos.filter(p => p.codigo.toLowerCase().includes(busqueda.toLowerCase()) ||
-            p.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
-        : prov.productos).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es'));
+    const busquedaNorm = busqueda.trim().toLowerCase().replace(/\s+/g, ' ');
+    const productos = (busquedaNorm
+        ? prov.productos.filter(p => p.codigo.toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm) ||
+            p.descripcion.toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm))
+        : prov.productos).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es', { numeric: true }));
     const cargarArchivo = (file) => {
         if (!file)
             return;
@@ -1723,11 +1749,12 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
         w.XLSX.writeFile(wb, 'mis_precios.xlsx');
         showToast('Excel exportado', 'success');
     };
-    const filtrados = (busqueda
-        ? (data.misProductos || []).filter(p => (p.codigoRef || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-            (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-            (p.codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()))
-        : (data.misProductos || [])).slice().sort((a, b) => (a.codigoRef || '').localeCompare(b.codigoRef || '', 'es'));
+    const busquedaNorm = busqueda.trim().toLowerCase().replace(/\s+/g, ' ');
+    const filtrados = (busquedaNorm
+        ? (data.misProductos || []).filter(p => (p.codigoRef || '').toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm) ||
+            (p.codigoProv || '').toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm) ||
+            (p.codigoBarras || '').toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm))
+        : (data.misProductos || [])).slice().sort((a, b) => (a.codigoRef || '').localeCompare(b.codigoRef || '', 'es', { numeric: true }));
     const fmt = (n) => '$' + Math.round(n).toLocaleString('es-AR');
     return (React.createElement("div", null,
         React.createElement("div", { className: "card", ref: formRef },
@@ -2046,11 +2073,11 @@ function TabStock({ data, setData, showToast }) {
     }).filter(p => {
         if (!busqueda.trim())
             return true;
-        const q = busqueda.trim().toLowerCase();
-        return ((p.codigoRef || '').toLowerCase().includes(q) ||
-            (p.codigoProv || '').toLowerCase().includes(q) ||
-            (p.codigoBarras || '').toLowerCase().includes(q));
-    }).sort((a, b) => (a.codigoRef || '').localeCompare(b.codigoRef || '', 'es'));
+        const q = busqueda.trim().toLowerCase().replace(/\s+/g, ' ');
+        return ((p.codigoRef || '').toLowerCase().replace(/\s+/g, ' ').includes(q) ||
+            (p.codigoProv || '').toLowerCase().replace(/\s+/g, ' ').includes(q) ||
+            (p.codigoBarras || '').toLowerCase().replace(/\s+/g, ' ').includes(q));
+    }).sort((a, b) => (a.codigoRef || '').localeCompare(b.codigoRef || '', 'es', { numeric: true }));
     const bajoMinimo = productos.filter(p => p.stock.minimo > 0 && p.actual < p.stock.minimo);
     const saveStock = (ref, vals) => {
         setData(d => ({ ...d, stock: { ...d.stock, [ref]: vals } }));
@@ -2367,11 +2394,11 @@ function TabPedidos({ data, setData, showToast }) {
         const actual = (s.inicial || 0) + (s.entradas || 0) - (s.salidas || 0);
         return s.minimo > 0 && actual < s.minimo && !pedidos.find(x => x.codigoRef === p.codigoRef);
     });
-    const resultadosAgregar = busqAgregar.length > 1 ? (() => {
-        const q = busqAgregar.toLowerCase();
-        return (data.misProductos || []).filter(p => (p.codigoProv || '').toLowerCase().includes(q) ||
-            (p.codigoBarras || '').toLowerCase().includes(q) ||
-            (p.descripcion || '').toLowerCase().includes(q)).sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es')).slice(0, 20);
+    const resultadosAgregar = busqAgregar.trim().length > 1 ? (() => {
+        const q = busqAgregar.trim().toLowerCase().replace(/\s+/g, ' ');
+        return (data.misProductos || []).filter(p => (p.codigoProv || '').toLowerCase().replace(/\s+/g, ' ').includes(q) ||
+            (p.codigoBarras || '').toLowerCase().replace(/\s+/g, ' ').includes(q) ||
+            (p.descripcion || '').toLowerCase().replace(/\s+/g, ' ').includes(q)).sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es', { numeric: true })).slice(0, 20);
     })() : [];
     const quitar = (ref) => {
         if (!window.confirm('Quitar este producto del pedido?'))
@@ -2477,12 +2504,12 @@ function TabPedidos({ data, setData, showToast }) {
                     React.createElement(Icon_1.Icon, { name: "check", size: 16 }),
                     " Confirmar y actualizar stock"))));
     };
-    const q = busqueda.trim().toLowerCase();
-    const filteredProvs = Object.keys(porProveedor).filter(prov => !q || prov.toLowerCase().includes(q) || porProveedor[prov].some(p => (p.codigoProv || '').toLowerCase().includes(q) ||
-        (p.descripcion || '').toLowerCase().includes(q)));
+    const q = busqueda.trim().toLowerCase().replace(/\s+/g, ' ');
+    const filteredProvs = Object.keys(porProveedor).filter(prov => !q || prov.toLowerCase().includes(q) || porProveedor[prov].some(p => (p.codigoProv || '').toLowerCase().replace(/\s+/g, ' ').includes(q) ||
+        (p.descripcion || '').toLowerCase().replace(/\s+/g, ' ').includes(q)));
     const filteredItems = (prov) => (!q ? porProveedor[prov] : porProveedor[prov].filter(p => prov.toLowerCase().includes(q) ||
-        (p.codigoProv || '').toLowerCase().includes(q) ||
-        (p.descripcion || '').toLowerCase().includes(q))).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es'));
+        (p.codigoProv || '').toLowerCase().replace(/\s+/g, ' ').includes(q) ||
+        (p.descripcion || '').toLowerCase().replace(/\s+/g, ' ').includes(q))).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es', { numeric: true }));
     return (React.createElement("div", null,
         React.createElement("div", { className: "card" },
             React.createElement("div", { style: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 14 } },
@@ -2839,6 +2866,46 @@ function TabConfig({ data, setData, showToast }) {
         };
         reader.readAsText(file);
     };
+    // ── Limpieza de datos huérfanos (fotos y stock de productos que ya no existen) ──
+    const [revisando, setRevisando] = useState(false);
+    const [huerfanos, setHuerfanos] = useState(null);
+    const revisarHuerfanos = async () => {
+        setRevisando(true);
+        try {
+            const refsValidos = new Set((data.misProductos || []).map(p => p.codigoRef));
+            const todasLasFotos = await (0, firebase_1.loadFotos)();
+            const fotosHuerfanas = Object.keys(todasLasFotos).filter(ref => !refsValidos.has(ref));
+            const stockHuerfano = Object.keys(data.stock || {}).filter(ref => !refsValidos.has(ref));
+            setHuerfanos({ fotos: fotosHuerfanas, stock: stockHuerfano });
+            if (fotosHuerfanas.length === 0 && stockHuerfano.length === 0) {
+                showToast('No se encontraron datos huérfanos', 'success');
+            }
+        }
+        catch (e) {
+            showToast('Error al revisar', 'error');
+        }
+        setRevisando(false);
+    };
+    const confirmarLimpieza = async () => {
+        if (!huerfanos)
+            return;
+        if (!window.confirm(`Se van a eliminar ${huerfanos.fotos.length} foto(s) y ${huerfanos.stock.length} entrada(s) de stock huérfanas. ¿Confirmar?`))
+            return;
+        // Borrar fotos huérfanas (de Firebase y del estado local)
+        for (const ref of huerfanos.fotos) {
+            await (0, firebase_1.deleteFoto)(ref);
+        }
+        // Borrar stock huérfano
+        setData(d => {
+            const nuevoStock = { ...(d.stock || {}) };
+            huerfanos.stock.forEach(ref => delete nuevoStock[ref]);
+            const nuevasFotos = { ...(d.fotos || {}) };
+            huerfanos.fotos.forEach(ref => delete nuevasFotos[ref]);
+            return { ...d, stock: nuevoStock, fotos: nuevasFotos };
+        });
+        showToast('Datos huérfanos eliminados', 'success');
+        setHuerfanos(null);
+    };
     const guardarPresupuesto = () => {
         // Save to Firebase via data
         setData(d => ({ ...d, empresa, telefono, direccion }));
@@ -2917,6 +2984,32 @@ function TabConfig({ data, setData, showToast }) {
                 React.createElement("input", { type: "file", accept: ".json", style: { display: 'none' }, onChange: e => { const f = e.target.files?.[0]; if (f)
                         restaurarBackup(f); e.target.value = ''; } })),
             React.createElement("div", { style: { marginTop: 12, fontSize: 11, color: T.textMuted, textAlign: 'center' } }, "Recomendado: hac\u00E9 un backup una vez por semana."))),
+        React.createElement(SectionHeader, { id: "limpieza", label: "Limpieza de datos", icon: "trash" }),
+        openSection === 'limpieza' && (React.createElement("div", { style: { background: T.card, borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 } },
+            React.createElement("div", { style: { background: T.sectionBg, borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: T.textMuted } }, "Cuando borr\u00E1s un producto de Mis Precios, a veces quedan fotos y datos de stock \"hu\u00E9rfanos\" dando vueltas sin usarse. Ac\u00E1 los pod\u00E9s revisar y borrar, viendo antes exactamente qu\u00E9 se va a eliminar."),
+            React.createElement("button", { className: "btn-primary", style: { width: '100%', justifyContent: 'center', marginBottom: 12 }, onClick: revisarHuerfanos, disabled: revisando },
+                React.createElement(Icon_1.Icon, { name: "refresh", size: 16 }),
+                " ",
+                revisando ? 'Revisando...' : 'Revisar datos huérfanos'),
+            huerfanos && (huerfanos.fotos.length > 0 || huerfanos.stock.length > 0) && (React.createElement("div", { style: { background: T.sectionBg, borderRadius: 10, padding: 14, marginBottom: 12 } },
+                React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 10 } }, "Se encontr\u00F3 esto para eliminar:"),
+                huerfanos.fotos.length > 0 && (React.createElement("div", { style: { marginBottom: 12 } },
+                    React.createElement("div", { style: { fontSize: 12, fontWeight: 600, color: '#ef4444', marginBottom: 6 } },
+                        "\uD83D\uDCF7 ",
+                        huerfanos.fotos.length,
+                        " foto(s) sin producto:"),
+                    React.createElement("div", { style: { maxHeight: 120, overflowY: 'auto', background: T.card, borderRadius: 8, padding: 8 } }, huerfanos.fotos.map(ref => (React.createElement("div", { key: ref, style: { fontSize: 11, color: T.textSecondary, padding: '3px 0', borderBottom: `1px solid ${T.divider}` } }, ref)))))),
+                huerfanos.stock.length > 0 && (React.createElement("div", { style: { marginBottom: 4 } },
+                    React.createElement("div", { style: { fontSize: 12, fontWeight: 600, color: '#ef4444', marginBottom: 6 } },
+                        "\uD83D\uDCE6 ",
+                        huerfanos.stock.length,
+                        " entrada(s) de stock sin producto:"),
+                    React.createElement("div", { style: { maxHeight: 120, overflowY: 'auto', background: T.card, borderRadius: 8, padding: 8 } }, huerfanos.stock.map(ref => (React.createElement("div", { key: ref, style: { fontSize: 11, color: T.textSecondary, padding: '3px 0', borderBottom: `1px solid ${T.divider}` } }, ref)))))),
+                React.createElement("div", { style: { display: 'flex', gap: 8, marginTop: 14 } },
+                    React.createElement("button", { className: "btn-ghost", style: { flex: 1, justifyContent: 'center' }, onClick: () => setHuerfanos(null) }, "Cancelar"),
+                    React.createElement("button", { className: "btn-danger", style: { flex: 1, justifyContent: 'center' }, onClick: confirmarLimpieza },
+                        React.createElement(Icon_1.Icon, { name: "trash", size: 16 }),
+                        " Eliminar todo esto")))))),
         React.createElement(SectionHeader, { id: "colores", label: "Colores de la app", icon: "settings" }),
         openSection === 'colores' && (React.createElement("div", { style: { background: T.card, borderRadius: '0 0 12px 12px', padding: 16, marginBottom: 8 } },
             React.createElement("div", { style: { background: T.sectionBg, borderRadius: 10, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: T.textMuted } },

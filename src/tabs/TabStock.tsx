@@ -98,13 +98,13 @@ export function TabStock({ data, setData, showToast }: Props) {
     return { ...p, stock: s, actual };
   }).filter(p => {
     if (!busqueda.trim()) return true;
-    const q = busqueda.trim().toLowerCase();
+    const q = busqueda.trim().toLowerCase().replace(/\s+/g, ' ');
     return (
-      (p.codigoRef || '').toLowerCase().includes(q) ||
-      (p.codigoProv || '').toLowerCase().includes(q) ||
-      ((p as any).codigoBarras || '').toLowerCase().includes(q)
+      (p.codigoRef || '').toLowerCase().replace(/\s+/g, ' ').includes(q) ||
+      (p.codigoProv || '').toLowerCase().replace(/\s+/g, ' ').includes(q) ||
+      ((p as any).codigoBarras || '').toLowerCase().replace(/\s+/g, ' ').includes(q)
     );
-  }).sort((a, b) => (a.codigoRef || '').localeCompare(b.codigoRef || '', 'es'));
+  }).sort((a, b) => (a.codigoRef || '').localeCompare(b.codigoRef || '', 'es', { numeric: true }));
 
   const bajoMinimo = productos.filter(p => p.stock.minimo > 0 && p.actual < p.stock.minimo);
 

@@ -43,13 +43,13 @@ export function TabPedidos({ data, setData, showToast }: Props) {
     return s.minimo > 0 && actual < s.minimo && !pedidos.find(x => x.codigoRef === p.codigoRef);
   });
 
-  const resultadosAgregar = busqAgregar.length > 1 ? (() => {
-    const q = busqAgregar.toLowerCase();
+  const resultadosAgregar = busqAgregar.trim().length > 1 ? (() => {
+    const q = busqAgregar.trim().toLowerCase().replace(/\s+/g, ' ');
     return (data.misProductos || []).filter(p =>
-      (p.codigoProv || '').toLowerCase().includes(q) ||
-      ((p as any).codigoBarras || '').toLowerCase().includes(q) ||
-      (p.descripcion || '').toLowerCase().includes(q)
-    ).sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es')).slice(0, 20);
+      (p.codigoProv || '').toLowerCase().replace(/\s+/g, ' ').includes(q) ||
+      ((p as any).codigoBarras || '').toLowerCase().replace(/\s+/g, ' ').includes(q) ||
+      (p.descripcion || '').toLowerCase().replace(/\s+/g, ' ').includes(q)
+    ).sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es', { numeric: true })).slice(0, 20);
   })() : [];
 
   const quitar = (ref: string) => {
@@ -175,16 +175,16 @@ export function TabPedidos({ data, setData, showToast }: Props) {
     );
   };
 
-  const q = busqueda.trim().toLowerCase();
+  const q = busqueda.trim().toLowerCase().replace(/\s+/g, ' ');
   const filteredProvs = Object.keys(porProveedor).filter(prov =>
     !q || prov.toLowerCase().includes(q) || porProveedor[prov].some(p =>
-      (p.codigoProv || '').toLowerCase().includes(q) ||
-      (p.descripcion || '').toLowerCase().includes(q)));
+      (p.codigoProv || '').toLowerCase().replace(/\s+/g, ' ').includes(q) ||
+      (p.descripcion || '').toLowerCase().replace(/\s+/g, ' ').includes(q)));
   const filteredItems = (prov: string) => (!q ? porProveedor[prov] : porProveedor[prov].filter(p =>
     prov.toLowerCase().includes(q) ||
-    (p.codigoProv || '').toLowerCase().includes(q) ||
-    (p.descripcion || '').toLowerCase().includes(q))
-  ).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es'));
+    (p.codigoProv || '').toLowerCase().replace(/\s+/g, ' ').includes(q) ||
+    (p.descripcion || '').toLowerCase().replace(/\s+/g, ' ').includes(q))
+  ).slice().sort((a, b) => (a.descripcion || '').localeCompare(b.descripcion || '', 'es', { numeric: true }));
 
   return (
     <div>

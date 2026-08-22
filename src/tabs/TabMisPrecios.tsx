@@ -212,13 +212,14 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
     showToast('Excel exportado', 'success');
   };
 
-  const filtrados = (busqueda
+  const busquedaNorm = busqueda.trim().toLowerCase().replace(/\s+/g, ' ');
+  const filtrados = (busquedaNorm
     ? (data.misProductos || []).filter(p =>
-        (p.codigoRef || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-        (p.codigoProv || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-        ((p as any).codigoBarras || '').toLowerCase().includes(busqueda.toLowerCase()))
+        (p.codigoRef || '').toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm) ||
+        (p.codigoProv || '').toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm) ||
+        ((p as any).codigoBarras || '').toLowerCase().replace(/\s+/g, ' ').includes(busquedaNorm))
     : (data.misProductos || [])
-  ).slice().sort((a, b) => (a.codigoRef || '').localeCompare(b.codigoRef || '', 'es'));
+  ).slice().sort((a, b) => (a.codigoRef || '').localeCompare(b.codigoRef || '', 'es', { numeric: true }));
 
   const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-AR');
 
