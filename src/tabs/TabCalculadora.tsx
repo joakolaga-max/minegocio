@@ -34,6 +34,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
   const [paymentMethod, setPaymentMethod] = useState<'transferencia' | 'efectivo'>('transferencia');
   const [descuentoPct, setDescuentoPct] = useState(0);
   const [descuentoCustom, setDescuentoCustom] = useState('');
+  const [mostrarDescuento, setMostrarDescuento] = useState(false);
   const [showModalEfectivo, setShowModalEfectivo] = useState(false);
   const [montoEfectivo, setMontoEfectivo] = useState('');
   const [showModalTransferencia, setShowModalTransferencia] = useState(false);
@@ -186,6 +187,7 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
     setMontoEfectivo('');
     setDescuentoPct(0);
     setDescuentoCustom('');
+    setMostrarDescuento(false);
     showToast('Venta registrada', 'success');
   };
 
@@ -358,34 +360,49 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
             </div>
           </div>
 
-          {/* Descuento */}
+          {/* Descuento (solapa colapsable) */}
           <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: T.textMuted, textTransform: 'uppercase', marginBottom: 6 }}>Descuento</div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {[0, 5, 10, 15].map(pct => (
-                <button key={pct}
-                  onClick={() => { setDescuentoPct(pct); setDescuentoCustom(''); }}
-                  style={{
-                    flex: 1, padding: '10px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                    fontFamily: 'inherit', fontWeight: 600, fontSize: 13,
-                    background: descuentoPct === pct && descuentoCustom === '' ? '#ef4444' : T.inputBg,
-                    color: descuentoPct === pct && descuentoCustom === '' ? 'white' : T.textSecondary,
-                  }}>
-                  {pct === 0 ? 'Sin desc.' : `${pct}%`}
-                </button>
-              ))}
-              <input
-                type="number" min={0} max={100}
-                placeholder="Otro"
-                value={descuentoCustom}
-                onChange={e => {
-                  setDescuentoCustom(e.target.value);
-                  const v = parseFloat(e.target.value);
-                  setDescuentoPct(isNaN(v) ? 0 : Math.min(Math.max(v, 0), 100));
-                }}
-                style={{ width: 56, padding: '10px 4px', borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.text, textAlign: 'center', fontFamily: 'inherit', fontSize: 13 }}
-              />
-            </div>
+            <button
+              onClick={() => setMostrarDescuento(v => !v)}
+              style={{
+                width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '10px 14px', borderRadius: 10, border: `1px solid ${descuentoPct > 0 ? '#ef4444' : T.inputBorder}`,
+                background: descuentoPct > 0 ? 'rgba(239,68,68,0.08)' : 'transparent',
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: descuentoPct > 0 ? '#ef4444' : T.textSecondary }}>
+                🏷️ {descuentoPct > 0 ? `Descuento: ${descuentoPct}%` : 'Aplicar descuento'}
+              </span>
+              <span style={{ fontSize: 12, color: T.textMuted }}>{mostrarDescuento ? '▲' : '▼'}</span>
+            </button>
+
+            {mostrarDescuento && (
+              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                {[0, 5, 10, 15].map(pct => (
+                  <button key={pct}
+                    onClick={() => { setDescuentoPct(pct); setDescuentoCustom(''); }}
+                    style={{
+                      flex: 1, padding: '10px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                      fontFamily: 'inherit', fontWeight: 600, fontSize: 13,
+                      background: descuentoPct === pct && descuentoCustom === '' ? '#ef4444' : T.inputBg,
+                      color: descuentoPct === pct && descuentoCustom === '' ? 'white' : T.textSecondary,
+                    }}>
+                    {pct === 0 ? 'Sin desc.' : `${pct}%`}
+                  </button>
+                ))}
+                <input
+                  type="number" min={0} max={100}
+                  placeholder="Otro"
+                  value={descuentoCustom}
+                  onChange={e => {
+                    setDescuentoCustom(e.target.value);
+                    const v = parseFloat(e.target.value);
+                    setDescuentoPct(isNaN(v) ? 0 : Math.min(Math.max(v, 0), 100));
+                  }}
+                  style={{ width: 56, padding: '10px 4px', borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.text, textAlign: 'center', fontFamily: 'inherit', fontSize: 13 }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Método de pago */}

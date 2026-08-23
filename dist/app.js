@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-08-22T16:35:16.529Z
+// MiNegocio v2.0 - Built 2026-08-23T15:21:09.052Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -888,6 +888,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
     const [paymentMethod, setPaymentMethod] = useState('transferencia');
     const [descuentoPct, setDescuentoPct] = useState(0);
     const [descuentoCustom, setDescuentoCustom] = useState('');
+    const [mostrarDescuento, setMostrarDescuento] = useState(false);
     const [showModalEfectivo, setShowModalEfectivo] = useState(false);
     const [montoEfectivo, setMontoEfectivo] = useState('');
     const [showModalTransferencia, setShowModalTransferencia] = useState(false);
@@ -1037,6 +1038,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
         setMontoEfectivo('');
         setDescuentoPct(0);
         setDescuentoCustom('');
+        setMostrarDescuento(false);
         showToast('Venta registrada', 'success');
     };
     const confirmarTransferencia = () => {
@@ -1152,8 +1154,17 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                         descuentoPct > 0 && (React.createElement("div", { style: { fontSize: 12, color: '#86efac', textDecoration: 'line-through', opacity: 0.7 } }, (0, utils_1.fmtPeso)(total))),
                         React.createElement("div", { style: { fontSize: 24, fontWeight: 700, color: '#22c55e' } }, (0, utils_1.fmtPeso)(totalConDescuento))))),
             React.createElement("div", { style: { marginBottom: 12 } },
-                React.createElement("div", { style: { fontSize: 10, fontWeight: 600, color: T.textMuted, textTransform: 'uppercase', marginBottom: 6 } }, "Descuento"),
-                React.createElement("div", { style: { display: 'flex', gap: 6 } },
+                React.createElement("button", { onClick: () => setMostrarDescuento(v => !v), style: {
+                        width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '10px 14px', borderRadius: 10, border: `1px solid ${descuentoPct > 0 ? '#ef4444' : T.inputBorder}`,
+                        background: descuentoPct > 0 ? 'rgba(239,68,68,0.08)' : 'transparent',
+                        cursor: 'pointer', fontFamily: 'inherit',
+                    } },
+                    React.createElement("span", { style: { fontSize: 13, fontWeight: 600, color: descuentoPct > 0 ? '#ef4444' : T.textSecondary } },
+                        "\uD83C\uDFF7\uFE0F ",
+                        descuentoPct > 0 ? `Descuento: ${descuentoPct}%` : 'Aplicar descuento'),
+                    React.createElement("span", { style: { fontSize: 12, color: T.textMuted } }, mostrarDescuento ? '▲' : '▼')),
+                mostrarDescuento && (React.createElement("div", { style: { display: 'flex', gap: 6, marginTop: 8 } },
                     [0, 5, 10, 15].map(pct => (React.createElement("button", { key: pct, onClick: () => { setDescuentoPct(pct); setDescuentoCustom(''); }, style: {
                             flex: 1, padding: '10px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
                             fontFamily: 'inherit', fontWeight: 600, fontSize: 13,
@@ -1164,7 +1175,7 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                             setDescuentoCustom(e.target.value);
                             const v = parseFloat(e.target.value);
                             setDescuentoPct(isNaN(v) ? 0 : Math.min(Math.max(v, 0), 100));
-                        }, style: { width: 56, padding: '10px 4px', borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.text, textAlign: 'center', fontFamily: 'inherit', fontSize: 13 } }))),
+                        }, style: { width: 56, padding: '10px 4px', borderRadius: 10, border: `1px solid ${T.inputBorder}`, background: T.inputBg, color: T.text, textAlign: 'center', fontFamily: 'inherit', fontSize: 13 } })))),
             React.createElement("div", { style: { display: 'flex', gap: 8, marginBottom: 12 } },
                 React.createElement("button", { onClick: () => { setPaymentMethod('transferencia'); setShowModalTransferencia(true); }, style: {
                         flex: 1,
@@ -1648,17 +1659,28 @@ function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClearPendin
             const lista = editIdx !== null
                 ? d.misProductos.map((p, i) => i === editIdx ? nuevo : p)
                 : [...d.misProductos, nuevo];
-            // Migrate foto if codigoRef changed
+            // Migrar foto y stock si cambió la Ref: mover en el estado local Y en Firebase
             let fotos = { ...d.fotos };
+            let stock = { ...d.stock };
             if (editIdx !== null) {
                 const oldRef = d.misProductos[editIdx]?.codigoRef;
                 const newRef = nuevo.codigoRef;
-                if (oldRef && oldRef !== newRef && fotos[oldRef]) {
-                    fotos[newRef] = fotos[oldRef];
-                    delete fotos[oldRef];
+                if (oldRef && oldRef !== newRef) {
+                    if (fotos[oldRef]) {
+                        const fotoData = fotos[oldRef];
+                        fotos[newRef] = fotoData;
+                        delete fotos[oldRef];
+                        // Persistir la migración en Firebase (si no, la foto vuelve a aparecer bajo la Ref vieja al sincronizar)
+                        (0, firebase_1.saveFoto)(newRef, fotoData);
+                        (0, firebase_1.deleteFoto)(oldRef);
+                    }
+                    if (stock[oldRef]) {
+                        stock[newRef] = stock[oldRef];
+                        delete stock[oldRef];
+                    }
                 }
             }
-            return { ...d, misProductos: lista, fotos };
+            return { ...d, misProductos: lista, fotos, stock };
         });
         showToast(editIdx !== null ? 'Producto actualizado' : 'Producto agregado', 'success');
         setCodigoRef('');

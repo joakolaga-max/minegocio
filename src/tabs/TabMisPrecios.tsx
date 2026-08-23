@@ -117,17 +117,28 @@ export function TabMisPrecios({ data, setData, showToast, pendingCodProv, onClea
       const lista = editIdx !== null
         ? d.misProductos.map((p, i) => i === editIdx ? nuevo : p)
         : [...d.misProductos, nuevo];
-      // Migrate foto if codigoRef changed
+      // Migrar foto y stock si cambió la Ref: mover en el estado local Y en Firebase
       let fotos = { ...d.fotos };
+      let stock = { ...d.stock };
       if (editIdx !== null) {
         const oldRef = d.misProductos[editIdx]?.codigoRef;
         const newRef = nuevo.codigoRef;
-        if (oldRef && oldRef !== newRef && fotos[oldRef]) {
-          fotos[newRef] = fotos[oldRef];
-          delete fotos[oldRef];
+        if (oldRef && oldRef !== newRef) {
+          if (fotos[oldRef]) {
+            const fotoData = fotos[oldRef];
+            fotos[newRef] = fotoData;
+            delete fotos[oldRef];
+            // Persistir la migración en Firebase (si no, la foto vuelve a aparecer bajo la Ref vieja al sincronizar)
+            saveFoto(newRef, fotoData);
+            deleteFoto(oldRef);
+          }
+          if (stock[oldRef]) {
+            stock[newRef] = stock[oldRef];
+            delete stock[oldRef];
+          }
         }
       }
-      return { ...d, misProductos: lista, fotos };
+      return { ...d, misProductos: lista, fotos, stock };
     });
 
     showToast(editIdx !== null ? 'Producto actualizado' : 'Producto agregado', 'success');
