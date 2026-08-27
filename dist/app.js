@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-08-23T15:21:09.052Z
+// MiNegocio v2.0 - Built 2026-08-27T23:50:39.902Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -1326,9 +1326,10 @@ function TabCalculadora({ data, setData, showToast, pendingItems, onClearPending
                         React.createElement("button", { onClick: () => { setDevProducto(null); setDevBusqueda(''); }, style: { background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 12 } }, "Quitar"))) : (React.createElement(React.Fragment, null,
                         React.createElement("label", { style: { fontSize: 11, color: T.textMuted, display: 'block', marginBottom: 4 } }, "Vincular a un producto real (opcional, as\u00ED repone stock)"),
                         React.createElement("input", { className: "input-field", style: { fontSize: 13 }, placeholder: "Buscar por Ref...", value: devBusqueda, onChange: e => setDevBusqueda(e.target.value) }),
-                        devBusqueda.trim().length > 0 && (React.createElement("div", { style: { marginTop: 6, maxHeight: 140, overflowY: 'auto', border: `1px solid ${T.inputBorder}`, borderRadius: 8 } }, (data.misProductos || [])
-                            .filter(p => (p.codigoRef || '').toLowerCase().includes(devBusqueda.toLowerCase()))
-                            .slice(0, 6)
+                        devBusqueda.trim().length > 0 && (React.createElement("div", { style: { marginTop: 6, maxHeight: 180, overflowY: 'auto', border: `1px solid ${T.inputBorder}`, borderRadius: 8 } }, (data.misProductos || [])
+                            .filter(p => (p.codigoRef || '').toLowerCase().replace(/\s+/g, ' ').includes(devBusqueda.trim().toLowerCase().replace(/\s+/g, ' ')))
+                            .sort((a, b) => (a.codigoRef || '').localeCompare(b.codigoRef || '', 'es', { numeric: true }))
+                            .slice(0, 30)
                             .map((p, i) => (React.createElement("div", { key: i, onClick: () => {
                                 const pv = (0, utils_1.calcPrecioVenta)(p.precioCosto, p.margen, data.margenes);
                                 setDevProducto(p);

@@ -659,10 +659,11 @@ export function TabCalculadora({ data, setData, showToast, pendingItems, onClear
                       onChange={e => setDevBusqueda(e.target.value)}
                     />
                     {devBusqueda.trim().length > 0 && (
-                      <div style={{ marginTop: 6, maxHeight: 140, overflowY: 'auto', border: `1px solid ${T.inputBorder}`, borderRadius: 8 }}>
+                      <div style={{ marginTop: 6, maxHeight: 180, overflowY: 'auto', border: `1px solid ${T.inputBorder}`, borderRadius: 8 }}>
                         {(data.misProductos || [])
-                          .filter(p => (p.codigoRef || '').toLowerCase().includes(devBusqueda.toLowerCase()))
-                          .slice(0, 6)
+                          .filter(p => (p.codigoRef || '').toLowerCase().replace(/\s+/g, ' ').includes(devBusqueda.trim().toLowerCase().replace(/\s+/g, ' ')))
+                          .sort((a, b) => (a.codigoRef || '').localeCompare(b.codigoRef || '', 'es', { numeric: true }))
+                          .slice(0, 30)
                           .map((p, i) => (
                             <div key={i} onClick={() => {
                               const pv = calcPrecioVenta(p.precioCosto, p.margen, data.margenes);
