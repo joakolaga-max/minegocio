@@ -1,5 +1,5 @@
 
-// MiNegocio v2.0 - Built 2026-08-27T23:50:39.902Z
+// MiNegocio v2.0 - Built 2026-09-05T03:30:59.738Z
 const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
 
 
@@ -243,7 +243,7 @@ __modules['lib/utils'] = exports;
 (function() {
 const exports = {};
 const module = { exports };
-exports.loadFotos = exports.deleteFoto = exports.saveFoto = exports.loadFromFirebase = exports.saveToFirebase = void 0;
+exports.loadProveedores = exports.saveProveedor = exports.loadFotos = exports.deleteFoto = exports.saveFoto = exports.loadFromFirebase = exports.saveToFirebase = void 0;
 const saveToFirebase = async (path, data) => {
     const w = window;
     if (w.__fb)
@@ -277,6 +277,21 @@ const loadFotos = async () => {
     return {};
 };
 exports.loadFotos = loadFotos;
+// Cada proveedor se guarda en su propio documento (evita el límite de 1MB de Firestore
+// cuando los 10 proveedores combinados, con miles de productos, superan ese tamaño)
+const saveProveedor = async (id, proveedor) => {
+    const w = window;
+    if (w.__fb?.saveProveedor)
+        await w.__fb.saveProveedor(id, proveedor);
+};
+exports.saveProveedor = saveProveedor;
+const loadProveedores = async () => {
+    const w = window;
+    if (w.__fb?.loadProveedores)
+        return await w.__fb.loadProveedores();
+    return null;
+};
+exports.loadProveedores = loadProveedores;
 
 __modules['lib/firebase'] = exports;
 })();
@@ -763,8 +778,9 @@ const module = { exports };
 exports.useAppData = useAppData;
 const firebase_1 = __require("../lib/firebase");
 const DEFAULT_MARGENES = { p1: 50, p2: 40, p3: 30, p4: 20 };
+const proveedoresPorDefecto = () => Array.from({ length: 10 }, (_, i) => ({ id: i + 1, nombre: `Proveedor ${i + 1}`, productos: [] }));
 const DEFAULT_DATA = {
-    proveedores: Array.from({ length: 10 }, (_, i) => ({ id: i + 1, nombre: `Proveedor ${i + 1}`, productos: [] })),
+    proveedores: proveedoresPorDefecto(),
     misProductos: [],
     margenes: DEFAULT_MARGENES,
     stock: {},
@@ -777,22 +793,47 @@ const DEFAULT_DATA = {
     telefono: '',
     direccion: '',
 };
-const PATHS = ['proveedores', 'misProductos', 'config', 'stock', 'ventas', 'pedidos', 'pedidosHistorial', 'presupuestos'];
+// 'proveedores' ya NO va acá: cada proveedor tiene su propio documento (ver saveProveedor/loadProveedores)
+const PATHS = ['misProductos', 'config', 'stock', 'ventas', 'pedidos', 'pedidosHistorial', 'presupuestos'];
 function useAppData(user) {
     const [data, setData] = useState(DEFAULT_DATA);
     const [loaded, setLoaded] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const prevRef = useRef(null);
+    const dataRef = useRef(data);
+    const savingRef = useRef(false);
+    useEffect(() => { dataRef.current = data; }, [data]);
     const loadAll = useCallback(async () => {
         setSyncing(true);
         try {
-            const [provData, misData, config, stockData, ventasData, pedidosData, pedHistData, presupuestosData] = await Promise.all(PATHS.map(p => (0, firebase_1.loadFromFirebase)(p)));
+            const [misData, config, stockData, ventasData, pedidosData, pedHistData, presupuestosData] = await Promise.all(PATHS.map(p => (0, firebase_1.loadFromFirebase)(p)));
             // Las fotos se cargan por separado (cada una en su documento)
             const fotosData = await (0, firebase_1.loadFotos)();
+            // Proveedores: combinar sistema nuevo (por documento) + sistema viejo (combinado) por si
+            // la migración quedó a mitad de camino (ej. se cortó la conexión) — así ningún proveedor
+            // se muestra vacío por error mientras se termina de migrar.
+            let proveedoresFinal = null;
+            const porId = await (0, firebase_1.loadProveedores)();
+            const viejo = await (0, firebase_1.loadFromFirebase)('proveedores');
+            const viejoPorId = {};
+            if (Array.isArray(viejo))
+                viejo.forEach(p => { if (p && p.id)
+                    viejoPorId[p.id] = p; });
+            if ((porId && Object.keys(porId).length > 0) || Object.keys(viejoPorId).length > 0) {
+                proveedoresFinal = proveedoresPorDefecto().map(p => {
+                    const nuevo = porId?.[p.id];
+                    const legacy = viejoPorId[p.id];
+                    const elegido = nuevo || legacy || p;
+                    // Si este proveedor todavía no está en el sistema nuevo pero sí en el viejo, migrarlo ahora
+                    if (!nuevo && legacy)
+                        (0, firebase_1.saveProveedor)(p.id, legacy);
+                    return { ...p, ...elegido };
+                });
+            }
             setData(d => {
                 const newData = {
                     ...d,
-                    proveedores: provData?.length ? provData : d.proveedores,
+                    proveedores: proveedoresFinal ?? d.proveedores,
                     misProductos: misData ?? d.misProductos,
                     margenes: config?.margenes ?? d.margenes,
                     empresa: config?.empresa ?? d.empresa ?? '',
@@ -806,6 +847,7 @@ function useAppData(user) {
                     presupuestos: presupuestosData ?? d.presupuestos,
                 };
                 prevRef.current = newData;
+                dataRef.current = newData;
                 return newData;
             });
         }
@@ -825,46 +867,87 @@ function useAppData(user) {
             setLoaded(false);
         }
     }, [user, loadAll]);
-    // Save changes (debounced)
+    // Guarda lo que haya cambiado entre prevRef.current y dataRef.current (usa el ref, no el
+    // `data` capturado por closure, para que también funcione al llamarla desde el listener de
+    // visibilitychange con el valor más actual posible)
+    const flushSave = useCallback(async () => {
+        if (!loaded || !user)
+            return;
+        const current = dataRef.current;
+        const prev = prevRef.current;
+        if (!prev || savingRef.current)
+            return;
+        const s = (key) => JSON.stringify(current[key]) !== JSON.stringify(prev[key]);
+        const saves = [];
+        // Proveedores: guardar SOLO el/los que cambiaron, cada uno en su propio documento
+        // (nunca un combinado de los 10 — eso es lo que hacía saltar el límite de 1MB de Firestore)
+        if (s('proveedores')) {
+            current.proveedores.forEach((prov, i) => {
+                const anterior = prev.proveedores[i];
+                if (JSON.stringify(prov) !== JSON.stringify(anterior)) {
+                    saves.push((0, firebase_1.saveProveedor)(prov.id, prov));
+                }
+            });
+        }
+        if (s('misProductos'))
+            saves.push((0, firebase_1.saveToFirebase)('misProductos', current.misProductos));
+        if (s('margenes') || s('misProductos') || s('empresa') || s('telefono') || s('direccion'))
+            saves.push((0, firebase_1.saveToFirebase)('config', {
+                margenes: current.margenes,
+                empresa: current.empresa ?? '',
+                telefono: current.telefono ?? '',
+                direccion: current.direccion ?? '',
+            }));
+        if (s('stock'))
+            saves.push((0, firebase_1.saveToFirebase)('stock', current.stock));
+        if (s('ventas'))
+            saves.push((0, firebase_1.saveToFirebase)('ventas', current.ventas));
+        if (s('pedidos'))
+            saves.push((0, firebase_1.saveToFirebase)('pedidos', current.pedidos));
+        if (s('pedidosHistorial'))
+            saves.push((0, firebase_1.saveToFirebase)('pedidosHistorial', current.pedidosHistorial));
+        if (s('presupuestos'))
+            saves.push((0, firebase_1.saveToFirebase)('presupuestos', current.presupuestos));
+        if (saves.length === 0)
+            return;
+        savingRef.current = true;
+        setSyncing(true);
+        try {
+            await Promise.all(saves);
+            prevRef.current = current;
+        }
+        finally {
+            savingRef.current = false;
+            setSyncing(false);
+        }
+    }, [loaded, user]);
+    // Save changes (debounced) — cubre el caso normal: seguís usando la app, se guarda solo
     useEffect(() => {
         if (!loaded || !user)
             return;
-        const t = setTimeout(async () => {
-            const prev = prevRef.current;
-            if (!prev)
-                return;
-            setSyncing(true);
-            const s = (key) => JSON.stringify(data[key]) !== JSON.stringify(prev[key]);
-            const saves = [];
-            if (s('proveedores'))
-                saves.push((0, firebase_1.saveToFirebase)('proveedores', data.proveedores));
-            if (s('misProductos'))
-                saves.push((0, firebase_1.saveToFirebase)('misProductos', data.misProductos));
-            const sAny = (key) => JSON.stringify(data[key]) !== JSON.stringify(prev[key]);
-            if (s('margenes') || s('misProductos') || sAny('empresa') || sAny('telefono') || sAny('direccion'))
-                saves.push((0, firebase_1.saveToFirebase)('config', {
-                    margenes: data.margenes,
-                    empresa: data.empresa ?? '',
-                    telefono: data.telefono ?? '',
-                    direccion: data.direccion ?? '',
-                }));
-            if (s('stock'))
-                saves.push((0, firebase_1.saveToFirebase)('stock', data.stock));
-            if (s('ventas'))
-                saves.push((0, firebase_1.saveToFirebase)('ventas', data.ventas));
-            if (s('pedidos'))
-                saves.push((0, firebase_1.saveToFirebase)('pedidos', data.pedidos));
-            if (s('pedidosHistorial'))
-                saves.push((0, firebase_1.saveToFirebase)('pedidosHistorial', data.pedidosHistorial));
-            if (s('presupuestos'))
-                saves.push((0, firebase_1.saveToFirebase)('presupuestos', data.presupuestos));
-            if (saves.length > 0)
-                await Promise.all(saves);
-            prevRef.current = data;
-            setSyncing(false);
-        }, 1200);
+        const t = setTimeout(() => { flushSave(); }, 1200);
         return () => clearTimeout(t);
-    }, [data, loaded, user]);
+    }, [data, loaded, user, flushSave]);
+    // Guardado inmediato al salir/cambiar de pestaña/minimizar — cubre el caso en que el usuario
+    // sale de la app ANTES de que se cumplan los 1.2s del guardado automático, para que ningún
+    // cambio se pierda por salir demasiado rápido.
+    useEffect(() => {
+        if (!loaded || !user)
+            return;
+        const onVisibility = () => {
+            if (document.visibilityState === 'hidden')
+                flushSave();
+        };
+        const onPageHide = () => { flushSave(); };
+        document.addEventListener('visibilitychange', onVisibility);
+        window.addEventListener('pagehide', onPageHide);
+        window.addEventListener('beforeunload', onPageHide);
+        return () => {
+            document.removeEventListener('visibilitychange', onVisibility);
+            window.removeEventListener('pagehide', onPageHide);
+            window.removeEventListener('beforeunload', onPageHide);
+        };
+    }, [loaded, user, flushSave]);
     return { data, setData, loaded, syncing };
 }
 

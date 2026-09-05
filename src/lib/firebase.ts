@@ -25,3 +25,16 @@ export const loadFotos = async (): Promise<Record<string, string>> => {
   if (w.__fb?.loadFotos) return await w.__fb.loadFotos();
   return {};
 };
+
+// Cada proveedor se guarda en su propio documento (evita el límite de 1MB de Firestore
+// cuando los 10 proveedores combinados, con miles de productos, superan ese tamaño)
+export const saveProveedor = async (id: number, proveedor: unknown): Promise<void> => {
+  const w = window as any;
+  if (w.__fb?.saveProveedor) await w.__fb.saveProveedor(id, proveedor);
+};
+
+export const loadProveedores = async (): Promise<Record<string, any> | null> => {
+  const w = window as any;
+  if (w.__fb?.loadProveedores) return await w.__fb.loadProveedores();
+  return null;
+};

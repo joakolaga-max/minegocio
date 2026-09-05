@@ -198,6 +198,45 @@
           } catch(e2) {}
           return fotos;
         }
+      },
+
+      // Cada proveedor se guarda en SU PROPIO documento (evita el límite de 1MB
+      // que salta cuando los 10 proveedores juntos, con miles de productos, se
+      // guardaban antes en un solo documento combinado)
+      saveProveedor: async (id, proveedor) => {
+        if (!window.__user) return;
+        try { localStorage.setItem("mn_proveedor_" + id, JSON.stringify(proveedor)); } catch(e) {}
+        try {
+          await setDoc(
+            doc(db, "negocios", window.__user, "proveedores", String(id)),
+            { data: JSON.stringify(proveedor), updatedAt: Date.now() }
+          );
+        } catch(e) {
+          console.log("Proveedor " + id + " offline, guardado solo localmente:", e);
+        }
+      },
+
+      loadProveedores: async () => {
+        if (!window.__user) return null;
+        const resultado = {};
+        try {
+          const { collection, getDocs } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+          const snap = await getDocs(collection(db, "negocios", window.__user, "proveedores"));
+          snap.forEach(d => { resultado[d.id] = JSON.parse(d.data().data); });
+          if (Object.keys(resultado).length > 0) {
+            try { localStorage.setItem("mn_proveedores_index", JSON.stringify(Object.keys(resultado))); } catch(e) {}
+            return resultado;
+          }
+        } catch(e) {}
+        // Sin conexión o sin datos todavía: reconstruir desde localStorage
+        try {
+          const idx = JSON.parse(localStorage.getItem("mn_proveedores_index") || "[]");
+          idx.forEach(id => {
+            const p = localStorage.getItem("mn_proveedor_" + id);
+            if (p) resultado[id] = JSON.parse(p);
+          });
+        } catch(e2) {}
+        return Object.keys(resultado).length > 0 ? resultado : null;
       }
     };
 
